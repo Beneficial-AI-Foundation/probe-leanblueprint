@@ -27,6 +27,26 @@ pub enum BlueprintError {
     )]
     NoManifest(PathBuf),
 
+    /// The Verso render command could not be spawned (needed to produce
+    /// `blueprint-manifest.json` from a bare project).
+    #[error("failed to run Verso render command `{cmd}`: {source}")]
+    VersoRenderSpawn {
+        cmd: String,
+        #[source]
+        source: std::io::Error,
+    },
+
+    /// The Verso render command ran but exited non-zero.
+    #[error(
+        "Verso render command `{cmd}` failed ({status}); pass a pre-rendered \
+         --verso-manifest, a working --verso-render-cmd, or --no-render:\n{stderr}"
+    )]
+    VersoRenderFailed {
+        cmd: String,
+        status: String,
+        stderr: String,
+    },
+
     /// A Verso `blueprint-manifest.json` failed to parse.
     #[error("failed to parse Verso blueprint-manifest.json: {0}")]
     ManifestParse(#[source] serde_json::Error),

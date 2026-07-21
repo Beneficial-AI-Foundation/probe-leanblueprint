@@ -65,6 +65,18 @@ struct ExtractArgs {
     #[arg(long)]
     verso_manifest: Option<PathBuf>,
 
+    /// Command used to render the Verso docs when no `blueprint-manifest.json`
+    /// is found under the project (run via `sh -c` in the project directory).
+    /// Defaults to `lake exe vbp build`, the render entry point that every
+    /// `versoBlueprint`-dependent project exposes.
+    #[arg(long)]
+    verso_render_cmd: Option<String>,
+
+    /// Do not attempt to render Verso docs; require a pre-existing manifest
+    /// (for callers that render the docs themselves before invoking this tool).
+    #[arg(long)]
+    no_render: bool,
+
     /// Massot blueprint source: a `web.tex` file or the directory containing it
     /// (defaults to `<project>/blueprint/src/web.tex`).
     #[arg(long)]
@@ -259,13 +271,70 @@ fn build_model(args: &ExtractArgs, adapter: ResolvedAdapter) -> Result<Blueprint
     }
 }
 
+/// Default Verso render command. `vbp` is shipped by the `versoBlueprint`
+/// dependency, so `lake exe vbp build` is available in any project that requires
+/// it; it auto-discovers the project's generator entry point and writes the
+/// site (including `blueprint-manifest.json`) under `_out/site/`.
+const DEFAULT_VERSO_RENDER_CMD: &str = "lake exe vbp build";
+
 fn build_verso_model(args: &ExtractArgs) -> Result<BlueprintModel> {
-    let model = match &args.verso_manifest {
-        Some(p) if p.is_file() => verso::load_manifest(p)?,
-        Some(p) => verso::load_from_dir(p)?,
-        None => verso::load_from_dir(&args.project)?,
-    };
-    Ok(model)
+    // An explicit `--verso-manifest` is authoritative and never triggers a
+    // render (the caller has pointed us at the artifact directly).
+    if let Some(p) = &args.verso_manifest {
+        return Ok(if p.is_file() {
+            verso::load_manifest(p)?
+        } else {
+            verso::load_from_dir(p)?
+        });
+    }
+
+    // Bare-project path: look for an already-rendered manifest, and if none is
+    // present, render the docs so a caller can pass just a Lean project.
+    match verso::load_from_dir(&args.project) {
+        Ok(model) => Ok(model),
+        Err(BlueprintError::NoManifest(root)) => {
+            if args.no_render {
+                return Err(BlueprintError::NoManifest(root).into());
+            }
+            render_verso_docs(args)?;
+            // Retry: the render must have produced at least one manifest.
+            Ok(verso::load_from_dir(&args.project)?)
+        }
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Render the Verso docs in-place so `blueprint-manifest.json` exists. Runs the
+/// render command through `sh -c` in the project directory (default:
+/// `lake exe vbp build`). This is what makes the Verso path work from a bare
+/// Lean project, mirroring the Massot path's embedded plasTeX emitter.
+fn render_verso_docs(args: &ExtractArgs) -> Result<()> {
+    let cmd = args
+        .verso_render_cmd
+        .as_deref()
+        .unwrap_or(DEFAULT_VERSO_RENDER_CMD);
+    eprintln!(
+        "No blueprint-manifest.json under {}; rendering Verso docs with `{cmd}` ...",
+        args.project.display()
+    );
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(cmd)
+        .current_dir(&args.project)
+        .output()
+        .map_err(|source| BlueprintError::VersoRenderSpawn {
+            cmd: cmd.to_string(),
+            source,
+        })?;
+    if !output.status.success() {
+        return Err(BlueprintError::VersoRenderFailed {
+            cmd: cmd.to_string(),
+            status: output.status.to_string(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        }
+        .into());
+    }
+    Ok(())
 }
 
 fn build_massot_model(args: &ExtractArgs) -> Result<BlueprintModel> {
@@ -376,6 +445,84 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A minimal `ExtractArgs` for the Verso path, rooted at `project`.
+    fn verso_args(project: PathBuf) -> ExtractArgs {
+        ExtractArgs {
+            project,
+            lean: None,
+            adapter: Adapter::Verso,
+            verso_manifest: None,
+            verso_render_cmd: None,
+            no_render: false,
+            blueprint_src: None,
+            python: "python3".into(),
+            emitter: None,
+            output: None,
+            summary_output: None,
+            source_package: None,
+            source_version: None,
+        }
+    }
+
+    #[test]
+    fn render_verso_docs_runs_command_in_project_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut args = verso_args(dir.path().to_path_buf());
+        args.verso_render_cmd = Some("touch rendered.marker".to_string());
+        render_verso_docs(&args).unwrap();
+        assert!(
+            dir.path().join("rendered.marker").exists(),
+            "render command must run in the project directory"
+        );
+    }
+
+    #[test]
+    fn render_verso_docs_surfaces_nonzero_exit() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut args = verso_args(dir.path().to_path_buf());
+        args.verso_render_cmd = Some("exit 7".to_string());
+        let err = render_verso_docs(&args).unwrap_err();
+        assert!(
+            matches!(
+                err.downcast_ref::<BlueprintError>(),
+                Some(BlueprintError::VersoRenderFailed { .. })
+            ),
+            "non-zero render exit must map to VersoRenderFailed, got: {err}"
+        );
+    }
+
+    #[test]
+    fn build_verso_model_no_render_errors_without_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut args = verso_args(dir.path().to_path_buf());
+        args.no_render = true;
+        let err = build_verso_model(&args).unwrap_err();
+        assert!(
+            matches!(
+                err.downcast_ref::<BlueprintError>(),
+                Some(BlueprintError::NoManifest(_))
+            ),
+            "--no-render must not attempt a render, got: {err}"
+        );
+    }
+
+    #[test]
+    fn build_verso_model_renders_then_loads_manifest() {
+        // A stand-in render command drops a real manifest fixture into the
+        // project; build_verso_model must render, then find and parse it.
+        let dir = tempfile::tempdir().unwrap();
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/verso/erasure-codes-manifest.json");
+        let mut args = verso_args(dir.path().to_path_buf());
+        args.verso_render_cmd = Some(format!(
+            "mkdir -p _out/site/html-multi/Erasure-Codes/-verso-data && \
+             cp {} _out/site/html-multi/Erasure-Codes/-verso-data/blueprint-manifest.json",
+            fixture.display()
+        ));
+        let model = build_verso_model(&args).unwrap();
+        assert_eq!(model.nodes.len(), 4, "rendered manifest is loaded");
+    }
 
     #[test]
     fn default_output_sanitizes_path_traversal() {

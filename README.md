@@ -41,16 +41,43 @@ pip install -r requirements.txt   # plasTeX, plastexdepgraph, leanblueprint
 
 ## Usage
 
-```bash
-# Verso project (auto-detects versoBlueprint; reads the already-rendered
-# blueprint-manifest.json under the project and runs probe-lean extract).
-# The Verso docs must be rendered beforehand; this tool does not build them.
-probe-leanblueprint extract path/to/lean-project
+### Zero-config: just a Lean project
 
-# Verso with an already-rendered manifest and a prebuilt probe-lean extract
+The intended entry point (and the one automated consumers use) needs **only a
+Lean project path** — no flags, no pre-built inputs:
+
+```bash
+probe-leanblueprint extract path/to/lean-project
+```
+
+From that alone the tool:
+
+1. **auto-detects the ecosystem** from the project — a `versoBlueprint`
+   dependency in `lakefile.toml`/`lakefile.lean` → Verso; a
+   `blueprint/src/web.tex` tree → Massot (fails loudly if neither is present);
+2. **produces the atom base** by running `probe-lean extract` (unless `--lean`
+   is given);
+3. **produces the blueprint data itself** — for Verso it runs `lake exe vbp
+   build` when no `blueprint-manifest.json` exists yet (that render entry point
+   ships with the `versoBlueprint` dependency); for Massot it runs the bundled
+   plasTeX emitter (embedded in the binary). No manual render step is required.
+
+See [the tool KB](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/tools/probe-leanblueprint.md#zero-config-contract-only-a-lean-project-in)
+for the full contract.
+
+### Manual flags
+
+Everything auto-detected can be overridden:
+
+```bash
+# Skip rendering: point at an already-rendered manifest (file or dir to search)
 probe-leanblueprint extract path/to/project \
     --lean lean_atoms.json \
     --verso-manifest path/to/blueprint-manifest.json
+
+# Custom Verso render command (run via `sh -c` in the project dir), or opt out
+probe-leanblueprint extract path/to/project --verso-render-cmd "scripts/render-docs-site.sh"
+probe-leanblueprint extract path/to/project --no-render   # require a pre-rendered manifest
 
 # Massot leanblueprint project
 probe-leanblueprint extract path/to/project \
@@ -65,6 +92,9 @@ Outputs (default under `<project>/.verilib/probes/`):
 
 The extract envelope is an atoms-category Schema 2.0 file, so `probe merge` /
 `probe project` accept it and preserve the `blueprint-*` extension fields.
+
+Both output formats — the enriched-atom envelope and the summary sidecar,
+including every `blueprint-*` field — are specified in [`docs/SCHEMA.md`](docs/SCHEMA.md).
 
 ## Displaying stats
 
@@ -96,9 +126,9 @@ By chapter                            nodes  stmt✓  thm✓/thm
 
 See the ecosystem knowledge base:
 
-- `../probe/kb/tools/probe-leanblueprint.md` — tool spec (pipeline, join rules, extension fields)
-- `../probe/kb/decisions/004-probe-leanblueprint.md` — design rationale (ADR-004)
-- `../probe/kb/engineering/properties.md` — P26 (additive blueprint status), P3 (stub detection)
+- [`kb/tools/probe-leanblueprint.md`](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/tools/probe-leanblueprint.md) — tool spec (pipeline, join rules, extension fields)
+- [`kb/decisions/004-probe-leanblueprint.md`](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/decisions/004-probe-leanblueprint.md) — design rationale (ADR-004)
+- [`kb/engineering/properties.md`](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/engineering/properties.md) — P26 (additive blueprint status), P3 (stub detection)
 
 ## Development
 
