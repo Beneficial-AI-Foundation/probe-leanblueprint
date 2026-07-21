@@ -1,0 +1,389 @@
+{
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "theorem",
+     "label": "opp_bikem_cka_correctness",
+     "parent": "cka_protocols_opp_bikem_cka",
+     "previewKey": "opp_bikem_cka_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "opp_bikem_cka_spec"
+      },
+      {
+       "label": "scka_correctness"
+      },
+      {
+       "label": "erasure_code_correctness"
+      }
+     ],
+     "title": "Theorem 3.2"
+    },
+    {
+     "kind": "definition",
+     "label": "scka_security",
+     "parent": "cka_protocols_scka",
+     "previewKey": "scka_security--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "scka_scheme"
+      }
+     ],
+     "title": "Definition 1.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "opp_rkem_cka_security",
+     "parent": "cka_protocols_opp_rkem_cka",
+     "previewKey": "opp_rkem_cka_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "opp_rkem_cka_spec"
+      },
+      {
+       "label": "scka_security"
+      },
+      {
+       "label": "erasure_code_scheme"
+      },
+      {
+       "label": "rkem_forward_security"
+      },
+      {
+       "label": "rkem_ratchet_sim"
+      }
+     ],
+     "title": "Theorem 4.3"
+    },
+    {
+     "kind": "definition",
+     "label": "scka_scheme",
+     "parent": "cka_protocols_scka",
+     "previewKey": "scka_scheme--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "opp_bikem_cka_security",
+     "parent": "cka_protocols_opp_bikem_cka",
+     "previewKey": "opp_bikem_cka_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "opp_bikem_cka_spec"
+      },
+      {
+       "label": "scka_security"
+      },
+      {
+       "label": "erasure_code_scheme"
+      }
+     ],
+     "title": "Theorem 3.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "opp_unikem_cka_security",
+     "parent": "cka_protocols_opp_unikem_cka",
+     "previewKey": "opp_unikem_cka_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "opp_unikem_cka_spec"
+      },
+      {
+       "label": "scka_security"
+      },
+      {
+       "label": "erasure_code_scheme"
+      },
+      {
+       "label": "on_off_kem_scheme"
+      }
+     ],
+     "title": "Theorem 2.3"
+    },
+    {
+     "kind": "definition",
+     "label": "scka_correctness",
+     "parent": "cka_protocols_scka",
+     "previewKey": "scka_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "scka_scheme"
+      }
+     ],
+     "title": "Definition 1.2"
+    },
+    {
+     "kind": "definition",
+     "label": "opp_bikem_cka_spec",
+     "parent": "cka_protocols_opp_bikem_cka",
+     "previewKey": "opp_bikem_cka_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "scka_scheme"
+      },
+      {
+       "label": "erasure_code_scheme"
+      }
+     ],
+     "title": "Definition 3.1"
+    },
+    {
+     "kind": "definition",
+     "label": "opp_rkem_cka_spec",
+     "parent": "cka_protocols_opp_rkem_cka",
+     "previewKey": "opp_rkem_cka_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "scka_scheme"
+      },
+      {
+       "label": "erasure_code_scheme"
+      },
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 4.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "opp_unikem_cka_correctness",
+     "parent": "cka_protocols_opp_unikem_cka",
+     "previewKey": "opp_unikem_cka_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "opp_unikem_cka_spec"
+      },
+      {
+       "label": "scka_correctness"
+      },
+      {
+       "label": "erasure_code_correctness"
+      },
+      {
+       "label": "on_off_kem_scheme"
+      }
+     ],
+     "title": "Theorem 2.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "opp_rkem_cka_correctness",
+     "parent": "cka_protocols_opp_rkem_cka",
+     "previewKey": "opp_rkem_cka_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "opp_rkem_cka_spec"
+      },
+      {
+       "label": "scka_correctness"
+      },
+      {
+       "label": "erasure_code_correctness"
+      },
+      {
+       "label": "rkem_correctness"
+      }
+     ],
+     "title": "Theorem 4.2"
+    },
+    {
+     "kind": "definition",
+     "label": "opp_unikem_cka_spec",
+     "parent": "cka_protocols_opp_unikem_cka",
+     "previewKey": "opp_unikem_cka_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "scka_scheme"
+      },
+      {
+       "label": "erasure_code_scheme"
+      },
+      {
+       "label": "on_off_kem_scheme"
+      }
+     ],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": null,
+     "label": "erasure_code_correctness",
+     "parent": null,
+     "previewKey": "erasure_code_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "erasure_code_correctness"
+    },
+    {
+     "kind": null,
+     "label": "erasure_code_scheme",
+     "parent": null,
+     "previewKey": "erasure_code_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "erasure_code_scheme"
+    },
+    {
+     "kind": null,
+     "label": "rkem_forward_security",
+     "parent": null,
+     "previewKey": "rkem_forward_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "rkem_forward_security"
+    },
+    {
+     "kind": null,
+     "label": "rkem_ratchet_sim",
+     "parent": null,
+     "previewKey": "rkem_ratchet_sim--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "rkem_ratchet_sim"
+    },
+    {
+     "kind": null,
+     "label": "on_off_kem_scheme",
+     "parent": null,
+     "previewKey": "on_off_kem_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "on_off_kem_scheme"
+    },
+    {
+     "kind": null,
+     "label": "rkem_scheme",
+     "parent": null,
+     "previewKey": "rkem_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "rkem_scheme"
+    },
+    {
+     "kind": null,
+     "label": "rkem_correctness",
+     "parent": null,
+     "previewKey": "rkem_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "rkem_correctness"
+    }
+   ]
+  }
+ ],
+ "previews": [
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "SCKAScheme.GameState"
+      },
+      {
+       "canonical": "SCKAScheme.sckaCorrectnessSpec"
+      },
+      {
+       "canonical": "SCKAScheme.sckaCorrectnessImpl"
+      },
+      {
+       "canonical": "SCKAScheme.SCKACorrectnessAdversary"
+      },
+      {
+       "canonical": "SCKAScheme.correctnessExp"
+      }
+     ]
+    }
+   },
+   "key": "scka_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "SCKAScheme"
+      }
+     ]
+    }
+   },
+   "key": "scka_scheme--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "SCKAScheme.sckaSecuritySpec"
+      },
+      {
+       "canonical": "SCKAScheme.sckaSecurityImpl"
+      },
+      {
+       "canonical": "SCKAScheme.SCKAAdversary"
+      },
+      {
+       "canonical": "SCKAScheme.securityExp"
+      },
+      {
+       "canonical": "SCKAScheme.sckaGuessAdvantage"
+      }
+     ]
+    }
+   },
+   "key": "scka_security--statement"
+  }
+ ]
+}
