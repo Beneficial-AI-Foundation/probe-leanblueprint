@@ -113,9 +113,3 @@ The live Massot emitter test needs a Python with plasTeX + leanblueprint:
 ```bash
 PROBE_LEANBLUEPRINT_PYTHON=/path/to/venv/bin/python cargo test -- --ignored
 ```
-
-## Knowledge Base
-
-- The ecosystem KB lives at `../probe/kb/`. Read `../probe/kb/index.md` for orientation.
-- Your implementation must conform to `../probe/kb/engineering/properties.md`.
-- Use terminology from `../probe/kb/engineering/glossary.md`.
