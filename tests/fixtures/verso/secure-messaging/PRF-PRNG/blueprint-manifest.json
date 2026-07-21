@@ -1,0 +1,71 @@
+{
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "definition",
+     "label": "prf_prng_scheme",
+     "parent": "prf_prng",
+     "previewKey": "prf_prng_scheme--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    },
+    {
+     "kind": "definition",
+     "label": "prf_prng_security",
+     "parent": "prf_prng",
+     "previewKey": "prf_prng_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "prf_prng_scheme"
+      }
+     ],
+     "title": "Definition 1.2"
+    },
+    {
+     "kind": "definition",
+     "label": "prf_prng_from_prp_prg_spec",
+     "parent": "prf_prng_prf_prng_from_prp_prg",
+     "previewKey": "prf_prng_from_prp_prg_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "prf_prng_scheme"
+      }
+     ],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "prf_prng_from_prp_prg_security",
+     "parent": "prf_prng_prf_prng_from_prp_prg",
+     "previewKey": "prf_prng_from_prp_prg_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "prf_prng_from_prp_prg_spec"
+      },
+      {
+       "label": "prf_prng_scheme"
+      },
+      {
+       "label": "prf_prng_security"
+      }
+     ],
+     "title": "Theorem 2.2"
+    }
+   ]
+  }
+ ],
+ "previews": []
+}

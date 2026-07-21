@@ -1,0 +1,459 @@
+{
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "definition",
+     "label": "cka_from_ddh_state",
+     "parent": "cka_cka_from_ddh",
+     "previewKey": "cka_from_ddh_state--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka"
+      }
+     ],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "cka_from_kem_security",
+     "parent": "cka_cka_from_kem",
+     "previewKey": "cka_from_kem_security--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka_from_kem_spec"
+      },
+      {
+       "label": "cka_security"
+      }
+     ],
+     "title": "Theorem 3.3"
+    },
+    {
+     "kind": "definition",
+     "label": "cka_from_lwe_spec",
+     "parent": "cka_cka_from_lwe",
+     "previewKey": "cka_from_lwe_spec--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [
+      {
+       "label": "cka"
+      }
+     ],
+     "title": "Definition 4.1"
+    },
+    {
+     "kind": "definition",
+     "label": "cka_security",
+     "parent": null,
+     "previewKey": "cka_security--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka"
+      },
+      {
+       "label": "cka_oracles"
+      }
+     ],
+     "title": "Definition 1.4"
+    },
+    {
+     "kind": "definition",
+     "label": "cka_oracles",
+     "parent": null,
+     "previewKey": "cka_oracles--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka"
+      }
+     ],
+     "title": "Definition 1.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "cka_from_lwe_security",
+     "parent": "cka_cka_from_lwe",
+     "previewKey": "cka_from_lwe_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "cka_from_lwe_spec"
+      },
+      {
+       "label": "cka_security"
+      }
+     ],
+     "title": "Theorem 4.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "cka_from_ddh_security",
+     "parent": "cka_cka_from_ddh",
+     "previewKey": "cka_from_ddh_security--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka_from_ddh"
+      },
+      {
+       "label": "cka_security"
+      }
+     ],
+     "title": "Theorem 2.4"
+    },
+    {
+     "kind": "definition",
+     "label": "cka_from_ddh",
+     "parent": "cka_cka_from_ddh",
+     "previewKey": "cka_from_ddh--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka"
+      },
+      {
+       "label": "cka_from_ddh_state"
+      }
+     ],
+     "title": "Definition 2.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "cka_from_ddh_correctness",
+     "parent": "cka_cka_from_ddh",
+     "previewKey": "cka_from_ddh_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka_from_ddh"
+      },
+      {
+       "label": "cka_correctness"
+      }
+     ],
+     "title": "Theorem 2.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "cka_from_lwe_correctness",
+     "parent": "cka_cka_from_lwe",
+     "previewKey": "cka_from_lwe_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "cka_from_lwe_spec"
+      },
+      {
+       "label": "cka_correctness"
+      }
+     ],
+     "title": "Theorem 4.2"
+    },
+    {
+     "kind": "definition",
+     "label": "cka_advantage",
+     "parent": null,
+     "previewKey": "cka_advantage--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka_security"
+      }
+     ],
+     "title": "Definition 1.5"
+    },
+    {
+     "kind": "definition",
+     "label": "cka_from_kem_spec",
+     "parent": "cka_cka_from_kem",
+     "previewKey": "cka_from_kem_spec--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka"
+      }
+     ],
+     "title": "Definition 3.1"
+    },
+    {
+     "kind": "definition",
+     "label": "cka_correctness",
+     "parent": null,
+     "previewKey": "cka_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka"
+      },
+      {
+       "label": "cka_oracles"
+      }
+     ],
+     "title": "Definition 1.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "cka_from_kem_correctness",
+     "parent": "cka_cka_from_kem",
+     "previewKey": "cka_from_kem_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "cka_from_kem_spec"
+      },
+      {
+       "label": "cka_correctness"
+      }
+     ],
+     "title": "Theorem 3.2"
+    },
+    {
+     "kind": "definition",
+     "label": "cka",
+     "parent": null,
+     "previewKey": "cka--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    }
+   ]
+  }
+ ],
+ "previews": [
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "CKAScheme"
+      }
+     ]
+    }
+   },
+   "key": "cka--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "CKAScheme.ckaGuessAdvantage"
+      }
+     ]
+    }
+   },
+   "key": "cka_advantage--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "CKAScheme.correctnessExp"
+      },
+      {
+       "canonical": "CKAScheme.ckaCorrectnessImpl"
+      },
+      {
+       "canonical": "CKAScheme.CKACorrectnessAdversary"
+      }
+     ]
+    }
+   },
+   "key": "cka_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "ddhCKA"
+      }
+     ]
+    }
+   },
+   "key": "cka_from_ddh--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "ddhCKA.correctness"
+      }
+     ]
+    }
+   },
+   "key": "cka_from_ddh_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "ddhCKA.security"
+      }
+     ]
+    }
+   },
+   "key": "cka_from_ddh_security--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "CKAState"
+      }
+     ]
+    }
+   },
+   "key": "cka_from_ddh_state--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "kemCKA.correctness"
+      }
+     ]
+    }
+   },
+   "key": "cka_from_kem_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "kemCKA.security"
+      }
+     ]
+    }
+   },
+   "key": "cka_from_kem_security--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "kemCKA.scheme"
+      }
+     ]
+    }
+   },
+   "key": "cka_from_kem_spec--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "CKAScheme.GameState"
+      },
+      {
+       "canonical": "CKAScheme.GameParams"
+      },
+      {
+       "canonical": "CKAScheme.isChallengeEpoch"
+      },
+      {
+       "canonical": "CKAScheme.allowCorrPCS"
+      },
+      {
+       "canonical": "CKAScheme.allowCorrFS"
+      },
+      {
+       "canonical": "CKAScheme.allowCorr"
+      },
+      {
+       "canonical": "CKAScheme.oracleSendA"
+      },
+      {
+       "canonical": "CKAScheme.oracleSendB"
+      },
+      {
+       "canonical": "CKAScheme.oracleSendArleak"
+      },
+      {
+       "canonical": "CKAScheme.oracleSendBrleak"
+      },
+      {
+       "canonical": "CKAScheme.oracleRecvA"
+      },
+      {
+       "canonical": "CKAScheme.oracleRecvB"
+      },
+      {
+       "canonical": "CKAScheme.oracleChallA"
+      },
+      {
+       "canonical": "CKAScheme.oracleChallB"
+      },
+      {
+       "canonical": "CKAScheme.oracleCorruptA"
+      },
+      {
+       "canonical": "CKAScheme.oracleCorruptB"
+      }
+     ]
+    }
+   },
+   "key": "cka_oracles--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "CKAScheme.securityExp"
+      },
+      {
+       "canonical": "CKAScheme.ckaSecurityImpl"
+      },
+      {
+       "canonical": "CKAScheme.CKAAdversary"
+      }
+     ]
+    }
+   },
+   "key": "cka_security--statement"
+  }
+ ]
+}

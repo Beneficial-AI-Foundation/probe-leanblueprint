@@ -1,0 +1,157 @@
+{
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "definition",
+     "label": "on_off_kem_from_ml_kem_spec",
+     "parent": "on_off_kem_on_off_kem_from_ml_kem",
+     "previewKey": "on_off_kem_from_ml_kem_spec--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [
+      {
+       "label": "on_off_kem_scheme"
+      },
+      {
+       "label": "ml_kem_scheme"
+      }
+     ],
+     "title": "Definition 2.2"
+    },
+    {
+     "kind": "definition",
+     "label": "on_off_kem_scheme",
+     "parent": "on_off_kem",
+     "previewKey": "on_off_kem_scheme--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "ml_kem_correctness",
+     "parent": "ml_kem",
+     "previewKey": "ml_kem_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "ml_kem_scheme"
+      }
+     ],
+     "title": "Theorem 1.2"
+    },
+    {
+     "kind": "definition",
+     "label": "incremental_kem_scheme",
+     "parent": "incremental_kem",
+     "previewKey": "incremental_kem_scheme--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [],
+     "title": "Definition 3.1"
+    },
+    {
+     "kind": "definition",
+     "label": "incremental_kem_from_ml_kem_spec",
+     "parent": "incremental_kem_incremental_kem_from_ml_kem",
+     "previewKey": "incremental_kem_from_ml_kem_spec--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [
+      {
+       "label": "incremental_kem_scheme"
+      },
+      {
+       "label": "ml_kem_scheme"
+      }
+     ],
+     "title": "Definition 3.2"
+    },
+    {
+     "kind": "definition",
+     "label": "ml_kem_scheme",
+     "parent": "ml_kem",
+     "previewKey": "ml_kem_scheme--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "ml_kem_security",
+     "parent": "ml_kem",
+     "previewKey": "ml_kem_security--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [
+      {
+       "label": "ml_kem_scheme"
+      }
+     ],
+     "title": "Theorem 1.3"
+    }
+   ]
+  }
+ ],
+ "previews": [
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "KEMScheme.IncrementalStructure"
+      }
+     ]
+    }
+   },
+   "key": "incremental_kem_scheme--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "MLKEM.deltaCorrect_fips203"
+      }
+     ]
+    }
+   },
+   "key": "ml_kem_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "MLKEM.mlkemScheme"
+      }
+     ]
+    }
+   },
+   "key": "ml_kem_scheme--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "KEMScheme.OnOffStructure"
+      }
+     ]
+    }
+   },
+   "key": "on_off_kem_scheme--statement"
+  }
+ ]
+}

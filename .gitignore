@@ -1,0 +1,11 @@
+/target
+.vscode/
+__pycache__/
+*.pyc
+.verilib/
+# Local-only probe hub patch (not committed; see .cargo/config.toml)
+/.cargo/config.toml
+*.swp
+*.swo
+*~
+.DS_Store

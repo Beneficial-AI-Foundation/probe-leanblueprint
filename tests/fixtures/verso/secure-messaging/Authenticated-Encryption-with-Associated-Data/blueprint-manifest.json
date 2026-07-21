@@ -1,0 +1,396 @@
+{
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "theorem",
+     "label": "aead_etm_security",
+     "parent": "aead_encrypt_then_mac",
+     "previewKey": "aead_etm_security--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead_etm_spec"
+      },
+      {
+       "label": "aead_security_exp"
+      },
+      {
+       "label": "aead_dist_advantage"
+      },
+      {
+       "label": "aead_decrypt_query_bound"
+      }
+     ],
+     "title": "Theorem 3.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "aead_aes_gcm_correctness",
+     "parent": "aead_aes_gcm",
+     "previewKey": "aead_aes_gcm_correctness--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [
+      {
+       "label": "aead_aes_gcm_spec"
+      },
+      {
+       "label": "aead_correctness"
+      }
+     ],
+     "title": "Theorem 2.2"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_dist_advantage",
+     "parent": null,
+     "previewKey": "aead_dist_advantage--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead_security_exp"
+      }
+     ],
+     "title": "Definition 1.7"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_etm_spec",
+     "parent": "aead_encrypt_then_mac",
+     "previewKey": "aead_etm_spec--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead"
+      }
+     ],
+     "title": "Definition 3.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "aead_guess_dist_advantage",
+     "parent": null,
+     "previewKey": "aead_guess_dist_advantage--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead_guess_advantage"
+      },
+      {
+       "label": "aead_dist_advantage"
+      }
+     ],
+     "title": "Theorem 1.8"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_security_exp",
+     "parent": null,
+     "previewKey": "aead_security_exp--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead"
+      },
+      {
+       "label": "aead_oracles"
+      }
+     ],
+     "title": "Definition 1.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "aead_aes_gcm_security",
+     "parent": "aead_aes_gcm",
+     "previewKey": "aead_aes_gcm_security--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [
+      {
+       "label": "aead_aes_gcm_spec"
+      },
+      {
+       "label": "aead_security_exp"
+      }
+     ],
+     "title": "Theorem 2.3"
+    },
+    {
+     "kind": "definition",
+     "label": "aead",
+     "parent": null,
+     "previewKey": "aead--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_aes_gcm_spec",
+     "parent": "aead_aes_gcm",
+     "previewKey": "aead_aes_gcm_spec--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead"
+      }
+     ],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_oracles",
+     "parent": null,
+     "previewKey": "aead_oracles--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead"
+      }
+     ],
+     "title": "Definition 1.2"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_correctness",
+     "parent": null,
+     "previewKey": "aead_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead"
+      }
+     ],
+     "title": "Definition 1.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "aead_etm_correctness",
+     "parent": "aead_encrypt_then_mac",
+     "previewKey": "aead_etm_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead_etm_spec"
+      },
+      {
+       "label": "aead_correctness"
+      }
+     ],
+     "title": "Theorem 3.2"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_decrypt_query_bound",
+     "parent": null,
+     "previewKey": "aead_decrypt_query_bound--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead_security_exp"
+      }
+     ],
+     "title": "Definition 1.5"
+    },
+    {
+     "kind": "definition",
+     "label": "aead_guess_advantage",
+     "parent": null,
+     "previewKey": "aead_guess_advantage--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "aead_security_exp"
+      }
+     ],
+     "title": "Definition 1.6"
+    }
+   ]
+  }
+ ],
+ "previews": [
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme"
+      }
+     ]
+    }
+   },
+   "key": "aead--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "aesGcmAEAD"
+      }
+     ]
+    }
+   },
+   "key": "aead_aes_gcm_spec--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme.Correct"
+      }
+     ]
+    }
+   },
+   "key": "aead_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme.decryptQueryBound"
+      }
+     ]
+    }
+   },
+   "key": "aead_decrypt_query_bound--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme.distAdvantage"
+      },
+      {
+       "canonical": "AEADScheme.securityExpFixedBit"
+      }
+     ]
+    }
+   },
+   "key": "aead_dist_advantage--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "etmAEAD_correct"
+      }
+     ]
+    }
+   },
+   "key": "aead_etm_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "etmAEAD_security"
+      }
+     ]
+    }
+   },
+   "key": "aead_etm_security--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "etmAEAD"
+      }
+     ]
+    }
+   },
+   "key": "aead_etm_spec--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme.guessAdvantage"
+      }
+     ]
+    }
+   },
+   "key": "aead_guess_advantage--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme.guessAdvantage_eq_distAdvantage_div_two"
+      }
+     ]
+    }
+   },
+   "key": "aead_guess_dist_advantage--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme.oracleEncrypt"
+      },
+      {
+       "canonical": "AEADScheme.oracleDecrypt"
+      }
+     ]
+    }
+   },
+   "key": "aead_oracles--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "AEADScheme.securityExp"
+      },
+      {
+       "canonical": "AEADScheme.aeadSecurityImpl"
+      },
+      {
+       "canonical": "AEADScheme.OneTimeCCAAdversary"
+      }
+     ]
+    }
+   },
+   "key": "aead_security_exp--statement"
+  }
+ ]
+}
