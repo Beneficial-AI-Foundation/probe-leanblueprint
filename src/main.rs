@@ -140,9 +140,7 @@ fn detect_adapter(args: &ExtractArgs) -> Result<ResolvedAdapter> {
     let has_verso = ["", "docs"].iter().any(|dir| {
         ["lakefile.toml", "lakefile.lean"].iter().any(|lf| {
             std::fs::read_to_string(args.project.join(dir).join(lf))
-                .map(|text| {
-                    text.contains("versoBlueprint") || text.contains("verso-blueprint")
-                })
+                .map(|text| text.contains("versoBlueprint") || text.contains("verso-blueprint"))
                 .unwrap_or(false)
         })
     });
