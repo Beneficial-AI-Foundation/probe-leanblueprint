@@ -39,7 +39,7 @@ enum Adapter {
 
 /// A concretely-selected adapter (never `Auto`). Resolving `Adapter::Auto` into
 /// this before dispatch removes the need for an `unreachable!` arm.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum ResolvedAdapter {
     Verso,
     Massot,
@@ -133,10 +133,18 @@ fn detect_adapter(args: &ExtractArgs) -> Result<ResolvedAdapter> {
     // leftover/migrated Massot `blueprint/` tree, and defaulting to Massot in
     // that case would silently pick the wrong ecosystem.
     let has_web_tex = args.project.join("blueprint/src/web.tex").exists();
-    let has_verso = ["lakefile.toml", "lakefile.lean"].iter().any(|lf| {
-        std::fs::read_to_string(args.project.join(lf))
-            .map(|text| text.contains("versoBlueprint") || text.contains("verso-blueprint"))
-            .unwrap_or(false)
+    // The `versoBlueprint` dependency is frequently declared in a dedicated
+    // blueprint subproject rather than the root lakefile (e.g. KVAC's
+    // `docs/lakefile.toml`), so scan the root *and* the conventional `docs/`
+    // subproject before giving up.
+    let has_verso = ["", "docs"].iter().any(|dir| {
+        ["lakefile.toml", "lakefile.lean"].iter().any(|lf| {
+            std::fs::read_to_string(args.project.join(dir).join(lf))
+                .map(|text| {
+                    text.contains("versoBlueprint") || text.contains("verso-blueprint")
+                })
+                .unwrap_or(false)
+        })
     });
     match (has_verso, has_web_tex) {
         (true, true) => {
@@ -522,6 +530,42 @@ mod tests {
         ));
         let model = build_verso_model(&args).unwrap();
         assert_eq!(model.nodes.len(), 4, "rendered manifest is loaded");
+    }
+
+    #[test]
+    fn detect_adapter_finds_verso_in_docs_subproject() {
+        // KVAC-style layout: the root lakefile has no verso signal; the
+        // `versoBlueprint` dependency is declared in `docs/lakefile.toml`.
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("lakefile.toml"), "name = \"kvac\"\n").unwrap();
+        std::fs::create_dir(dir.path().join("docs")).unwrap();
+        std::fs::write(
+            dir.path().join("docs/lakefile.toml"),
+            "[[require]]\nname = \"versoBlueprint\"\n",
+        )
+        .unwrap();
+        let mut args = verso_args(dir.path().to_path_buf());
+        args.adapter = Adapter::Auto;
+        assert!(
+            matches!(detect_adapter(&args).unwrap(), ResolvedAdapter::Verso),
+            "verso signal in docs/lakefile.toml must be detected"
+        );
+    }
+
+    #[test]
+    fn detect_adapter_errors_without_any_signal() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("lakefile.toml"), "name = \"plain\"\n").unwrap();
+        let mut args = verso_args(dir.path().to_path_buf());
+        args.adapter = Adapter::Auto;
+        let err = detect_adapter(&args).unwrap_err();
+        assert!(
+            matches!(
+                err.downcast_ref::<BlueprintError>(),
+                Some(BlueprintError::AdapterUndetected)
+            ),
+            "no signal must yield AdapterUndetected, got: {err}"
+        );
     }
 
     #[test]

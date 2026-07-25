@@ -90,7 +90,12 @@ pub enum BlueprintError {
     EmitterParse(#[source] serde_json::Error),
 
     /// No blueprint adapter could be auto-detected.
-    #[error("could not detect blueprint adapter; pass --adapter verso|massot")]
+    #[error(
+        "could not detect blueprint adapter: no `versoBlueprint` signal in \
+         lakefile.toml/lakefile.lean (checked project root and docs/) and no \
+         blueprint/src/web.tex. If the blueprint lives in another subproject, \
+         pass --adapter verso|massot (or point the project path at that subproject)"
+    )]
     AdapterUndetected,
 
     /// The `--lean` atom base is this tool's own output (self-ingestion), which

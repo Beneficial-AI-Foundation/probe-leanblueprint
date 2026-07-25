@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Re-enrichment is now idempotent across model changes: `enrich` scrubs prior synthetic blueprint atoms and stale `blueprint-*` fields before joining, so deleting or renaming a node no longer leaks a stale synthetic atom or label. Running on a merged spine that carries old blueprint atoms is supported (they are scrubbed); re-ingesting probe-leanblueprint's own `probe-leanblueprint/extract` as `--lean` is now rejected with a clear error.
 - The Massot adapter de-duplicates node labels via the shared merge policy (matching Verso) instead of trusting the Python emitter's dedup.
 - Adapter auto-detection checks the lakefile `versoBlueprint` signal before `blueprint/src/web.tex`, so a Verso project with a leftover/migrated Massot tree resolves to Verso (warns when both signals are present).
+- Adapter auto-detection also scans the conventional `docs/` subproject lakefile for the `versoBlueprint` signal, so a project that declares the blueprint dependency only in `docs/lakefile.toml` (e.g. KVAC-model) is detected instead of failing. The `AdapterUndetected` error now spells out where it looked and how to override.
 - `NodeKind::from_source` warns on a non-empty unrecognized kind instead of silently bucketing it as a theorem; absent / `null` / empty kinds still default to theorem.
 - Depend on the `probe` hub via a pinned git dependency instead of a local path, so the crate builds standalone (as its `repository` field and `cargo install --path .` instructions imply).
 
