@@ -1,0 +1,48 @@
+probe-leanblueprint stats — FLT ee47fd2
+  source: https://github.com/ImperialCollegeLondon/FLT.git@ee47fd2abe
+
+Headline: 105/194 theorems fully proved (54.1%)
+Blueprint nodes: 245   (bound 150 · planned-only 73 · decl-missing 22 · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized         171    33   138
+  ready               39     9    30
+  blocked             35     9    26
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved       137    32   105
+  proved              25     1    24
+  ready               32     9    23
+  none                51     9    42
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  verso-flt                             245    171   105/194
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? fermatLastTheoremThree
+  ? «Algebra.IsInvariant.charpoly_mem_lifts»
+  ? «Algebra.IsInvariant.isIntegral»
+  ? «ContinuousMulEquiv.piUnits»
+  ? «FermatLastTheorem.of_odd_primes»
+  ? «FixedPoints.toAlgAut_surjective»
+  ? «IsAlgebraic.exists_smul_eq_mul»
+  ? «IsFractionRing.stabilizerHom_surjective»
+  ? «IsFractionRing.stabilizerHom»
+  ? «MeasureTheory.addEquivAddHaarChar_comap»
+  ? «MeasureTheory.addEquivAddHaarChar_eq»
+  ? «MeasureTheory.addEquivAddHaarChar_refl»
+  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_comap»
+  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_map»
+  ? «MeasureTheory.addEquivAddHaarChar_smul_map»
+  ? «MeasureTheory.addEquivAddHaarChar_smul_preimage»
+  ? «MeasureTheory.addEquivAddHaarChar_trans»
+  ? «MeasureTheory.addEquivAddHaarChar»
+  ? «MeasureTheory.mulEquivHaarChar_eq_one_of_compactSpace»
+  ? «MulSemiringAction.charpoly»
+  ? «MulSemiringAction.monic_charpoly»
+  ? «Submonoid.units_isCompact»
+Partial-missing declarations: none

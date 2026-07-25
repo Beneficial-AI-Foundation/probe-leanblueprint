@@ -1,0 +1,92 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "2.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.1.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "",
+    "commit": "",
+    "language": "lean",
+    "package": "ProjectTemplate",
+    "package-version": "0.0.0"
+  },
+  "timestamp": "2026-07-23T15:54:56Z",
+  "data": {
+    "totals": {
+      "nodes": 9,
+      "with-lean-decl": 0,
+      "planned-only": 7,
+      "decl-missing": 2,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 2,
+        "formalized": 6
+      },
+      "proof": {
+        "none": 2,
+        "ready": 2,
+        "proved": 4,
+        "fully-proved": 1
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 2,
+        "formalized": 1
+      },
+      "proof": {
+        "none": 1,
+        "ready": 2,
+        "proved": 1,
+        "fully-proved": 0
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 0,
+        "formalized": 5
+      },
+      "proof": {
+        "none": 1,
+        "ready": 0,
+        "proved": 3,
+        "fully-proved": 1
+      }
+    },
+    "headline": {
+      "theorems-total": 5,
+      "theorems-fully-proved": 1,
+      "fraction": 0.2
+    },
+    "by-chapter": {
+      "project_template": {
+        "nodes": 9,
+        "statement": {
+          "none": 0,
+          "blocked": 1,
+          "ready": 2,
+          "formalized": 6
+        },
+        "proof": {
+          "none": 2,
+          "ready": 2,
+          "proved": 4,
+          "fully-proved": 1
+        },
+        "theorems-total": 5,
+        "theorems-fully-proved": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+probe-leanblueprint stats — SpherePacking 1828993
+  source: https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean.git@1828993f87
+
+Headline: 24/106 theorems fully proved (22.6%)
+Blueprint nodes: 140   (bound 75 · planned-only 51 · decl-missing 14 · partial-missing 1 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized          89    27    62
+  ready               22     3    19
+  blocked             29     4    25
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved        42    18    24
+  proved              38     9    29
+  ready               18     3    15
+  none                42     4    38
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  verso-sphere-packing                  140     89    24/106
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? IsZLattice
+  ? «def:Ek»
+  ? «def:Fourier-Transform»
+  ? «def:Mk»
+  ? «def:Schwartz-Space»
+  ? «def:automorphy-factor»
+  ? «def:dedekind_eta»
+  ? «def:dual-lattice»
+  ? «lemma:Ek-is-modular-form»
+  ? «lemma:Fourier-transform-is-automorphism»
+  ? «lemma:automorphy-factor-chain-rule»
+  ? «lemma:slash-operator-chain-rule»
+  ? «thm:lvl1_dims»
+  ? «thm:nonpos_wt»
+Bound nodes with some declarations missing from probe-lean:
+  ? «def:Gamma-generators»: ModularGroup.S, ModularGroup.T

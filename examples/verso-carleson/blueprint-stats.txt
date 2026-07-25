@@ -1,0 +1,34 @@
+probe-leanblueprint stats — carleson 8e93bee
+  source: https://github.com/fpvandoorn/carleson@8e93bee110
+
+Headline: 154/161 theorems fully proved (95.7%)
+Blueprint nodes: 161   (bound 152 · planned-only 1 · decl-missing 8 · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized         160     0   160
+  ready                0     0     0
+  blocked              1     0     1
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved       154     0   154
+  proved               6     0     6
+  ready                0     0     0
+  none                 1     0     1
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  verso-carleson                        161    160   154/161
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? «convergence-of-coeffs-summable»
+  ? «covering-separable-space»
+  ? «fourier-coeff-derivative»
+  ? «periodic-domain-shift»
+  ? «real-line-ball-measure»
+  ? «real-line-ball»
+  ? «real-line-measure»
+  ? «real-line-metric»
+Partial-missing declarations: none

@@ -1,0 +1,94 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "2.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.2.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean.git",
+    "commit": "1828993f87e7f751125a66d263cd58855a8e973a",
+    "language": "lean",
+    "package": "SpherePacking",
+    "package-version": "1828993"
+  },
+  "timestamp": "2026-07-25T06:36:49Z",
+  "data": {
+    "totals": {
+      "nodes": 140,
+      "with-lean-decl": 75,
+      "planned-only": 51,
+      "decl-missing": 14,
+      "partial-missing": 1,
+      "collisions": 0,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 29,
+        "ready": 22,
+        "formalized": 89
+      },
+      "proof": {
+        "none": 42,
+        "ready": 18,
+        "proved": 38,
+        "fully-proved": 42
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 4,
+        "ready": 3,
+        "formalized": 27
+      },
+      "proof": {
+        "none": 4,
+        "ready": 3,
+        "proved": 9,
+        "fully-proved": 18
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 25,
+        "ready": 19,
+        "formalized": 62
+      },
+      "proof": {
+        "none": 38,
+        "ready": 15,
+        "proved": 29,
+        "fully-proved": 24
+      }
+    },
+    "headline": {
+      "theorems-total": 106,
+      "theorems-fully-proved": 24,
+      "fraction": 0.22641509433962265
+    },
+    "by-chapter": {
+      "verso-sphere-packing": {
+        "nodes": 140,
+        "statement": {
+          "none": 0,
+          "blocked": 29,
+          "ready": 22,
+          "formalized": 89
+        },
+        "proof": {
+          "none": 42,
+          "ready": 18,
+          "proved": 38,
+          "fully-proved": 42
+        },
+        "theorems-total": 106,
+        "theorems-fully-proved": 24
+      }
+    }
+  }
+}

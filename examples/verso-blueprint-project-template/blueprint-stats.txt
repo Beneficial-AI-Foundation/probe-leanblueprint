@@ -1,0 +1,27 @@
+probe-leanblueprint stats — ProjectTemplate 0.0.0
+
+Headline: 1/5 theorems fully proved (20.0%)
+Blueprint nodes: 9   (bound 0 · planned-only 7 · decl-missing 2 · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized           6     1     5
+  ready                2     2     0
+  blocked              1     1     0
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved         1     0     1
+  proved               4     1     3
+  ready                2     2     0
+  none                 2     1     1
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  project_template                        9      6       1/5
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? addition_assoc
+  ? multiplication_assoc
+Partial-missing declarations: none

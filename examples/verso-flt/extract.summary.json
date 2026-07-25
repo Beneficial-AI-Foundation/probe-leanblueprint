@@ -1,0 +1,94 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "2.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.2.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/ImperialCollegeLondon/FLT.git",
+    "commit": "ee47fd2abea29d0007dfed9c3c7cad2b1f4d642b",
+    "language": "lean",
+    "package": "FLT",
+    "package-version": "ee47fd2"
+  },
+  "timestamp": "2026-07-25T06:36:51Z",
+  "data": {
+    "totals": {
+      "nodes": 245,
+      "with-lean-decl": 150,
+      "planned-only": 73,
+      "decl-missing": 22,
+      "partial-missing": 0,
+      "collisions": 4,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 35,
+        "ready": 39,
+        "formalized": 171
+      },
+      "proof": {
+        "none": 51,
+        "ready": 32,
+        "proved": 25,
+        "fully-proved": 137
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 9,
+        "ready": 9,
+        "formalized": 33
+      },
+      "proof": {
+        "none": 9,
+        "ready": 9,
+        "proved": 1,
+        "fully-proved": 32
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 26,
+        "ready": 30,
+        "formalized": 138
+      },
+      "proof": {
+        "none": 42,
+        "ready": 23,
+        "proved": 24,
+        "fully-proved": 105
+      }
+    },
+    "headline": {
+      "theorems-total": 194,
+      "theorems-fully-proved": 105,
+      "fraction": 0.5412371134020618
+    },
+    "by-chapter": {
+      "verso-flt": {
+        "nodes": 245,
+        "statement": {
+          "none": 0,
+          "blocked": 35,
+          "ready": 39,
+          "formalized": 171
+        },
+        "proof": {
+          "none": 51,
+          "ready": 32,
+          "proved": 25,
+          "fully-proved": 137
+        },
+        "theorems-total": 194,
+        "theorems-fully-proved": 105
+      }
+    }
+  }
+}

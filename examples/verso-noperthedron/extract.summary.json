@@ -1,0 +1,94 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "2.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.2.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/jcreedcmu/Noperthedron.git",
+    "commit": "8350205440d66d19afe774346edaaed13f61b416",
+    "language": "lean",
+    "package": "Noperthedron",
+    "package-version": "8350205"
+  },
+  "timestamp": "2026-07-25T06:36:49Z",
+  "data": {
+    "totals": {
+      "nodes": 68,
+      "with-lean-decl": 58,
+      "planned-only": 9,
+      "decl-missing": 1,
+      "partial-missing": 0,
+      "collisions": 0,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 9,
+        "formalized": 59
+      },
+      "proof": {
+        "none": 2,
+        "ready": 7,
+        "proved": 15,
+        "fully-proved": 44
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 1,
+        "formalized": 8
+      },
+      "proof": {
+        "none": 0,
+        "ready": 1,
+        "proved": 1,
+        "fully-proved": 7
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 8,
+        "formalized": 51
+      },
+      "proof": {
+        "none": 2,
+        "ready": 6,
+        "proved": 14,
+        "fully-proved": 37
+      }
+    },
+    "headline": {
+      "theorems-total": 59,
+      "theorems-fully-proved": 37,
+      "fraction": 0.6271186440677966
+    },
+    "by-chapter": {
+      "verso-noperthedron": {
+        "nodes": 68,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 9,
+          "formalized": 59
+        },
+        "proof": {
+          "none": 2,
+          "ready": 7,
+          "proved": 15,
+          "fully-proved": 44
+        },
+        "theorems-total": 59,
+        "theorems-fully-proved": 37
+      }
+    }
+  }
+}

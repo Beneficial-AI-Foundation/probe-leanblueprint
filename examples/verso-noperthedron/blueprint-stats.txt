@@ -1,0 +1,27 @@
+probe-leanblueprint stats — Noperthedron 8350205
+  source: https://github.com/jcreedcmu/Noperthedron.git@8350205440
+
+Headline: 37/59 theorems fully proved (62.7%)
+Blueprint nodes: 68   (bound 58 · planned-only 9 · decl-missing 1 · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized          59     8    51
+  ready                9     1     8
+  blocked              0     0     0
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved        44     7    37
+  proved              15     1    14
+  ready                7     1     6
+  none                 2     0     2
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  verso-noperthedron                     68     59     37/59
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? «def:C15»
+Partial-missing declarations: none

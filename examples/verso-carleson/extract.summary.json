@@ -1,0 +1,94 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "2.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.2.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/fpvandoorn/carleson",
+    "commit": "8e93bee110628f230e2b6e11611d231ede5981ab",
+    "language": "lean",
+    "package": "carleson",
+    "package-version": "8e93bee"
+  },
+  "timestamp": "2026-07-25T06:36:50Z",
+  "data": {
+    "totals": {
+      "nodes": 161,
+      "with-lean-decl": 152,
+      "planned-only": 1,
+      "decl-missing": 8,
+      "partial-missing": 0,
+      "collisions": 2,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 0,
+        "formalized": 160
+      },
+      "proof": {
+        "none": 1,
+        "ready": 0,
+        "proved": 6,
+        "fully-proved": 154
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 0,
+        "formalized": 0
+      },
+      "proof": {
+        "none": 0,
+        "ready": 0,
+        "proved": 0,
+        "fully-proved": 0
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 0,
+        "formalized": 160
+      },
+      "proof": {
+        "none": 1,
+        "ready": 0,
+        "proved": 6,
+        "fully-proved": 154
+      }
+    },
+    "headline": {
+      "theorems-total": 161,
+      "theorems-fully-proved": 154,
+      "fraction": 0.9565217391304348
+    },
+    "by-chapter": {
+      "verso-carleson": {
+        "nodes": 161,
+        "statement": {
+          "none": 0,
+          "blocked": 1,
+          "ready": 0,
+          "formalized": 160
+        },
+        "proof": {
+          "none": 1,
+          "ready": 0,
+          "proved": 6,
+          "fully-proved": 154
+        },
+        "theorems-total": 161,
+        "theorems-fully-proved": 154
+      }
+    }
+  }
+}
