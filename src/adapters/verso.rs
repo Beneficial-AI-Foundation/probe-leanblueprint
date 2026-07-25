@@ -81,14 +81,18 @@ struct Decl {
 }
 
 /// Known Verso statement-status vocabulary (for error messages).
-const STATEMENT_STATUSES: &str = "none, blocked, ready, formalized";
+const STATEMENT_STATUSES: &str = "none, blocked, ready, formalized, mathlib";
 /// Known Verso proof-status vocabulary (for error messages).
-const PROOF_STATUSES: &str = "none, ready, formalized, formalizedWithAncestors";
+const PROOF_STATUSES: &str = "none, ready, incomplete, formalized, formalizedWithAncestors";
 
 fn map_statement(s: Option<&str>) -> Result<StatementStatus> {
     Ok(match s {
         None | Some("none") => StatementStatus::NonePlanned,
         Some("formalized") => StatementStatus::Formalized,
+        // `mathlib` (Verso ≥ v4.31) marks a statement already available upstream
+        // in Mathlib: it is formalized, only not in this project's own sources.
+        // Treat it as `formalized` on the statement axis.
+        Some("mathlib") => StatementStatus::Formalized,
         Some("ready") => StatementStatus::Ready,
         Some("blocked") => StatementStatus::Blocked,
         // Unknown status: fail loudly rather than silently bucketing to the
@@ -109,6 +113,12 @@ fn map_proof(s: Option<&str>) -> Result<ProofStatus> {
         Some("formalizedWithAncestors") => ProofStatus::FullyProved,
         Some("formalized") => ProofStatus::Proved,
         Some("ready") => ProofStatus::Ready,
+        // `incomplete` (Verso ≥ v4.31) marks a proof whose Lean code exists but
+        // is not complete (contains `sorry`/gaps). It is explicitly *not* a
+        // finished proof, so it must not count as proved; bucket it as `none`
+        // (not-proved) so the proof axis and the `blueprint-status-mismatch`
+        // check (P26) stay honest against probe-lean's machine status.
+        Some("incomplete") => ProofStatus::None,
         Some(other) => {
             return Err(BlueprintError::UnknownStatus {
                 axis: "proof",
@@ -319,6 +329,27 @@ mod tests {
             err,
             BlueprintError::UnknownStatus { axis: "proof", .. }
         ));
+    }
+
+    #[test]
+    fn verso_v431_statuses_map_to_canonical() {
+        // Verso >= v4.31 introduces `mathlib` (statement axis) and `incomplete`
+        // (proof axis). They must map into the canonical vocabulary rather than
+        // erroring as schema drift.
+        let text = r#"{
+          "graphs": [{"nodes": [
+            {"label":"m","statementStatus":"mathlib","proofStatus":"formalized"},
+            {"label":"i","statementStatus":"formalized","proofStatus":"incomplete"}
+          ]}],
+          "previews": []
+        }"#;
+        let model = parse_manifest(text, None).unwrap();
+        let m = model.nodes.iter().find(|n| n.label == "m").unwrap();
+        assert_eq!(m.statement_status, StatementStatus::Formalized);
+        let i = model.nodes.iter().find(|n| n.label == "i").unwrap();
+        // An incomplete (sorried) proof is not a complete proof.
+        assert_eq!(i.proof_status, ProofStatus::None);
+        assert!(!i.proof_status.claims_proved());
     }
 
     #[test]

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depend on the `probe` hub via a pinned git dependency instead of a local path, so the crate builds standalone (as its `repository` field and `cargo install --path .` instructions imply).
 
 ### Fixed
+- Verso adapter accepts the ≥ v4.31 blueprint-manifest status vocabulary instead of failing with a schema-drift error: `mathlib` (statement already upstream in Mathlib) maps to `formalized` on the statement axis, and `incomplete` (Lean proof present but containing `sorry`) maps to `none` on the proof axis (an incomplete proof is not a complete one, so it never counts as proved and keeps the `blueprint-status-mismatch` check honest).
 - `select_source` no longer misclassifies probe-leanblueprint's own `probe-leanblueprint/*` provenance as a probe-lean input (the `probe-lean/` prefix is now matched with its delimiter). The ambiguous-provenance error points at `--source-package` / `--source-version` rather than the ineffective `-o` / `--summary-output`.
 
 ## [0.2.0] - 2026-07-21
