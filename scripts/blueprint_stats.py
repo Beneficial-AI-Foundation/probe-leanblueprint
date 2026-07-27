@@ -70,7 +70,7 @@ def collect_nodes(data):
     return list(nodes.values())
 
 
-def axis_counts(nodes, axis, order):
+def axis_counts(nodes, axis):
     by_kind = {"all": defaultdict(int), "definition": defaultdict(int), "theorem": defaultdict(int)}
     for n in nodes:
         status = getattr(n, axis)
@@ -129,8 +129,8 @@ def build_report(env):
             "theorems-total": thm_total, "theorems-fully-proved": thm_proved,
             "fraction": fraction,
         },
-        "statement": axis_counts(nodes, "statement", STATEMENT_ORDER),
-        "proof": axis_counts(nodes, "proof", PROOF_ORDER),
+        "statement": axis_counts(nodes, "statement"),
+        "proof": axis_counts(nodes, "proof"),
         "by-chapter": dict(sorted(by_chapter.items())),
         "mismatch-list": [(n.label, n.mismatch) for n in mismatches],
         "decl-missing-list": [n.label for n in nodes if n.decl_missing and not n.bound],

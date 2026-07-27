@@ -4,6 +4,8 @@
 //! enrichment core only ever sees this normalized shape. The two-axis status
 //! vocabulary is canonical here and every source status is mapped into it.
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 /// The kind of a blueprint node.
@@ -174,10 +176,20 @@ impl BlueprintModel {
     ///   is intentionally not merged so per-kind totals (e.g. `theorems_total`)
     ///   stay stable.
     pub fn merge_from(&mut self, other: BlueprintModel) {
+        // Index existing nodes by label once so each incoming node is a single
+        // lookup rather than a linear scan — keeps merges linear on large
+        // multi-chapter manifests while preserving the first-wins merge policy.
+        let mut index_by_label: HashMap<String, usize> = self
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.label.clone(), i))
+            .collect();
         for node in other.nodes {
-            if let Some(existing) = self.nodes.iter_mut().find(|n| n.label == node.label) {
-                merge_node(existing, node);
+            if let Some(&idx) = index_by_label.get(&node.label) {
+                merge_node(&mut self.nodes[idx], node);
             } else {
+                index_by_label.insert(node.label.clone(), self.nodes.len());
                 self.nodes.push(node);
             }
         }
