@@ -213,6 +213,13 @@ const INFRA_DIRS: &[&str] = &[
 ];
 
 fn chapter_from_path(path: &Path) -> Option<String> {
+    // Only a real Verso output artifact carries chapter structure in its path.
+    // For any other file (e.g. a manifest passed via `--verso-manifest` under an
+    // arbitrary name), the parent directory is just wherever the file happens to
+    // live, not a chapter — deriving one from it would be misleading.
+    if path.file_name().and_then(|n| n.to_str()) != Some("blueprint-manifest.json") {
+        return None;
+    }
     for ancestor in path.ancestors().skip(1) {
         if let Some(name) = ancestor.file_name().and_then(|n| n.to_str()) {
             if !INFRA_DIRS.contains(&name) {
@@ -241,6 +248,11 @@ pub fn load_from_dir(root: &Path) -> Result<BlueprintModel> {
     Ok(model)
 }
 
+/// Directories skipped when walking a Lean project for manifests. Build,
+/// dependency, and VCS trees can be huge and never contain a Verso render (which
+/// lands under `_out/site/`), so descending into them only wastes time.
+const SKIP_DIRS: &[&str] = &[".lake", ".git", "target", "node_modules", "lake-packages"];
+
 fn collect_manifests(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> Result<()> {
     if !dir.is_dir() {
         return Ok(());
@@ -254,10 +266,23 @@ fn collect_manifests(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> Result<()
             path: dir.to_path_buf(),
             source,
         })?;
+        // `file_type()` reports the entry itself without following symlinks, so
+        // symlinked directories are treated as non-directories and skipped —
+        // avoiding surprising recursion (and cycles) through linked trees.
+        let file_type = entry.file_type().map_err(|source| BlueprintError::Io {
+            path: entry.path(),
+            source,
+        })?;
         let path = entry.path();
-        if path.is_dir() {
+        if file_type.is_dir() {
+            let name = path.file_name().and_then(|n| n.to_str());
+            if name.is_some_and(|n| SKIP_DIRS.contains(&n)) {
+                continue;
+            }
             collect_manifests(&path, out)?;
-        } else if path.file_name().and_then(|n| n.to_str()) == Some("blueprint-manifest.json") {
+        } else if file_type.is_file()
+            && path.file_name().and_then(|n| n.to_str()) == Some("blueprint-manifest.json")
+        {
             out.push(path);
         }
     }
@@ -350,6 +375,38 @@ mod tests {
         // An incomplete (sorried) proof is not a complete proof.
         assert_eq!(i.proof_status, ProofStatus::None);
         assert!(!i.proof_status.claims_proved());
+    }
+
+    #[test]
+    fn chapter_only_derived_for_canonical_manifest_name() {
+        // A real Verso artifact carries chapter structure in its path.
+        let real =
+            Path::new("_out/site/html-multi/Erasure-Codes/-verso-data/blueprint-manifest.json");
+        assert_eq!(chapter_from_path(real).as_deref(), Some("Erasure-Codes"));
+        // An arbitrarily-named manifest (e.g. via `--verso-manifest`) has no
+        // chapter to infer; the parent dir is not part of a Verso output tree.
+        let arbitrary = Path::new("tests/fixtures/verso/erasure-codes-manifest.json");
+        assert_eq!(chapter_from_path(arbitrary), None);
+    }
+
+    #[test]
+    fn collect_manifests_skips_build_and_vcs_dirs() {
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path();
+        // A manifest inside a real render tree must be found.
+        let good = base.join("_out/site/html-multi/Chap/-verso-data");
+        std::fs::create_dir_all(&good).unwrap();
+        std::fs::write(good.join("blueprint-manifest.json"), "{}").unwrap();
+        // Manifests buried in build/VCS trees must be ignored.
+        for skipped in SKIP_DIRS {
+            let d = base.join(skipped).join("nested");
+            std::fs::create_dir_all(&d).unwrap();
+            std::fs::write(d.join("blueprint-manifest.json"), "{}").unwrap();
+        }
+        let mut found = Vec::new();
+        collect_manifests(base, &mut found).unwrap();
+        assert_eq!(found.len(), 1, "only the _out manifest should be collected");
+        assert!(found[0].starts_with(base.join("_out")));
     }
 
     #[test]
