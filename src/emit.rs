@@ -9,7 +9,7 @@ use serde::Serialize;
 use crate::enrich::Summary;
 
 pub const TOOL_NAME: &str = "probe-leanblueprint";
-pub const SCHEMA_VERSION: &str = "2.0";
+pub const SCHEMA_VERSION: &str = "3.0";
 pub const EXTRACT_SCHEMA: &str = "probe-leanblueprint/extract";
 pub const SUMMARY_SCHEMA: &str = "probe-leanblueprint/summary";
 

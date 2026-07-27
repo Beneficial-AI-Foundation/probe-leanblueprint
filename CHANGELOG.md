@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--source-package` / `--source-version` overrides to set the atom base's identity directly; supplying both also bypasses the ambiguous-provenance check for a spine with multiple probe-lean inputs.
 
 ### Changed
+- Bumped schema-version to 3.0 (breaking) to align with the ecosystem-wide major bump for the is-disabled→untracked atom field rename.
 - Enrichment reworked around an ownership pass. `blueprint-statement-uses` / `blueprint-proof-uses` now always resolve to a code-name that exists in the atom map (previously a `uses` edge targeting a decl-missing node resolved to an absent `probe:<decl>` key). Same-decl collision losers are preserved as `blueprint-shadow` synthetic atoms (keep-last still wins the real atom) so every model node appears in the extract, and the loser keeps its `blueprint-status-mismatch` / `blueprint-missing-decls` signal.
 - Re-enrichment is now idempotent across model changes: `enrich` scrubs prior synthetic blueprint atoms and stale `blueprint-*` fields before joining, so deleting or renaming a node no longer leaks a stale synthetic atom or label. Running on a merged spine that carries old blueprint atoms is supported (they are scrubbed); re-ingesting probe-leanblueprint's own `probe-leanblueprint/extract` as `--lean` is now rejected with a clear error.
 - The Massot adapter de-duplicates node labels via the shared merge policy (matching Verso) instead of trusting the Python emitter's dedup.

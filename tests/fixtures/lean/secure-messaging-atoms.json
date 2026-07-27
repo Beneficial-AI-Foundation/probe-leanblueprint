@@ -3382,7 +3382,7 @@
   }
  },
  "schema": "probe-lean/extract",
- "schema-version": "2.0",
+ "schema-version": "3.0",
  "source": {
   "class": "security-protocol",
   "commit": "6a4fce0e9c9b21d8afbb3fdb940a2acaca3a70bd",

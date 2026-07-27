@@ -28,7 +28,7 @@ Both output files share this envelope structure:
 | Field | Type | Description |
 |-------|------|-------------|
 | `schema` | string | Data type identifier (`"probe-leanblueprint/extract"` or `"probe-leanblueprint/summary"`) |
-| `schema-version` | string | Interchange spec version (`"2.0"`) |
+| `schema-version` | string | Interchange spec version (`"3.0"`) |
 | `tool.name` | string | Always `"probe-leanblueprint"` |
 | `tool.version` | string | Semver version of the binary |
 | `tool.command` | string | Always `"extract"` |
@@ -65,7 +65,7 @@ for the selection rules.
 ```json
 {
   "schema": "probe-leanblueprint/extract",
-  "schema-version": "2.0",
+  "schema-version": "3.0",
   "tool": {
     "name": "probe-leanblueprint",
     "version": "0.2.0",
@@ -221,7 +221,7 @@ two-axis progress stats.
 ```json
 {
   "schema": "probe-leanblueprint/summary",
-  "schema-version": "2.0",
+  "schema-version": "3.0",
   "tool": { "name": "probe-leanblueprint", "version": "0.2.0", "command": "extract" },
   "source": { "language": "lean", "package": "SecureMessaging", "package-version": "4cfee4c", "...": "..." },
   "timestamp": "2026-07-21T19:28:49Z",
