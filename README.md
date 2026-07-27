@@ -1,7 +1,7 @@
 # probe-leanblueprint
 
 Enrich [`probe-lean`](https://github.com/Beneficial-AI-Foundation/probe-lean)
-Schema 2.0 atoms with Lean **blueprint** progress metadata, so Lean projects get
+Schema 3.0 atoms with Lean **blueprint** progress metadata, so Lean projects get
 meaningful verification-progress statistics instead of a bare theorem count.
 
 A blueprint captures, per declaration, a **two-axis status**:
@@ -10,7 +10,7 @@ A blueprint captures, per declaration, a **two-axis status**:
 - **proof** — is the *proof* complete and sorry-free? (`none` → `ready` → `proved` → `fully-proved`)
 
 `probe-leanblueprint` reads that status from either blueprint ecosystem, joins it
-onto probe-lean's code call graph, and re-emits a Schema 2.0 envelope plus a
+onto probe-lean's code call graph, and re-emits a Schema 3.0 envelope plus a
 two-axis progress summary.
 
 ## Supported blueprint ecosystems
@@ -90,7 +90,7 @@ Outputs (default under `<project>/.verilib/probes/`):
 - `leanblueprint_<pkg>[_<version>].json` — enriched atoms (`probe-leanblueprint/extract`)
 - `leanblueprint_<pkg>[_<version>]_summary.json` — two-axis progress counts, incl. a per-chapter breakdown (`probe-leanblueprint/summary`)
 
-The extract envelope is an atoms-category Schema 2.0 file, so `probe merge` /
+The extract envelope is an atoms-category Schema 3.0 file, so `probe merge` /
 `probe project` accept it and preserve the `blueprint-*` extension fields.
 
 Both output formats — the enriched-atom envelope and the summary sidecar,

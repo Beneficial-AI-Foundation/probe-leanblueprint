@@ -333,7 +333,7 @@ enrichment is scrubbed first, so re-runs are idempotent. Passing this tool's own
 
 ### With probe merge / project
 
-The `probe-leanblueprint/extract` file is an atoms-category Schema 2.0 envelope,
+The `probe-leanblueprint/extract` file is an atoms-category Schema 3.0 envelope,
 so `probe merge`/`probe project` accept it and preserve the `blueprint-*`
 extension fields (KB
 [P10](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/engineering/properties.md)).

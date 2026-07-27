@@ -1,4 +1,4 @@
-//! probe-leanblueprint: enrich probe-lean Schema 2.0 atoms with Lean blueprint
+//! probe-leanblueprint: enrich probe-lean Schema 3.0 atoms with Lean blueprint
 //! progress metadata.
 //!
 //! The tool consumes a `probe-lean/extract` atom envelope (the atom "spine")
