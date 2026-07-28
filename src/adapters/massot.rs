@@ -113,7 +113,7 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
     for n in &out.nodes {
         let built = BlueprintNode {
             label: n.label.clone(),
-            kind: NodeKind::from_source(&n.kind),
+            kind: Some(NodeKind::from_source(&n.kind)),
             lean_decls: n.lean_decls.clone(),
             statement_status: map_statement(n),
             proof_status: map_proof(n),

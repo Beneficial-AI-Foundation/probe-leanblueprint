@@ -102,7 +102,7 @@ fn make_extensions(
     };
     BlueprintExtensions {
         label: node.label.clone(),
-        kind: node.kind.as_str().to_string(),
+        kind: node.display_kind().as_str().to_string(),
         statement_status: node.statement_status.as_str().to_string(),
         proof_status: node.proof_status.as_str().to_string(),
         status_source: node.status_source.as_str().to_string(),
@@ -188,7 +188,7 @@ fn synthetic_atom(node: &BlueprintNode, ext: &BlueprintExtensions) -> Atom {
             lines_start: 0,
             lines_end: 0,
         },
-        kind: format!("blueprint-{}", node.kind.as_str()),
+        kind: format!("blueprint-{}", node.display_kind().as_str()),
         language: "blueprint".to_string(),
         extensions: BTreeMap::new(),
     };
@@ -447,7 +447,7 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
             .or_default();
         chapter.nodes += 1;
         chapter.axes.tally(node);
-        match node.kind {
+        match node.display_kind() {
             NodeKind::Definition => definitions.tally(node),
             NodeKind::Theorem => {
                 theorems.tally(node);
@@ -523,11 +523,11 @@ mod tests {
     ) -> BlueprintNode {
         BlueprintNode {
             label: label.into(),
-            kind: if label.starts_with("def") {
+            kind: Some(if label.starts_with("def") {
                 NodeKind::Definition
             } else {
                 NodeKind::Theorem
-            },
+            }),
             lean_decls: decls.iter().map(|s| s.to_string()).collect(),
             statement_status: stmt,
             proof_status: proof,
@@ -774,7 +774,7 @@ mod tests {
             StatementStatus::Formalized,
             ProofStatus::None,
         );
-        ghost.kind = NodeKind::Definition;
+        ghost.kind = Some(NodeKind::Definition);
         model.nodes.push(ghost);
         let mut user = node(
             "thm:user",

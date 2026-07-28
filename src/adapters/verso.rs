@@ -161,7 +161,10 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
 
             let built = BlueprintNode {
                 label: node.label.clone(),
-                kind: NodeKind::from_source(node.kind.as_deref().unwrap_or("theorem")),
+                // A `null` kind means this is a mention of a node defined in
+                // another chapter; leave it unknown so the defining copy wins
+                // the kind during merge rather than freezing it as a theorem.
+                kind: node.kind.as_deref().map(NodeKind::from_source),
                 lean_decls,
                 statement_status: map_statement(node.statement_status.as_deref())?,
                 proof_status: map_proof(node.proof_status.as_deref())?,

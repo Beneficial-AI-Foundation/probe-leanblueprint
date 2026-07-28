@@ -96,8 +96,14 @@ fn verso_secure_messaging_full_project() {
     );
 
     let summary = enrich::summarize(&model, &report);
-    assert_eq!(summary.headline.theorems_total, 56);
-    assert_eq!(summary.headline.theorems_fully_proved, 9);
+    // 58 definitions + 53 theorems = 111 nodes. Earlier this pinned 56/9: three
+    // definitions (prf_prng_scheme, prf_prng_security, scka_scheme) are *mentioned*
+    // by chapters that sort before their defining chapter, and those mention copies
+    // carry a null kind. The defining copy now wins the kind during merge, so they
+    // are no longer miscounted as theorems (scka_scheme is fully proved, which is
+    // why the proved count drops from 9 to 8).
+    assert_eq!(summary.headline.theorems_total, 53);
+    assert_eq!(summary.headline.theorems_fully_proved, 8);
 
     // Per-chapter breakdown is populated and consistent with the whole.
     let chapters = &summary.by_chapter;

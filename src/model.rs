@@ -27,11 +27,12 @@ impl NodeKind {
     /// Blueprint "definition" is a definition; lemma/proposition/theorem/
     /// corollary are all theorem-like.
     ///
-    /// An absent/empty kind defaults to theorem silently (Verso emits a `null`
-    /// kind for many nodes, which the pinned counts treat as theorems). A
-    /// *non-empty, unrecognized* kind is warned about before defaulting to
-    /// theorem, so schema drift is surfaced instead of silently bucketed
-    /// (mirroring the fail-noisy stance the status axes take).
+    /// A *null* source kind (a mention of a node defined elsewhere) is handled
+    /// by the caller as "unknown" ([`BlueprintNode::kind`] `= None`), not here.
+    /// An empty string still defaults to theorem, and a *non-empty, unrecognized*
+    /// kind is warned about before defaulting to theorem, so schema drift is
+    /// surfaced instead of silently bucketed (mirroring the fail-noisy stance the
+    /// status axes take).
     pub fn from_source(s: &str) -> NodeKind {
         let kind = s.trim().to_ascii_lowercase();
         match kind.as_str() {
@@ -131,7 +132,12 @@ impl StatusSource {
 pub struct BlueprintNode {
     /// The blueprint label (e.g. `thm:sphere_eversion` or `aead_correctness`).
     pub label: String,
-    pub kind: NodeKind,
+    /// The node kind, or `None` when the source gave no kind. In the per-chapter
+    /// Verso layout a chapter that merely *mentions* a node defined elsewhere
+    /// emits a copy with a `null` kind; keeping that distinct from a real kind
+    /// lets the defining copy win the kind/title/chapter during merge instead of
+    /// freezing an arbitrary guess (see [`merge_node`]).
+    pub kind: Option<NodeKind>,
     /// Fully-qualified Lean declaration names this node binds (`\lean{...}` /
     /// Verso `codeData.external.decls[].canonical`). Empty for planned-only
     /// nodes.
@@ -153,6 +159,15 @@ pub struct BlueprintNode {
     pub status_source: StatusSource,
 }
 
+impl BlueprintNode {
+    /// The kind to count/emit this node as. A node that was only ever *mentioned*
+    /// (null kind everywhere, never defined) resolves to `Theorem`, preserving
+    /// the historical default for genuinely-unknown nodes.
+    pub fn display_kind(&self) -> NodeKind {
+        self.kind.unwrap_or(NodeKind::Theorem)
+    }
+}
+
 /// The full normalized blueprint model produced by an adapter.
 #[derive(Debug, Clone, Default)]
 pub struct BlueprintModel {
@@ -171,10 +186,11 @@ impl BlueprintModel {
     /// - `lean_decls`, `statement_uses`, `proof_uses`: set-union (order-
     ///   preserving, de-duplicated). Merging decls is the load-bearing fix —
     ///   different manifests may each expose a subset of a node's bindings.
-    /// - `kind`, `chapter`, `group`, `title`, `discussion`: FIRST-WINS. Because
-    ///   `load_from_dir` sorts manifest paths, "first" is deterministic. `kind`
-    ///   is intentionally not merged so per-kind totals (e.g. `theorems_total`)
-    ///   stay stable.
+    /// - `kind`, `chapter`, `group`, `title`, `discussion`: DEFINING-COPY-WINS.
+    ///   A copy carrying a known `kind` is the defining occurrence and its
+    ///   identity beats a null-kind *mention* regardless of manifest order;
+    ///   between two copies of equal standing it is first-wins, which is
+    ///   deterministic because `load_from_dir` sorts manifest paths.
     pub fn merge_from(&mut self, other: BlueprintModel) {
         // Index existing nodes by label once so each incoming node is a single
         // lookup rather than a linear scan — keeps merges linear on large
@@ -210,19 +226,46 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
     if incoming.proof_status > existing.proof_status {
         existing.proof_status = incoming.proof_status;
     }
-    // First-wins for descriptive/structural fields (deterministic given sorted
-    // manifest order).
-    if existing.group.is_none() {
-        existing.group = incoming.group;
-    }
-    if existing.chapter.is_none() {
-        existing.chapter = incoming.chapter;
-    }
-    if existing.title.is_none() {
-        existing.title = incoming.title;
-    }
-    if existing.discussion.is_none() {
-        existing.discussion = incoming.discussion;
+    // Identity (kind/title/chapter/group/discussion): a copy carrying a KNOWN
+    // kind is the *defining* occurrence; a null-kind copy is a mere mention
+    // (a chapter referencing a node defined elsewhere). Let the defining copy's
+    // identity win over a mention's, regardless of manifest order — otherwise a
+    // mention that sorts first would freeze the node as the wrong kind, in the
+    // wrong chapter, with the label as its title.
+    if existing.kind.is_none() && incoming.kind.is_some() {
+        existing.kind = incoming.kind;
+        // Defining copy wins, but fall back to the mention's value if the
+        // defining copy happens to omit a field.
+        if incoming.group.is_some() {
+            existing.group = incoming.group;
+        }
+        if incoming.chapter.is_some() {
+            existing.chapter = incoming.chapter;
+        }
+        if incoming.title.is_some() {
+            existing.title = incoming.title;
+        }
+        if incoming.discussion.is_some() {
+            existing.discussion = incoming.discussion;
+        }
+    } else {
+        // First-wins for descriptive/structural fields (deterministic given
+        // sorted manifest order). Also adopts a kind when neither side defines.
+        if existing.kind.is_none() {
+            existing.kind = incoming.kind;
+        }
+        if existing.group.is_none() {
+            existing.group = incoming.group;
+        }
+        if existing.chapter.is_none() {
+            existing.chapter = incoming.chapter;
+        }
+        if existing.title.is_none() {
+            existing.title = incoming.title;
+        }
+        if existing.discussion.is_none() {
+            existing.discussion = incoming.discussion;
+        }
     }
 }
 
@@ -243,7 +286,7 @@ mod tests {
     fn node(label: &str, decls: &[&str], uses: &[&str]) -> BlueprintNode {
         BlueprintNode {
             label: label.into(),
-            kind: NodeKind::Theorem,
+            kind: Some(NodeKind::Theorem),
             lean_decls: decls.iter().map(|s| s.to_string()).collect(),
             statement_status: StatementStatus::NonePlanned,
             proof_status: ProofStatus::None,
@@ -288,6 +331,58 @@ mod tests {
         a.merge_from(b);
         assert_eq!(a.nodes[0].statement_status, StatementStatus::Formalized);
         assert_eq!(a.nodes[0].proof_status, ProofStatus::Ready, "max, not last");
+    }
+
+    /// A null-kind *mention* must never freeze a node's identity: the defining
+    /// copy (with a known kind) wins its kind/chapter/title regardless of which
+    /// side is merged first.
+    #[test]
+    fn defining_copy_wins_over_mention_either_order() {
+        let mention = || {
+            let mut n = node("prf_prng_scheme", &[], &[]);
+            n.kind = None; // a chapter that merely references the node
+            n.chapter = Some("Forward-Secure-AEAD".into());
+            n.title = Some("prf_prng_scheme".into());
+            n
+        };
+        let defining = || {
+            let mut n = node("prf_prng_scheme", &[], &[]);
+            n.kind = Some(NodeKind::Definition);
+            n.chapter = Some("PRF-PRNG".into());
+            n.title = Some("Definition 1.1".into());
+            n.group = Some("prf_prng".into());
+            n
+        };
+
+        for (first, second) in [(mention(), defining()), (defining(), mention())] {
+            let mut a = BlueprintModel::default();
+            a.nodes.push(first);
+            let mut b = BlueprintModel::default();
+            b.nodes.push(second);
+            a.merge_from(b);
+            let n = &a.nodes[0];
+            assert_eq!(n.kind, Some(NodeKind::Definition), "defining kind wins");
+            assert_eq!(
+                n.chapter.as_deref(),
+                Some("PRF-PRNG"),
+                "defining chapter wins"
+            );
+            assert_eq!(
+                n.title.as_deref(),
+                Some("Definition 1.1"),
+                "defining title wins"
+            );
+            assert_eq!(n.group.as_deref(), Some("prf_prng"), "defining group wins");
+        }
+    }
+
+    /// A node that is only ever mentioned (null kind everywhere) resolves to the
+    /// historical default (theorem) rather than being dropped.
+    #[test]
+    fn pure_mention_defaults_to_theorem() {
+        let mut n = node("dangling", &[], &[]);
+        n.kind = None;
+        assert_eq!(n.display_kind(), NodeKind::Theorem);
     }
 }
 

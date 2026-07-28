@@ -38,7 +38,7 @@ fn atom(status: &str) -> Atom {
 fn node(label: &str, decls: &[&str], kind: NodeKind, proof: ProofStatus) -> BlueprintNode {
     BlueprintNode {
         label: label.into(),
-        kind,
+        kind: Some(kind),
         lean_decls: decls.iter().map(|s| s.to_string()).collect(),
         statement_status: StatementStatus::Formalized,
         proof_status: proof,
