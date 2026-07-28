@@ -41,8 +41,9 @@ Full report: [`blueprint-stats.txt`](./blueprint-stats.txt) · machine summary:
 [`extract.summary.json`](./extract.summary.json).
 
 ```
-Headline: 154/161 theorems fully proved (95.7%)
-Blueprint nodes: 161  (bound 152 · planned-only 1 · decl-missing 8 · mismatches 0)
+Headline: 146/161 theorems machine-confirmed fully proved (90.7%)
+  (blueprint claims 154/161; 8 not backed by probe-lean's verification status)
+Blueprint nodes: 161   (bound 152 · planned-only 1 · decl-missing 8 · partial-missing 0 · mismatches 0)
 ```
 
 - **152 of 160** statement-formalized nodes bound to a real `probe-lean` atom —

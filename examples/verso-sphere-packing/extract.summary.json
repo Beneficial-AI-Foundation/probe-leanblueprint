@@ -1,9 +1,9 @@
 {
   "schema": "probe-leanblueprint/summary",
-  "schema-version": "2.0",
+  "schema-version": "2.1",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "command": "extract"
   },
   "source": {
@@ -13,7 +13,17 @@
     "package": "SpherePacking",
     "package-version": "1828993"
   },
-  "timestamp": "2026-07-25T06:36:49Z",
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      {
+        "path": "/home/lacra/git_repos/baif/verso-blueprint-experiments/real/verso-sphere-packing/_out/site/html-multi/-verso-data/blueprint-manifest.json",
+        "sha256": "96c98ebcdb92bfab9d8809dd857a7fd2915f674be0fac969e66e2fa2252850da",
+        "vbp-internal-schema-version": 2
+      }
+    ]
+  },
+  "timestamp": "2026-07-28T11:06:28Z",
   "data": {
     "totals": {
       "nodes": 140,
@@ -69,25 +79,163 @@
     "headline": {
       "theorems-total": 106,
       "theorems-fully-proved": 24,
-      "fraction": 0.22641509433962265
+      "theorems-fully-proved-machine-confirmed": 21,
+      "fraction": 0.22641509433962265,
+      "fraction-machine-confirmed": 0.19811320754716982
     },
     "by-chapter": {
-      "verso-sphere-packing": {
-        "nodes": 140,
+      "Cohn-Elkies-Bounds": {
+        "nodes": 3,
         "statement": {
           "none": 0,
-          "blocked": 29,
-          "ready": 22,
-          "formalized": 89
+          "blocked": 1,
+          "ready": 0,
+          "formalized": 2
         },
         "proof": {
-          "none": 42,
-          "ready": 18,
-          "proved": 38,
-          "fully-proved": 42
+          "none": 1,
+          "ready": 0,
+          "proved": 2,
+          "fully-proved": 0
         },
-        "theorems-total": 106,
-        "theorems-fully-proved": 24
+        "theorems-total": 3,
+        "theorems-fully-proved": 0
+      },
+      "Density-of-Packings": {
+        "nodes": 5,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 5
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 2,
+          "fully-proved": 3
+        },
+        "theorems-total": 5,
+        "theorems-fully-proved": 3
+      },
+      "Fourier-Analysis": {
+        "nodes": 8,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 4,
+          "formalized": 4
+        },
+        "proof": {
+          "none": 1,
+          "ready": 4,
+          "proved": 0,
+          "fully-proved": 3
+        },
+        "theorems-total": 6,
+        "theorems-fully-proved": 1
+      },
+      "Fourier-Eigenfunctions-with-Double-Zeroes": {
+        "nodes": 30,
+        "statement": {
+          "none": 0,
+          "blocked": 13,
+          "ready": 9,
+          "formalized": 8
+        },
+        "proof": {
+          "none": 19,
+          "ready": 5,
+          "proved": 5,
+          "fully-proved": 1
+        },
+        "theorems-total": 25,
+        "theorems-fully-proved": 1
+      },
+      "Modular-Forms": {
+        "nodes": 52,
+        "statement": {
+          "none": 0,
+          "blocked": 7,
+          "ready": 7,
+          "formalized": 38
+        },
+        "proof": {
+          "none": 8,
+          "ready": 7,
+          "proved": 16,
+          "fully-proved": 21
+        },
+        "theorems-total": 38,
+        "theorems-fully-proved": 12
+      },
+      "Proof-of-the-Optimal-Function-Inequalities": {
+        "nodes": 14,
+        "statement": {
+          "none": 0,
+          "blocked": 6,
+          "ready": 1,
+          "formalized": 7
+        },
+        "proof": {
+          "none": 9,
+          "ready": 1,
+          "proved": 3,
+          "fully-proved": 1
+        },
+        "theorems-total": 13,
+        "theorems-fully-proved": 0
+      },
+      "Sphere-Packings": {
+        "nodes": 16,
+        "statement": {
+          "none": 0,
+          "blocked": 2,
+          "ready": 0,
+          "formalized": 14
+        },
+        "proof": {
+          "none": 4,
+          "ready": 0,
+          "proved": 9,
+          "fully-proved": 3
+        },
+        "theorems-total": 7,
+        "theorems-fully-proved": 0
+      },
+      "The-E8-Lattice": {
+        "nodes": 11,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 11
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 1,
+          "fully-proved": 10
+        },
+        "theorems-total": 8,
+        "theorems-fully-proved": 7
+      },
+      "verso-sphere-packing": {
+        "nodes": 1,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 1,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 0,
+          "ready": 1,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
       }
     }
   }

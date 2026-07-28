@@ -1,7 +1,8 @@
 probe-leanblueprint stats — SpherePacking 1828993
   source: https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean.git@1828993f87
 
-Headline: 24/106 theorems fully proved (22.6%)
+Headline: 21/106 theorems machine-confirmed fully proved (19.8%)
+  (blueprint claims 24/106; 3 not backed by probe-lean's verification status)
 Blueprint nodes: 140   (bound 75 · planned-only 51 · decl-missing 14 · partial-missing 1 · mismatches 0)
 
 Statement axis (is the statement formalized?)
@@ -19,7 +20,15 @@ Proof axis (is the proof complete?)
   none                42     4    38
 
 By chapter                            nodes  stmt✓  thm✓/thm
-  verso-sphere-packing                  140     89    24/106
+  Cohn-Elkies-Bounds                      3      2       0/3
+  Density-of-Packings                     5      5       3/5
+  Fourier-Analysis                        8      4       1/6
+  Fourier-Eigenfunctions-with-Dou...     30      8      1/25
+  Modular-Forms                          52     38     12/38
+  Proof-of-the-Optimal-Function-I...     14      7      0/13
+  Sphere-Packings                        16     14       0/7
+  The-E8-Lattice                         11     11       7/8
+  verso-sphere-packing                    1      0       0/1
 
 Status mismatches: none
 Declarations bound in blueprint but missing from probe-lean:

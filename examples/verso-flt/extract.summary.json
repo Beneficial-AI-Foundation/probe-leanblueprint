@@ -1,9 +1,9 @@
 {
   "schema": "probe-leanblueprint/summary",
-  "schema-version": "2.0",
+  "schema-version": "2.1",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "command": "extract"
   },
   "source": {
@@ -13,7 +13,17 @@
     "package": "FLT",
     "package-version": "ee47fd2"
   },
-  "timestamp": "2026-07-25T06:36:51Z",
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      {
+        "path": "/home/lacra/git_repos/baif/verso-blueprint-experiments/real/verso-flt/_out/site/html-multi/-verso-data/blueprint-manifest.json",
+        "sha256": "6e2812928d65935ad05fe0707a2449c944a2ccbb9ee18d37ced352ce7ca9c742",
+        "vbp-internal-schema-version": 2
+      }
+    ]
+  },
+  "timestamp": "2026-07-28T11:06:29Z",
   "data": {
     "totals": {
       "nodes": 245,
@@ -69,25 +79,248 @@
     "headline": {
       "theorems-total": 194,
       "theorems-fully-proved": 105,
-      "fraction": 0.5412371134020618
+      "theorems-fully-proved-machine-confirmed": 88,
+      "fraction": 0.5412371134020618,
+      "fraction-machine-confirmed": 0.4536082474226804
     },
     "by-chapter": {
-      "verso-flt": {
-        "nodes": 245,
+      "An-Example-Of-An-Automorphic-Form": {
+        "nodes": 35,
         "statement": {
           "none": 0,
-          "blocked": 35,
-          "ready": 39,
-          "formalized": 171
+          "blocked": 0,
+          "ready": 1,
+          "formalized": 34
         },
         "proof": {
-          "none": 51,
-          "ready": 32,
-          "proved": 25,
-          "fully-proved": 137
+          "none": 2,
+          "ready": 1,
+          "proved": 1,
+          "fully-proved": 31
         },
-        "theorems-total": 194,
-        "theorems-fully-proved": 105
+        "theorems-total": 28,
+        "theorems-fully-proved": 24
+      },
+      "An-overview-of-the-proof": {
+        "nodes": 1,
+        "statement": {
+          "none": 0,
+          "blocked": 1,
+          "ready": 0,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 1,
+          "ready": 0,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
+      },
+      "Appendix___-A-collection-of-results-which-are-needed-in-the-proof___": {
+        "nodes": 29,
+        "statement": {
+          "none": 0,
+          "blocked": 16,
+          "ready": 13,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 16,
+          "ready": 13,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 17,
+        "theorems-fully-proved": 0
+      },
+      "Automorphic-forms-and-the-Langlands-Conjectures": {
+        "nodes": 10,
+        "statement": {
+          "none": 0,
+          "blocked": 3,
+          "ready": 4,
+          "formalized": 3
+        },
+        "proof": {
+          "none": 3,
+          "ready": 4,
+          "proved": 1,
+          "fully-proved": 2
+        },
+        "theorems-total": 2,
+        "theorems-fully-proved": 0
+      },
+      "First-Reductions-Of-The-Problem": {
+        "nodes": 10,
+        "statement": {
+          "none": 0,
+          "blocked": 1,
+          "ready": 1,
+          "formalized": 8
+        },
+        "proof": {
+          "none": 3,
+          "ready": 0,
+          "proved": 1,
+          "fully-proved": 6
+        },
+        "theorems-total": 8,
+        "theorems-fully-proved": 4
+      },
+      "Miniproject___-Adeles": {
+        "nodes": 48,
+        "statement": {
+          "none": 0,
+          "blocked": 6,
+          "ready": 6,
+          "formalized": 36
+        },
+        "proof": {
+          "none": 6,
+          "ready": 6,
+          "proved": 5,
+          "fully-proved": 31
+        },
+        "theorems-total": 42,
+        "theorems-fully-proved": 26
+      },
+      "Miniproject___-Frobenius-Elements": {
+        "nodes": 12,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 4,
+          "formalized": 8
+        },
+        "proof": {
+          "none": 3,
+          "ready": 1,
+          "proved": 1,
+          "fully-proved": 7
+        },
+        "theorems-total": 10,
+        "theorems-fully-proved": 5
+      },
+      "Miniproject___-Fujisaki___s-Lemma": {
+        "nodes": 16,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 16
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 5,
+          "fully-proved": 11
+        },
+        "theorems-total": 11,
+        "theorems-fully-proved": 6
+      },
+      "Miniproject___-Haar-Characters": {
+        "nodes": 37,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 1,
+          "formalized": 36
+        },
+        "proof": {
+          "none": 1,
+          "ready": 0,
+          "proved": 9,
+          "fully-proved": 27
+        },
+        "theorems-total": 35,
+        "theorems-fully-proved": 25
+      },
+      "Miniproject___-Hecke-Operators": {
+        "nodes": 21,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 4,
+          "formalized": 17
+        },
+        "proof": {
+          "none": 1,
+          "ready": 3,
+          "proved": 1,
+          "fully-proved": 16
+        },
+        "theorems-total": 20,
+        "theorems-fully-proved": 15
+      },
+      "Miniproject___-Quaternion-algebras": {
+        "nodes": 6,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 6
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 1,
+          "fully-proved": 5
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
+      },
+      "Reducibility-Of-p-Torsion-Of-The-Frey-Curve": {
+        "nodes": 8,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 1,
+          "formalized": 7
+        },
+        "proof": {
+          "none": 7,
+          "ready": 0,
+          "proved": 0,
+          "fully-proved": 1
+        },
+        "theorems-total": 7,
+        "theorems-fully-proved": 0
+      },
+      "Stating-the-modularity-lifting-theorems": {
+        "nodes": 2,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 2,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 0,
+          "ready": 2,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 2,
+        "theorems-fully-proved": 0
+      },
+      "verso-flt": {
+        "nodes": 10,
+        "statement": {
+          "none": 0,
+          "blocked": 8,
+          "ready": 2,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 8,
+          "ready": 2,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 10,
+        "theorems-fully-proved": 0
       }
     }
   }

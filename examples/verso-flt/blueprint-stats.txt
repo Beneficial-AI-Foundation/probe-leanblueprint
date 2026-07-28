@@ -1,7 +1,8 @@
 probe-leanblueprint stats — FLT ee47fd2
   source: https://github.com/ImperialCollegeLondon/FLT.git@ee47fd2abe
 
-Headline: 105/194 theorems fully proved (54.1%)
+Headline: 88/194 theorems machine-confirmed fully proved (45.4%)
+  (blueprint claims 105/194; 17 not backed by probe-lean's verification status)
 Blueprint nodes: 245   (bound 150 · planned-only 73 · decl-missing 22 · partial-missing 0 · mismatches 0)
 
 Statement axis (is the statement formalized?)
@@ -19,7 +20,20 @@ Proof axis (is the proof complete?)
   none                51     9    42
 
 By chapter                            nodes  stmt✓  thm✓/thm
-  verso-flt                             245    171   105/194
+  An-Example-Of-An-Automorphic-Form      35     34     24/28
+  An-overview-of-the-proof                1      0       0/1
+  Appendix___-A-collection-of-res...     29      0      0/17
+  Automorphic-forms-and-the-Langl...     10      3       0/2
+  First-Reductions-Of-The-Problem        10      8       4/8
+  Miniproject___-Adeles                  48     36     26/42
+  Miniproject___-Frobenius-Elements      12      8      5/10
+  Miniproject___-Fujisaki___s-Lemma      16     16      6/11
+  Miniproject___-Haar-Characters         37     36     25/35
+  Miniproject___-Hecke-Operators         21     17     15/20
+  Miniproject___-Quaternion-algebras      6      6       0/1
+  Reducibility-Of-p-Torsion-Of-Th...      8      7       0/7
+  Stating-the-modularity-lifting-...      2      0       0/2
+  verso-flt                              10      0      0/10
 
 Status mismatches: none
 Declarations bound in blueprint but missing from probe-lean:
