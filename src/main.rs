@@ -382,12 +382,72 @@ fn default_output(project: &Path, source: &Source, suffix: &str) -> PathBuf {
 }
 
 fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .with_context(|| format!("failed to create {}", parent.display()))?;
-    }
+    let dir = match path.parent() {
+        Some(p) if !p.as_os_str().is_empty() => {
+            std::fs::create_dir_all(p)
+                .with_context(|| format!("failed to create {}", p.display()))?;
+            p.to_path_buf()
+        }
+        _ => PathBuf::from("."),
+    };
     let json = serde_json::to_string_pretty(value).context("failed to serialize output")?;
-    std::fs::write(path, json).with_context(|| format!("failed to write {}", path.display()))?;
+    // Atomic write: serialize into a temp file in the destination directory,
+    // then rename over the target. A failure mid-write leaves the temp file, not
+    // a truncated output — so the extract/summary pair can never be left
+    // half-written and mismatched.
+    use std::io::Write as _;
+    let mut tmp = tempfile::NamedTempFile::new_in(&dir)
+        .with_context(|| format!("failed to create temp file in {}", dir.display()))?;
+    tmp.write_all(json.as_bytes())
+        .with_context(|| format!("failed to write {}", path.display()))?;
+    tmp.as_file()
+        .sync_all()
+        .with_context(|| format!("failed to flush {}", path.display()))?;
+    tmp.persist(path)
+        .map_err(|e| e.error)
+        .with_context(|| format!("failed to write {}", path.display()))?;
+    Ok(())
+}
+
+/// Best-effort absolute path for comparison. Output paths may not exist yet, so
+/// fall back to canonicalizing the parent and re-appending the file name.
+fn normalize_for_compare(p: &Path) -> PathBuf {
+    if let Ok(c) = p.canonicalize() {
+        return c;
+    }
+    match (p.parent(), p.file_name()) {
+        (Some(parent), Some(name)) => parent
+            .canonicalize()
+            .map(|c| c.join(name))
+            .unwrap_or_else(|_| p.to_path_buf()),
+        _ => p.to_path_buf(),
+    }
+}
+
+/// Reject output paths that collide with each other or with an input file, so
+/// the summary can't silently overwrite the extract (or clobber an input).
+fn validate_output_paths(
+    extract: &Path,
+    summary: &Path,
+    inputs: &[Option<&PathBuf>],
+) -> Result<()> {
+    let extract_n = normalize_for_compare(extract);
+    let summary_n = normalize_for_compare(summary);
+    if extract_n == summary_n {
+        anyhow::bail!(
+            "--output and --summary-output must be different files (both resolve to {})",
+            extract.display()
+        );
+    }
+    for input in inputs.iter().flatten() {
+        let input_n = normalize_for_compare(input);
+        if input_n == extract_n || input_n == summary_n {
+            anyhow::bail!(
+                "refusing to overwrite input file {} with an output",
+                input.display()
+            );
+        }
+    }
     Ok(())
 }
 
@@ -419,6 +479,16 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
         .summary_output
         .clone()
         .unwrap_or_else(|| default_output(&args.project, &source, "_summary"));
+
+    validate_output_paths(
+        &extract_path,
+        &summary_path,
+        &[
+            args.lean.as_ref(),
+            args.verso_manifest.as_ref(),
+            args.blueprint_src.as_ref(),
+        ],
+    )?;
 
     let extract_env = emit::build_extract_envelope(atoms, source.clone());
     let summary_env = emit::build_summary_envelope(summary, source);
@@ -592,6 +662,24 @@ mod tests {
         assert!(!name.contains('/'), "{name} must not contain /");
         assert!(!name.contains('\\'), "{name} must not contain backslash");
         assert_eq!(out.parent().unwrap(), Path::new("/proj/.verilib/probes"));
+    }
+
+    #[test]
+    fn validate_output_paths_rejects_collisions() {
+        let dir = tempfile::tempdir().unwrap();
+        let extract = dir.path().join("out.json");
+        let summary = dir.path().join("out_summary.json");
+        let input = dir.path().join("atoms.json");
+        std::fs::write(&input, "{}").unwrap();
+
+        // Distinct paths are fine.
+        assert!(validate_output_paths(&extract, &summary, &[Some(&input)]).is_ok());
+
+        // Extract == summary is rejected.
+        assert!(validate_output_paths(&extract, &extract, &[]).is_err());
+
+        // An output that would clobber an input is rejected.
+        assert!(validate_output_paths(&input, &summary, &[Some(&input)]).is_err());
     }
 
     #[test]
