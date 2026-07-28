@@ -1,7 +1,7 @@
 //! Parity test: `scripts/blueprint_stats.py` (which reconstructs nodes from the
 //! enriched atoms) must agree with the summary sidecar (computed from the model)
-//! on the meaningful aggregate numbers, INCLUDING the same-decl collision case
-//! that used to make the two diverge. Skips gracefully when `python3` is absent.
+//! on the meaningful aggregate numbers, including the same-decl collision case.
+//! Skips gracefully when `python3` is absent.
 
 use std::collections::BTreeMap;
 use std::path::Path;

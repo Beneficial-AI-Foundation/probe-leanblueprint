@@ -37,8 +37,8 @@ enum Adapter {
     Massot,
 }
 
-/// A concretely-selected adapter (never `Auto`). Resolving `Adapter::Auto` into
-/// this before dispatch removes the need for an `unreachable!` arm.
+/// A concretely-selected adapter (never `Auto`); `Adapter::Auto` is resolved to
+/// this before dispatch.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum ResolvedAdapter {
     Verso,
@@ -128,10 +128,9 @@ fn main() -> Result<()> {
     }
 }
 
-/// The directory whose lakefile declares `versoBlueprint`, if any. The
-/// dependency is frequently declared in a dedicated blueprint subproject rather
-/// than the root lakefile (e.g. KVAC's `docs/lakefile.toml`), so scan the root
-/// *and* the conventional `docs/` subproject.
+/// The directory whose lakefile declares `versoBlueprint`, if any — the project
+/// root or a conventional `docs/` subproject, since the dependency is often
+/// declared in a dedicated blueprint subproject.
 fn verso_blueprint_root(project: &Path) -> Option<PathBuf> {
     for sub in ["", "docs"] {
         let dir = project.join(sub);
@@ -201,16 +200,15 @@ fn detect_adapter(args: &ExtractArgs) -> Result<Detected> {
             adapter: ResolvedAdapter::Massot,
             verso_blueprint_root: None,
         }),
-        // No positive signal: fail loudly instead of defaulting to Verso and
-        // then dying later with a confusing "no manifest" error.
+        // No positive signal: fail with a clear error rather than guessing.
         (None, false) => Err(BlueprintError::AdapterUndetected.into()),
     }
 }
 
-/// Loads the atom base and returns it with its provenance-derived `Source` and
-/// the resolved atom-file path (explicit `--lean`, or the file `probe-lean`
-/// generated). The path is returned so output-collision validation can also
-/// protect a generated atom base, not just an explicit one.
+/// Load the atom base, returning it with its provenance-derived `Source` and the
+/// resolved atom-file path (an explicit `--lean`, or the file `probe-lean`
+/// generated). The path lets output-collision validation protect the atom base
+/// from being overwritten.
 fn load_atoms(
     args: &ExtractArgs,
 ) -> Result<(std::collections::BTreeMap<String, Atom>, Source, PathBuf)> {
@@ -396,8 +394,8 @@ const DEFAULT_VERSO_RENDER_CMD: &str = "lake exe vbp build";
 
 /// Canonical Verso render-output subdirectory, relative to the blueprint root.
 /// `lake exe vbp build` writes the site (and its `blueprint-manifest.json`s)
-/// here; scoping discovery to it — rather than walking the whole project — is
-/// what keeps stale sibling renders (e.g. `_out/site-v430`) from being merged in.
+/// here. Manifest discovery is scoped to it, so only one render generation is
+/// read and sibling output directories are ignored.
 const VERSO_SITE_SUBDIR: &str = "_out/site";
 
 fn build_verso_model(args: &ExtractArgs, render_root: &Path) -> Result<BlueprintModel> {
@@ -411,9 +409,8 @@ fn build_verso_model(args: &ExtractArgs, render_root: &Path) -> Result<Blueprint
         });
     }
 
-    // Discovery is scoped to the canonical render-output root so a single fresh
-    // generation is read, never a merge of whatever `blueprint-manifest.json`s
-    // happen to litter the project (stale `_out/site-v430` leftovers, etc.).
+    // Scope discovery to the canonical render-output root: read one generation,
+    // not every `blueprint-manifest.json` anywhere under the project.
     let site = render_root.join(VERSO_SITE_SUBDIR);
     match verso::load_from_dir(&site) {
         Ok(model) => Ok(model),
@@ -791,10 +788,10 @@ mod tests {
 
     #[test]
     fn detect_adapter_finds_verso_in_docs_subproject() {
-        // KVAC-style layout: the root lakefile has no verso signal; the
-        // `versoBlueprint` dependency is declared in `docs/lakefile.toml`.
+        // Root lakefile has no verso signal; `versoBlueprint` is declared only
+        // in the `docs/` subproject.
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("lakefile.toml"), "name = \"kvac\"\n").unwrap();
+        std::fs::write(dir.path().join("lakefile.toml"), "name = \"proj\"\n").unwrap();
         std::fs::create_dir(dir.path().join("docs")).unwrap();
         std::fs::write(
             dir.path().join("docs/lakefile.toml"),

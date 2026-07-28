@@ -23,16 +23,11 @@ impl NodeKind {
         }
     }
 
-    /// Best-effort classification from a source kind string.
-    /// Blueprint "definition" is a definition; lemma/proposition/theorem/
-    /// corollary are all theorem-like.
-    ///
-    /// A *null* source kind (a mention of a node defined elsewhere) is handled
-    /// by the caller as "unknown" ([`BlueprintNode::kind`] `= None`), not here.
-    /// An empty string still defaults to theorem, and a *non-empty, unrecognized*
-    /// kind is warned about before defaulting to theorem, so schema drift is
-    /// surfaced instead of silently bucketed (mirroring the fail-noisy stance the
-    /// status axes take).
+    /// Classify a non-null source kind string. `definition`/`def`/`dfn` are
+    /// definitions; lemma/proposition/theorem/corollary and friends are
+    /// theorems. An empty string maps to theorem; an unrecognized kind warns and
+    /// maps to theorem. A null kind is the caller's concern (see
+    /// [`BlueprintNode::kind`]).
     pub fn from_source(s: &str) -> NodeKind {
         let kind = s.trim().to_ascii_lowercase();
         match kind.as_str() {
@@ -132,11 +127,9 @@ impl StatusSource {
 pub struct BlueprintNode {
     /// The blueprint label (e.g. `thm:sphere_eversion` or `aead_correctness`).
     pub label: String,
-    /// The node kind, or `None` when the source gave no kind. In the per-chapter
-    /// Verso layout a chapter that merely *mentions* a node defined elsewhere
-    /// emits a copy with a `null` kind; keeping that distinct from a real kind
-    /// lets the defining copy win the kind/title/chapter during merge instead of
-    /// freezing an arbitrary guess (see [`merge_node`]).
+    /// The node kind, or `None` when the source gave no kind (a chapter that
+    /// only *mentions* a node defined elsewhere emits a `null` kind). The
+    /// defining copy's known kind wins during merge (see [`merge_node`]).
     pub kind: Option<NodeKind>,
     /// Fully-qualified Lean declaration names this node binds (`\lean{...}` /
     /// Verso `codeData.external.decls[].canonical`). Empty for planned-only
@@ -166,9 +159,8 @@ pub struct BlueprintNode {
 }
 
 impl BlueprintNode {
-    /// The kind to count/emit this node as. A node that was only ever *mentioned*
-    /// (null kind everywhere, never defined) resolves to `Theorem`, preserving
-    /// the historical default for genuinely-unknown nodes.
+    /// The kind to count/emit this node as; an unknown (`None`) kind resolves to
+    /// `Theorem`.
     pub fn display_kind(&self) -> NodeKind {
         self.kind.unwrap_or(NodeKind::Theorem)
     }
@@ -190,17 +182,15 @@ impl BlueprintModel {
     /// - `statement_status` / `proof_status`: take the maximum (best-known)
     ///   status on each axis.
     /// - `lean_decls`, `statement_uses`, `proof_uses`: set-union (order-
-    ///   preserving, de-duplicated). Merging decls is the load-bearing fix —
-    ///   different manifests may each expose a subset of a node's bindings.
-    /// - `kind`, `chapter`, `group`, `title`, `discussion`: DEFINING-COPY-WINS.
-    ///   A copy carrying a known `kind` is the defining occurrence and its
-    ///   identity beats a null-kind *mention* regardless of manifest order;
-    ///   between two copies of equal standing it is first-wins, which is
-    ///   deterministic because `load_from_dir` sorts manifest paths.
+    ///   preserving, de-duplicated); each manifest may expose a subset of a
+    ///   node's bindings.
+    /// - `kind`, `chapter`, `group`, `title`, `discussion`: a copy with a known
+    ///   `kind` (the defining occurrence) wins over a null-kind *mention*;
+    ///   between copies of equal standing it is first-wins, deterministic
+    ///   because `load_from_dir` sorts manifest paths.
     pub fn merge_from(&mut self, other: BlueprintModel) {
         // Index existing nodes by label once so each incoming node is a single
-        // lookup rather than a linear scan — keeps merges linear on large
-        // multi-chapter manifests while preserving the first-wins merge policy.
+        // lookup rather than a linear scan.
         let mut index_by_label: HashMap<String, usize> = self
             .nodes
             .iter()
@@ -240,16 +230,11 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
     if existing.source_proof_status.is_none() {
         existing.source_proof_status = incoming.source_proof_status.clone();
     }
-    // Identity (kind/title/chapter/group/discussion): a copy carrying a KNOWN
-    // kind is the *defining* occurrence; a null-kind copy is a mere mention
-    // (a chapter referencing a node defined elsewhere). Let the defining copy's
-    // identity win over a mention's, regardless of manifest order — otherwise a
-    // mention that sorts first would freeze the node as the wrong kind, in the
-    // wrong chapter, with the label as its title.
+    // Identity (kind/title/chapter/group/discussion): a copy with a known kind
+    // is the defining occurrence and wins over a null-kind mention; its fields
+    // fall back to the mention's only where the defining copy omits them.
     if existing.kind.is_none() && incoming.kind.is_some() {
         existing.kind = incoming.kind;
-        // Defining copy wins, but fall back to the mention's value if the
-        // defining copy happens to omit a field.
         if incoming.group.is_some() {
             existing.group = incoming.group;
         }
@@ -263,8 +248,7 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
             existing.discussion = incoming.discussion;
         }
     } else {
-        // First-wins for descriptive/structural fields (deterministic given
-        // sorted manifest order). Also adopts a kind when neither side defines.
+        // First-wins for descriptive/structural fields.
         if existing.kind.is_none() {
             existing.kind = incoming.kind;
         }

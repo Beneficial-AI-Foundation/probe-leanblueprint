@@ -127,10 +127,9 @@ fn make_extensions(
     }
 }
 
-/// Every `blueprint-*` extension key this tool may write. Used to clear stale
-/// keys on re-enrichment so a second pass over already-enriched atoms is
-/// idempotent (`skip_serializing_if` would otherwise leave a prior run's
-/// `blueprint-status-mismatch` / `blueprint-decl-missing` in place).
+/// Every `blueprint-*` extension key this tool may write. Cleared before each
+/// enrichment so omitted (`None`/`false`/empty) fields do not persist across
+/// re-runs of an already-enriched atom base.
 const BLUEPRINT_KEYS: &[&str] = &[
     "blueprint-label",
     "blueprint-kind",
@@ -157,9 +156,8 @@ fn insert_extensions(atom: &mut Atom, ext: &BlueprintExtensions) {
     for key in BLUEPRINT_KEYS {
         atom.extensions.remove(*key);
     }
-    // A plain `#[derive(Serialize)]` struct of scalars/strings never fails to
-    // serialize; fall back to leaving the atom's blueprint keys cleared rather
-    // than panicking (the `Value::Null` arm below is unreachable in practice).
+    // A struct of scalars/strings never fails to serialize; on the unreachable
+    // error path, leave the blueprint keys cleared rather than panic.
     let value = serde_json::to_value(ext).unwrap_or(Value::Null);
     if let Value::Object(map) = value {
         for (k, v) in map {
@@ -168,11 +166,9 @@ fn insert_extensions(atom: &mut Atom, ext: &BlueprintExtensions) {
     }
 }
 
-/// Remove every trace of a prior enrichment so a re-run over an already-enriched
-/// atom base (or a merged spine that carries old blueprint atoms) is idempotent:
-/// drop synthetic blueprint atoms and clear all `blueprint-*` keys from the
-/// atoms that remain. Without this, deleting/renaming a blueprint node between
-/// runs would leak the node's stale synthetic atom and stale labels forever.
+/// Drop synthetic blueprint atoms and clear all `blueprint-*` keys from the
+/// rest, so enriching an already-enriched atom base (or a merged spine carrying
+/// old blueprint atoms) rebuilds cleanly rather than accumulating stale entries.
 fn scrub_prior_enrichment(atoms: &mut BTreeMap<String, Atom>) {
     atoms.retain(|_, atom| atom.language != "blueprint");
     for atom in atoms.values_mut() {

@@ -31,9 +31,9 @@ struct Manifest {
 /// Manifest generations whose `graphs[].nodes[]` schema this adapter understands.
 const KNOWN_SCHEMA_VERSIONS: &[u64] = &[2, 3];
 
-/// Diagnose a parsed manifest, returning human-readable warnings (empty when the
-/// manifest looks healthy). Factored out so the empty-vs-drifted distinction and
-/// the schema-generation check are unit-testable without capturing stderr.
+/// Human-readable warnings about a parsed manifest — an unknown schema
+/// generation, or an empty graph distinguished as previews-only vs wrong/drifted.
+/// Empty when the manifest looks healthy.
 fn manifest_warnings(
     schema_version: Option<u64>,
     graph_nodes: usize,
@@ -117,9 +117,8 @@ struct Preview {
 struct CodeData {
     #[serde(default)]
     external: Option<External>,
-    /// Declarations bound *inline* in the blueprint text (a `lean` code block
-    /// rather than a reference to an existing decl). Modern manifests carry the
-    /// bound decl names here, so a node authored this way must be joined too.
+    /// Declarations defined *inline* in the blueprint text (a `lean` code block,
+    /// as opposed to `external`, which references an existing decl).
     #[serde(default)]
     inline: Option<Inline>,
 }
@@ -173,14 +172,12 @@ fn map_statement(s: Option<&str>) -> Result<StatementStatus> {
     Ok(match s {
         None | Some("none") => StatementStatus::NonePlanned,
         Some("formalized") => StatementStatus::Formalized,
-        // `mathlib` (Verso ≥ v4.31) marks a statement already available upstream
-        // in Mathlib: it is formalized, only not in this project's own sources.
-        // Treat it as `formalized` on the statement axis.
+        // `mathlib` (Verso ≥ v4.31): formalized upstream in Mathlib, not in this
+        // project's own sources; formalized on the statement axis.
         Some("mathlib") => StatementStatus::Formalized,
         Some("ready") => StatementStatus::Ready,
         Some("blocked") => StatementStatus::Blocked,
-        // Unknown status: fail loudly rather than silently bucketing to the
-        // worst state, which would under-count progress on schema drift.
+        // Unknown status: error on schema drift rather than bucketing it.
         Some(other) => {
             return Err(BlueprintError::UnknownStatus {
                 axis: "statement",
@@ -197,11 +194,8 @@ fn map_proof(s: Option<&str>) -> Result<ProofStatus> {
         Some("formalizedWithAncestors") => ProofStatus::FullyProved,
         Some("formalized") => ProofStatus::Proved,
         Some("ready") => ProofStatus::Ready,
-        // `incomplete` (Verso ≥ v4.31) marks a proof whose Lean code exists but
-        // is not complete (contains `sorry`/gaps). It is explicitly *not* a
-        // finished proof, so it must not count as proved; bucket it as `none`
-        // (not-proved) so the proof axis and the `blueprint-status-mismatch`
-        // check (P26) stay honest against probe-lean's machine status.
+        // `incomplete` (Verso ≥ v4.31): Lean code exists but is not a finished
+        // proof (contains `sorry`/gaps), so it maps to `none`, not proved.
         Some("incomplete") => ProofStatus::None,
         Some(other) => {
             return Err(BlueprintError::UnknownStatus {
@@ -257,9 +251,8 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
 
             let built = BlueprintNode {
                 label: node.label.clone(),
-                // A `null` kind means this is a mention of a node defined in
-                // another chapter; leave it unknown so the defining copy wins
-                // the kind during merge rather than freezing it as a theorem.
+                // A `null` kind (a mention of a node defined in another chapter)
+                // stays unknown so the defining copy's kind wins during merge.
                 kind: node.kind.as_deref().map(NodeKind::from_source),
                 lean_decls,
                 statement_status: map_statement(node.statement_status.as_deref())?,
@@ -341,10 +334,8 @@ fn chapter_from_href(href: &str) -> Option<String> {
 }
 
 fn chapter_from_path(path: &Path) -> Option<String> {
-    // Only a real Verso output artifact carries chapter structure in its path.
-    // For any other file (e.g. a manifest passed via `--verso-manifest` under an
-    // arbitrary name), the parent directory is just wherever the file happens to
-    // live, not a chapter — deriving one from it would be misleading.
+    // Only a canonically-named manifest sits in a Verso output tree whose path
+    // encodes the chapter; for any other file the parent directory is not one.
     if path.file_name().and_then(|n| n.to_str()) != Some("blueprint-manifest.json") {
         return None;
     }
@@ -400,9 +391,8 @@ fn collect_manifests(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> Result<()
             path: dir.to_path_buf(),
             source,
         })?;
-        // `file_type()` reports the entry itself without following symlinks, so
-        // symlinked directories are treated as non-directories and skipped —
-        // avoiding surprising recursion (and cycles) through linked trees.
+        // `file_type()` does not follow symlinks, so symlinked directories are
+        // not descended into (no cycles).
         let file_type = entry.file_type().map_err(|source| BlueprintError::Io {
             path: entry.path(),
             source,

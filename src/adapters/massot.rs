@@ -105,10 +105,8 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
     }
 
     let mut model = BlueprintModel::default();
-    // De-duplicate by label with the shared merge policy, mirroring the Verso
-    // adapter. The Python emitter already first-wins duplicate labels, but we
-    // do not rely on that undocumented cross-process invariant: a stale or
-    // hand-crafted emitter output must not double-count nodes here.
+    // De-duplicate by label with the shared merge policy (like the Verso
+    // adapter), so a repeated label in the emitter output is not double-counted.
     let mut index_by_label: HashMap<String, usize> = HashMap::new();
     for n in &out.nodes {
         let built = BlueprintNode {

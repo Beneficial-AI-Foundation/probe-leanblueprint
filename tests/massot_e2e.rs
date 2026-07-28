@@ -62,7 +62,7 @@ fn massot_enrichment_from_emitter_fixture() {
 
     // `thm:qux` uses the decl-missing `def:baz`; the resolved code-name must be
     // the synthetic key that actually exists in the atom map, not the absent
-    // `probe:Foo.baz`. Locks in the dangling-uses fix.
+    // `probe:Foo.baz`.
     let qux = &atoms["probe:blueprint:thm:qux"];
     let uses: Vec<&str> = qux
         .extensions
