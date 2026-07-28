@@ -7,6 +7,9 @@ __pycache__/
 # Ignore the whole dir so a renamed/disabled variant can't be committed either.
 /.cargo/
 .claude/
+# Local-only working docs (kept out of the repo, not shipped).
+/docs/kvac-blueprint-findings.md
+/docs/pr2-review-responses.md
 *.swp
 *.swo
 *~
