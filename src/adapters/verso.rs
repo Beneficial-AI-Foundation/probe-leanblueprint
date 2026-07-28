@@ -67,6 +67,11 @@ struct Preview {
 struct CodeData {
     #[serde(default)]
     external: Option<External>,
+    /// Declarations bound *inline* in the blueprint text (a `lean` code block
+    /// rather than a reference to an existing decl). Modern manifests carry the
+    /// bound decl names here, so a node authored this way must be joined too.
+    #[serde(default)]
+    inline: Option<Inline>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -78,6 +83,25 @@ struct External {
 #[derive(Debug, Deserialize)]
 struct Decl {
     canonical: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct Inline {
+    #[serde(default)]
+    code: Option<InlineCode>,
+}
+
+#[derive(Debug, Deserialize)]
+struct InlineCode {
+    #[serde(rename = "definedDefs", default)]
+    defined_defs: Vec<DefinedDecl>,
+    #[serde(rename = "definedTheorems", default)]
+    defined_theorems: Vec<DefinedDecl>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DefinedDecl {
+    name: String,
 }
 
 /// Known Verso statement-status vocabulary (for error messages).
@@ -132,16 +156,28 @@ fn map_proof(s: Option<&str>) -> Result<ProofStatus> {
 fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
     let manifest: Manifest = serde_json::from_str(text).map_err(BlueprintError::ManifestParse)?;
 
-    // Index preview key -> Lean decl canonical names.
+    // Index preview key -> Lean decl names. A preview binds decls either by
+    // reference to an existing decl (`external.decls[].canonical`) or inline in
+    // the blueprint text (`inline.code.definedDefs/definedTheorems[].name`);
+    // collect both so inline-authored nodes join too.
     let mut decls_by_preview: HashMap<String, Vec<String>> = HashMap::new();
     for preview in &manifest.previews {
-        if let Some(cd) = &preview.code_data {
-            if let Some(ext) = &cd.external {
-                let names: Vec<String> = ext.decls.iter().map(|d| d.canonical.clone()).collect();
-                if !names.is_empty() {
-                    decls_by_preview.insert(preview.key.clone(), names);
-                }
-            }
+        let Some(cd) = &preview.code_data else {
+            continue;
+        };
+        let mut names: Vec<String> = Vec::new();
+        if let Some(ext) = &cd.external {
+            names.extend(ext.decls.iter().map(|d| d.canonical.clone()));
+        }
+        if let Some(code) = cd.inline.as_ref().and_then(|i| i.code.as_ref()) {
+            names.extend(code.defined_defs.iter().map(|d| d.name.clone()));
+            names.extend(code.defined_theorems.iter().map(|d| d.name.clone()));
+        }
+        // De-duplicate while preserving first-seen order (external before inline).
+        let mut seen = std::collections::HashSet::new();
+        names.retain(|n| seen.insert(n.clone()));
+        if !names.is_empty() {
+            decls_by_preview.insert(preview.key.clone(), names);
         }
     }
 
@@ -324,6 +360,35 @@ mod tests {
         let b = model.nodes.iter().find(|n| n.label == "b").unwrap();
         assert_eq!(b.statement_uses, vec!["a"]);
         assert_eq!(b.statement_status, StatementStatus::Ready);
+    }
+
+    #[test]
+    fn binds_inline_decls_not_just_external() {
+        // `a` binds an existing decl by reference (external); `b` binds a decl
+        // defined inline in the blueprint text. Both must join.
+        let text = r#"{
+          "graphs": [{"nodes": [
+            {"label":"a","kind":"theorem","previewKey":"a--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"},
+            {"label":"b","kind":"theorem","previewKey":"b--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"}
+          ]}],
+          "previews": [
+            {"key":"a--statement","codeData":{"external":{"decls":[{"canonical":"Foo.a"}]}}},
+            {"key":"b--statement","codeData":{"inline":{"code":{
+               "definedDefs":[{"name":"b_def"}],
+               "definedTheorems":[{"name":"b_thm"}]}}}}
+          ]
+        }"#;
+        let model = parse_manifest(text, None).unwrap();
+        let a = model.nodes.iter().find(|n| n.label == "a").unwrap();
+        assert_eq!(a.lean_decls, vec!["Foo.a"], "external decl still bound");
+        let b = model.nodes.iter().find(|n| n.label == "b").unwrap();
+        assert_eq!(
+            b.lean_decls,
+            vec!["b_def", "b_thm"],
+            "inline defs and theorems both bound"
+        );
     }
 
     #[test]
