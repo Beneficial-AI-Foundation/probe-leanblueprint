@@ -104,6 +104,12 @@ fn verso_secure_messaging_full_project() {
     // why the proved count drops from 9 to 8).
     assert_eq!(summary.headline.theorems_total, 53);
     assert_eq!(summary.headline.theorems_fully_proved, 8);
+    // Verso status is code-derived, so every claim is machine-backed: confirmed
+    // equals claimed (no `blueprint-status-mismatch`).
+    assert_eq!(
+        summary.headline.theorems_fully_proved_machine_confirmed, 8,
+        "code-derived: machine-confirmed equals claimed"
+    );
 
     // Per-chapter breakdown is populated and consistent with the whole.
     let chapters = &summary.by_chapter;

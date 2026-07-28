@@ -105,7 +105,13 @@ def build_report(env):
     thms = [n for n in nodes if n.kind != "definition"]
     thm_total = len(thms)
     thm_proved = sum(1 for n in thms if n.proof == "fully-proved")
+    # Machine-confirmed: the blueprint claims fully-proved AND probe-lean backs it
+    # (bound, not contradicted). Mirrors the Rust summary; see P26.
+    thm_proved_confirmed = sum(
+        1 for n in thms if n.proof == "fully-proved" and n.bound and not n.mismatch
+    )
     fraction = (thm_proved / thm_total) if thm_total else 0.0
+    fraction_confirmed = (thm_proved_confirmed / thm_total) if thm_total else 0.0
 
     by_chapter = defaultdict(lambda: {"nodes": 0, "stmt_formalized": 0, "thm_total": 0, "thm_proved": 0})
     for n in nodes:
@@ -127,7 +133,8 @@ def build_report(env):
         },
         "headline": {
             "theorems-total": thm_total, "theorems-fully-proved": thm_proved,
-            "fraction": fraction,
+            "theorems-fully-proved-machine-confirmed": thm_proved_confirmed,
+            "fraction": fraction, "fraction-machine-confirmed": fraction_confirmed,
         },
         "statement": axis_counts(nodes, "statement"),
         "proof": axis_counts(nodes, "proof"),
@@ -150,8 +157,13 @@ def print_report(env, report):
     if src.get("repo"):
         print(f"  source: {src['repo']}@{src.get('commit', '')[:10]}")
     print()
-    pct = h["fraction"] * 100
-    print(f"Headline: {h['theorems-fully-proved']}/{h['theorems-total']} theorems fully proved ({pct:.1f}%)")
+    confirmed = h["theorems-fully-proved-machine-confirmed"]
+    claimed = h["theorems-fully-proved"]
+    pct = h["fraction-machine-confirmed"] * 100
+    print(f"Headline: {confirmed}/{h['theorems-total']} theorems machine-confirmed fully proved ({pct:.1f}%)")
+    if claimed > confirmed:
+        print(f"  (blueprint claims {claimed}/{h['theorems-total']}; "
+              f"{claimed - confirmed} not backed by probe-lean's verification status)")
     print(
         f"Blueprint nodes: {t['nodes']}   "
         f"(bound {t['bound']} · planned-only {t['planned-only']} · "

@@ -62,14 +62,20 @@ probe-leanblueprint extract path/to/project_template \
 ## probe-leanblueprint result
 
 ```
-Headline: 1/5 theorems fully proved (20.0%)
-Blueprint nodes: 9   (bound 0 · planned-only 7 · decl-missing 2 · partial-missing 0 · mismatches 0)
+Headline: 0/5 theorems machine-confirmed fully proved (0.0%)
+  (blueprint claims 1/5; 1 not backed by probe-lean's verification status)
+Blueprint nodes: 9   (bound 4 · planned-only 3 · decl-missing 2 · partial-missing 0 · mismatches 0)
 
 Statement axis        all  def  thm        Proof axis         all  def  thm
   formalized            6    1    5          fully-proved        1    0    1
   ready                 2    2    0          proved              4    1    3
   blocked               1    1    0          ready               2    2    0
   none                  0    0    0          none                2    1    1
+
+By chapter            nodes  stmt✓  thm✓/thm
+  Addition                4      2       0/2
+  Collatz                 2      2       0/1
+  Multiplication          3      2       1/2
 ```
 
 ## Comparison with the blueprint's own rendering
@@ -81,25 +87,25 @@ The Verso build renders a **Blueprint Summary** page
 | Concept | Verso Blueprint Summary | probe-leanblueprint |
 |---------|-------------------------|---------------------|
 | Total nodes | 9 | 9 |
-| Theorems, fully closed / total | "Fully closed 1"; theorems `completed: 1` of 5 | headline **1/5 (20.0%)**; proof `fully-proved` = 1 (thm) |
+| Theorems, fully closed / total | "Fully closed 1"; theorems `completed: 1` of 5 | blueprint-claimed **1/5**; proof `fully-proved` = 1 (thm) |
 | Locally formalized, deps not all closed | theorems `deps incomplete: 3` | proof `proved` = 3 (thm) |
 | Proof contains `sorry` | `sorries: 1` (collatz_conjecture) | proof `incomplete` → mapped to `none` (1 thm) |
 | Statement formalized (defs + thms) | 6 nodes carry formalized statements | statement `formalized` = 6 |
 | Informal-only / ready | "Ready now 3"; `Informal-only entries 3` | statement `ready` = 2, `blocked` = 1 |
 
-The headline (**1/5 theorems fully proved**) is the same conclusion the rendered
-summary reaches ("Fully closed 1" of 5 theorems).
+The blueprint's claim (**1/5 theorems fully proved**) matches the rendered
+summary ("Fully closed 1" of 5). probe-leanblueprint's *machine-confirmed*
+headline is **0/5**, because the one fully-proved theorem is `multiplication_assoc`,
+bound to the stdlib decl `Nat.mul_assoc` — which is not in this project's own
+probe-lean extract, so the machine cannot confirm it here. Both numbers are
+emitted; the machine-confirmed one is the honest verified-progress figure (P26).
 
-### Known difference: decl binding
+### Decl binding
 
-Verso's summary lists **7** associated Lean declarations (e.g.
-`collatz_conjecture`, `nat_add_zero_right`, `collatzStep`), whereas
-`probe-leanblueprint` binds only the **2** that appear as `codeData.external.decls`
-in the manifest (`Nat.add_assoc`, `Nat.mul_assoc`) — hence `bound 0` project
-atoms and `decl-missing 2` (both are stdlib, absent from this project's atoms).
-The adapter currently reads external-decl bindings only; inline
-`lean` code blocks and `@[blueprint]`-tagged decls that Verso also surfaces are
-not yet joined. This does not affect the two-axis status counts above, which are
-read from `graphs[].nodes[]`, but it does mean the code-atom join is thinner than
-what the rendered site shows for this particular template (whose proofs are
-mostly inline).
+The adapter binds decls from both `codeData.external.decls[].canonical` (a
+reference to an existing decl) and `codeData.inline.code.definedDefs/
+definedTheorems[].name` (a decl defined inline in the blueprint text). For this
+template that binds **4** project atoms — `collatz_conjecture`, `nat_add_zero_right`,
+`multiplication_one_right`, and the collatz defs — with `decl-missing 2` for the
+two stdlib externals (`Nat.add_assoc`, `Nat.mul_assoc`) that this project does
+not itself define.

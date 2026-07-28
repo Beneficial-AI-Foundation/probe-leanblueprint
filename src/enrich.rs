@@ -58,6 +58,12 @@ pub struct EnrichReport {
     /// Count of synthetic keys produced more than once in a single run (later
     /// wins). Indicates duplicate labels leaking past adapter de-duplication.
     pub duplicate_synthetic: usize,
+    /// Labels of fully-proved *theorems* whose claim the machine actually backs:
+    /// bound to a present atom and not contradicted by probe-lean's
+    /// `verification-status`. This is the honest "proved" count; the blueprint's
+    /// own `fully_proved` claim (used by `theorems-fully-proved`) can be larger
+    /// for `declared` (Massot `\leanok`) blueprints. See P26.
+    pub machine_confirmed_proved: Vec<String>,
 }
 
 fn machine_status(atom: &Atom) -> Option<String> {
@@ -291,6 +297,14 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         if !missing.is_empty() {
             report.partial_missing += 1;
         }
+        // A fully-proved theorem bound to a present atom counts as
+        // machine-confirmed unless the machine contradicts it (recorded below).
+        // Definitions and unbound/decl-missing nodes never reach here.
+        if node.display_kind() == NodeKind::Theorem && node.proof_status == ProofStatus::FullyProved
+        {
+            // Provisionally confirmed; removed just below if a mismatch fires.
+            report.machine_confirmed_proved.push(node.label.clone());
+        }
         // Mismatch is per-node: check every present atom this node binds (owned
         // or not) and record it once so counts match `blueprint_stats.py`.
         let mismatch = present.iter().find_map(|cn| {
@@ -299,6 +313,8 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         });
         if let Some(m) = &mismatch {
             report.mismatches.push(format!("{}: {m}", node.label));
+            // The machine contradicts the proof claim, so it is not confirmed.
+            report.machine_confirmed_proved.retain(|l| l != &node.label);
         }
 
         let owned: Vec<&String> = present.iter().filter(|cn| owns(&node.label, cn)).collect();
@@ -420,11 +436,21 @@ pub struct Totals {
 pub struct Headline {
     #[serde(rename = "theorems-total")]
     pub theorems_total: usize,
+    /// Theorems the *blueprint* claims fully proved (`fully_proved`). For
+    /// `declared` (Massot `\leanok`) blueprints this can over-claim, so it is not
+    /// on its own a verified-progress number.
     #[serde(rename = "theorems-fully-proved")]
     pub theorems_fully_proved: usize,
-    /// Fraction of theorems whose proof is fully formalized (blueprint's
-    /// `fully_proved`). This is the headline progress number.
+    /// Theorems whose fully-proved claim probe-lean actually backs: bound and not
+    /// contradicted. Equals `theorems-fully-proved` for `code-derived` (Verso)
+    /// blueprints, and is the honest headline number (P26).
+    #[serde(rename = "theorems-fully-proved-machine-confirmed")]
+    pub theorems_fully_proved_machine_confirmed: usize,
+    /// Fraction of theorems the blueprint claims fully proved.
     pub fraction: f64,
+    /// Fraction of theorems machine-confirmed fully proved.
+    #[serde(rename = "fraction-machine-confirmed")]
+    pub fraction_machine_confirmed: f64,
 }
 
 /// Build the summary from the model and the enrichment report.
@@ -461,8 +487,14 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
         }
     }
 
+    let theorems_fully_proved_machine_confirmed = report.machine_confirmed_proved.len();
     let fraction = if theorems_total > 0 {
         theorems_fully_proved as f64 / theorems_total as f64
+    } else {
+        0.0
+    };
+    let fraction_machine_confirmed = if theorems_total > 0 {
+        theorems_fully_proved_machine_confirmed as f64 / theorems_total as f64
     } else {
         0.0
     };
@@ -483,7 +515,9 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
         headline: Headline {
             theorems_total,
             theorems_fully_proved,
+            theorems_fully_proved_machine_confirmed,
             fraction,
+            fraction_machine_confirmed,
         },
         by_chapter,
     }

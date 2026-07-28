@@ -112,7 +112,7 @@ python3 scripts/blueprint_stats.py path/to/leanblueprint_<pkg>.json --json  # ma
 Example (secure-messaging):
 
 ```
-Headline: 9/56 theorems fully proved (16.1%)
+Headline: 8/53 theorems machine-confirmed fully proved (15.1%)
 Blueprint nodes: 111   (bound 33 · planned-only 78 · decl-missing 0 · partial-missing 0 · mismatches 0)
 
 By chapter                            nodes  stmt✓  thm✓/thm
@@ -121,6 +121,11 @@ By chapter                            nodes  stmt✓  thm✓/thm
   Erasure-Codes                           4      2       0/1
   ...
 ```
+
+(58 definitions + 53 theorems = 111 nodes. The headline reports theorems
+*machine-confirmed* fully proved — for a code-derived Verso blueprint this equals
+the blueprint's own claim; for a `declared` Massot blueprint it excludes any
+`\leanok` the machine contradicts.)
 
 ## How it works
 

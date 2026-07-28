@@ -437,12 +437,23 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
         report.collisions,
         report.mismatches.len()
     );
+    let h = &summary_env.data.headline;
     eprintln!(
-        "Headline: {}/{} theorems fully proved ({:.1}%)",
-        summary_env.data.headline.theorems_fully_proved,
-        summary_env.data.headline.theorems_total,
-        summary_env.data.headline.fraction * 100.0
+        "Headline: {}/{} theorems machine-confirmed fully proved ({:.1}%)",
+        h.theorems_fully_proved_machine_confirmed,
+        h.theorems_total,
+        h.fraction_machine_confirmed * 100.0
     );
+    // Surface the blueprint's own claim only when it exceeds what the machine
+    // backs, so a `declared` blueprint's over-claim is visible, not hidden.
+    if h.theorems_fully_proved > h.theorems_fully_proved_machine_confirmed {
+        eprintln!(
+            "  (blueprint claims {}/{}; {} not backed by probe-lean's verification status)",
+            h.theorems_fully_proved,
+            h.theorems_total,
+            h.theorems_fully_proved - h.theorems_fully_proved_machine_confirmed
+        );
+    }
     eprintln!("Wrote {}", extract_path.display());
     eprintln!("Wrote {}", summary_path.display());
     Ok(())

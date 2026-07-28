@@ -83,6 +83,20 @@ fn massot_enrichment_from_emitter_fixture() {
             "every resolved uses target must be a real atom key: {cn}"
         );
     }
+
+    // Headline must not count the contradicted claim: `thm:bar` is fully-proved
+    // in the blueprint but unverified by the machine, so it is claimed-but-not-
+    // confirmed. The honest headline is 0/2, not 1/2 (P26).
+    let summary = enrich::summarize(&model, &report);
+    assert_eq!(summary.headline.theorems_total, 2);
+    assert_eq!(
+        summary.headline.theorems_fully_proved, 1,
+        "blueprint claims bar fully proved"
+    );
+    assert_eq!(
+        summary.headline.theorems_fully_proved_machine_confirmed, 0,
+        "machine contradicts bar, so it is not confirmed"
+    );
 }
 
 /// Live emitter run. Requires a Python with plasTeX + leanblueprint installed.

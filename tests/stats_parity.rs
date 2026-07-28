@@ -169,6 +169,13 @@ fn stats_py_agrees_with_summary_under_collision() {
         summary.headline.theorems_fully_proved,
         "theorems-fully-proved parity"
     );
+    assert_eq!(
+        stats["headline"]["theorems-fully-proved-machine-confirmed"]
+            .as_u64()
+            .unwrap() as usize,
+        summary.headline.theorems_fully_proved_machine_confirmed,
+        "machine-confirmed parity"
+    );
     // Per-axis "all" formalized-statement count.
     assert_eq!(
         stats["statement"]["all"]["formalized"].as_u64().unwrap() as usize,

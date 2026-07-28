@@ -13,7 +13,7 @@
     "package": "ProjectTemplate",
     "package-version": "6561770"
   },
-  "timestamp": "2026-07-28T10:01:06Z",
+  "timestamp": "2026-07-28T10:08:17Z",
   "data": {
     "totals": {
       "nodes": 9,
@@ -69,7 +69,9 @@
     "headline": {
       "theorems-total": 5,
       "theorems-fully-proved": 1,
-      "fraction": 0.2
+      "theorems-fully-proved-machine-confirmed": 0,
+      "fraction": 0.2,
+      "fraction-machine-confirmed": 0.0
     },
     "by-chapter": {
       "Addition": {
