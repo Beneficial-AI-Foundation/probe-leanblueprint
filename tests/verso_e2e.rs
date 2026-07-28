@@ -6,7 +6,7 @@ use std::path::Path;
 
 use probe::types::load_atom_file;
 use probe_leanblueprint::adapters::verso;
-use probe_leanblueprint::enrich;
+use probe_leanblueprint::{emit, enrich};
 
 fn fixture(rel: &str) -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -79,7 +79,24 @@ fn verso_secure_messaging_full_project() {
         "secure-messaging has 111 blueprint nodes"
     );
 
-    let (mut atoms, _prov) = load_atom_file(&fixture("lean/secure-messaging-atoms.json")).unwrap();
+    let (mut atoms, prov) = load_atom_file(&fixture("lean/secure-messaging-atoms.json")).unwrap();
+
+    // Schema 3.0 `source` passthrough: probe-lean marks this a security-protocol
+    // via `source.class`, an unmodeled field the hub `Source` captures via
+    // flatten. It must survive load -> emit instead of being dropped.
+    let source = prov[0].source.clone();
+    assert_eq!(
+        source.extensions.get("class").and_then(|v| v.as_str()),
+        Some("security-protocol"),
+        "source.class is captured on load"
+    );
+    let extract_env = emit::build_extract_envelope(atoms.clone(), source);
+    let env_json = serde_json::to_value(&extract_env).unwrap();
+    assert_eq!(
+        env_json["source"]["class"], "security-protocol",
+        "source.class round-trips into the emitted extract"
+    );
+
     let report = enrich::enrich(&mut atoms, &model);
 
     assert_eq!(report.nodes_total, 111);

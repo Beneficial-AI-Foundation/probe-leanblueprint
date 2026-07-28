@@ -378,8 +378,8 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "probe"
-version = "0.3.0"
-source = "git+https://github.com/Beneficial-AI-Foundation/probe?rev=80555cc0f3ac2f63a18922fcf4b62cdd8fcfa4d5#80555cc0f3ac2f63a18922fcf4b62cdd8fcfa4d5"
+version = "0.4.0"
+source = "git+https://github.com/Beneficial-AI-Foundation/probe?rev=608a620#608a620d71d6358ce1745775f542be61e8c556b4"
 dependencies = [
  "chrono",
  "clap",

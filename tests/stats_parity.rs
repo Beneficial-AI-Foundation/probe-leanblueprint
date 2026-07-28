@@ -109,6 +109,7 @@ fn stats_py_agrees_with_summary_under_collision() {
         language: "lean".into(),
         package: "p".into(),
         package_version: String::new(),
+        extensions: Default::default(),
     };
     let extract_env = emit::build_extract_envelope(atoms, source);
 

@@ -24,7 +24,7 @@ sha2 = "0.10"
 # Git dependency on the probe hub, pinned for reproducibility (matches the rest
 # of the published ecosystem, e.g. probe-aeneas). For local development against
 # uncommitted hub changes, add a `[patch]` pointing `probe` at `../probe`.
-probe = { git = "https://github.com/Beneficial-AI-Foundation/probe", rev = "80555cc0f3ac2f63a18922fcf4b62cdd8fcfa4d5" }
+probe = { git = "https://github.com/Beneficial-AI-Foundation/probe", rev = "608a620" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Runtime dep: the Massot adapter materializes the bundled emitter to a temp

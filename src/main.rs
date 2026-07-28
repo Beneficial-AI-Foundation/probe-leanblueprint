@@ -283,6 +283,7 @@ fn select_source(
             language: "lean".to_string(),
             package: "unknown".to_string(),
             package_version: String::new(),
+            extensions: Default::default(),
         }
     };
 
@@ -814,6 +815,7 @@ mod tests {
             language: "lean".to_string(),
             package: "../../etc".to_string(),
             package_version: "a/b\\c".to_string(),
+            extensions: Default::default(),
         };
         let out = default_output(Path::new("/proj"), &source, "");
         let name = out.file_name().unwrap().to_str().unwrap();
@@ -852,6 +854,7 @@ mod tests {
                     language: "rust".to_string(),
                     package: "rustpkg".to_string(),
                     package_version: String::new(),
+                    extensions: Default::default(),
                 },
             },
             InputProvenance {
@@ -862,6 +865,7 @@ mod tests {
                     language: "lean".to_string(),
                     package: "leanpkg".to_string(),
                     package_version: String::new(),
+                    extensions: Default::default(),
                 },
             },
         ];
@@ -881,6 +885,7 @@ mod tests {
                     language: "blueprint".to_string(),
                     package: "blueprintpkg".to_string(),
                     package_version: String::new(),
+                    extensions: Default::default(),
                 },
             },
             InputProvenance {
@@ -891,6 +896,7 @@ mod tests {
                     language: "lean".to_string(),
                     package: "leanpkg".to_string(),
                     package_version: String::new(),
+                    extensions: Default::default(),
                 },
             },
         ];
@@ -911,6 +917,7 @@ mod tests {
                     language: "lean".to_string(),
                     package: "a".to_string(),
                     package_version: "1".to_string(),
+                    extensions: Default::default(),
                 },
             },
             InputProvenance {
@@ -921,6 +928,7 @@ mod tests {
                     language: "lean".to_string(),
                     package: "b".to_string(),
                     package_version: "2".to_string(),
+                    extensions: Default::default(),
                 },
             },
         ];

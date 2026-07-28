@@ -1,6 +1,6 @@
 # probe-leanblueprint Data Schemas
 
-Schema version: 2.1
+Schema version: 3.0
 Date: 2026-07-21
 
 This document specifies the JSON output formats produced by `probe-leanblueprint`.
@@ -21,14 +21,14 @@ Both are produced by the single `extract` subcommand.
 
 ---
 
-## Common: Envelope (Schema 2.x)
+## Common: Envelope (Schema 3.x)
 
 Both output files share this envelope structure:
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `schema` | string | Data type identifier (`"probe-leanblueprint/extract"` or `"probe-leanblueprint/summary"`) |
-| `schema-version` | string | Interchange spec version (`"2.1"`) |
+| `schema-version` | string | Interchange spec version (`"3.0"`) |
 | `tool.name` | string | Always `"probe-leanblueprint"` |
 | `tool.version` | string | Semver version of the binary |
 | `tool.command` | string | Always `"extract"` |
@@ -65,7 +65,7 @@ for the selection rules.
 ```json
 {
   "schema": "probe-leanblueprint/extract",
-  "schema-version": "2.1",
+  "schema-version": "3.0",
   "tool": {
     "name": "probe-leanblueprint",
     "version": "0.2.0",
@@ -180,8 +180,8 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-kind` | string | yes | Blueprint node kind: `"definition"` or `"theorem"` (lets consumers classify bound atoms whose atom `kind` is the Lean kind) |
 | `blueprint-statement-status` | string | yes | Statement axis: `"none"`, `"blocked"`, `"ready"`, or `"formalized"` |
 | `blueprint-proof-status` | string | yes | Proof axis: `"none"`, `"ready"`, `"proved"`, or `"fully-proved"` |
-| `blueprint-source-statement-status` | string | no | Raw source status when the canonical value is lossy (e.g. Verso `"mathlib"` → `formalized`). Omitted when the mapping is faithful. Added in 2.1 |
-| `blueprint-source-proof-status` | string | no | Raw source status when the canonical value is lossy (e.g. Verso `"incomplete"` → `none`). Omitted when the mapping is faithful. Added in 2.1 |
+| `blueprint-source-statement-status` | string | no | Raw source status when the canonical value is lossy (e.g. Verso `"mathlib"` → `formalized`). Omitted when the mapping is faithful. Added in 3.0 |
+| `blueprint-source-proof-status` | string | no | Raw source status when the canonical value is lossy (e.g. Verso `"incomplete"` → `none`). Omitted when the mapping is faithful. Added in 3.0 |
 | `blueprint-status-source` | string | yes | `"code-derived"` (Verso) or `"declared"` (Massot `\leanok`) |
 | `blueprint-group` | string | no | Sub-construction grouping label (Verso `parent`) |
 | `blueprint-chapter` | string | no | Chapter the node belongs to (one Verso manifest = one chapter) |
@@ -223,7 +223,7 @@ two-axis progress stats.
 ```json
 {
   "schema": "probe-leanblueprint/summary",
-  "schema-version": "2.1",
+  "schema-version": "3.0",
   "tool": { "name": "probe-leanblueprint", "version": "0.3.0", "command": "extract" },
   "source": { "language": "lean", "package": "SecureMessaging", "package-version": "4cfee4c", "...": "..." },
   "blueprint-provenance": {
@@ -299,9 +299,9 @@ Each is a two-axis histogram over the relevant node subset:
 |-------|------|-------------|
 | `theorems-total` | integer | Number of theorem-kind nodes |
 | `theorems-fully-proved` | integer | Theorem nodes the *blueprint* claims `fully-proved`. For `declared` (Massot) blueprints this can over-claim; not a verified-progress number on its own |
-| `theorems-fully-proved-machine-confirmed` | integer | Theorem nodes claimed `fully-proved` that probe-lean backs: bound and not contradicted. The honest headline number (P26). Added in 2.1 |
+| `theorems-fully-proved-machine-confirmed` | integer | Theorem nodes claimed `fully-proved` that probe-lean backs: bound and not contradicted. The honest headline number (P26). Added in 3.0 |
 | `fraction` | float | `theorems-fully-proved / theorems-total` (0.0 when no theorems) |
-| `fraction-machine-confirmed` | float | `theorems-fully-proved-machine-confirmed / theorems-total`. Added in 2.1 |
+| `fraction-machine-confirmed` | float | `theorems-fully-proved-machine-confirmed / theorems-total`. Added in 3.0 |
 
 ### `by-chapter`
 
@@ -324,21 +324,22 @@ a parity test).
 
 ## Schema Evolution
 
-When adding new optional fields, increment the minor version (`2.0` → `2.1`).
-When changing required fields or their semantics, increment the major version
-(`2.0` → `3.0`).
+When adding new optional fields, increment the minor version. When changing
+required fields or their semantics, increment the major version.
 
 Consumers should check `schema-version` and reject files with an unsupported
-major version. A minor bump is backward-compatible: a `2.0` consumer can read a
-`2.1` file (the new fields are optional).
+major version.
 
-### 2.1
+### 3.0
 
-Additive over 2.0:
+Aligns `schema-version` with the ecosystem-wide interchange bump to 3.0 (so
+`probe merge`/`project` accept the extract), and adds:
 
 - extract: optional `blueprint-source-statement-status` / `blueprint-source-proof-status`
   preserve a raw Verso status when the canonical enum is lossy (`mathlib`,
   `incomplete`).
+- extract: unknown `source` fields (e.g. `source.class`) now round-trip instead
+  of being dropped, via the hub `Source` passthrough.
 - summary: `theorems-fully-proved-machine-confirmed` and `fraction-machine-confirmed`
   report progress probe-lean actually backs, distinct from the blueprint's own claim.
 - summary: a top-level `blueprint-provenance` block records which blueprint inputs
@@ -360,7 +361,7 @@ enrichment is scrubbed first, so re-runs are idempotent. Passing this tool's own
 
 ### With probe merge / project
 
-The `probe-leanblueprint/extract` file is an atoms-category Schema 2.0 envelope,
+The `probe-leanblueprint/extract` file is an atoms-category Schema 3.0 envelope,
 so `probe merge`/`probe project` accept it and preserve the `blueprint-*`
 extension fields (KB
 [P10](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/engineering/properties.md)).
