@@ -27,8 +27,12 @@ So detection resolved to `(has_verso=false, has_web_tex=false)` →
 **Fix (in this PR):** auto-detection now also scans the conventional `docs/`
 subproject lakefile, and the `AdapterUndetected` error spells out where it
 looked and how to override (`--adapter`, or point the project path at the
-subproject). Workarounds without the fix: `probe-leanblueprint extract docs
---adapter verso …`, or pass `--verso-manifest …` explicitly.
+subproject). Detection *and* execution are fixed: the directory that supplied
+the `versoBlueprint` signal is carried through the pipeline as the render root,
+so `lake exe vbp build` runs there (in `docs/`, where `vbp` resolves) and
+manifest discovery is scoped to `docs/_out/site` — while probe-lean still
+extracts the math-project root. Workarounds without the fix: `probe-leanblueprint
+extract docs --adapter verso …`, or pass `--verso-manifest …` explicitly.
 
 ## Layer 2 — KVAC's pinned versoBlueprint was too old (version cliff)
 

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--source-package` / `--source-version` overrides to set the atom base's identity directly; supplying both also bypasses the ambiguous-provenance check for a spine with multiple probe-lean inputs.
 
 ### Changed
+- Verso manifest discovery is scoped to the canonical render-output root (`<blueprint-root>/_out/site`) instead of walking the whole project, so stale sibling generations (e.g. `_out/site-v430`) are no longer discovered and max-status-merged into the result.
+- The Verso render (`lake exe vbp build`) and manifest discovery now run in the subproject whose lakefile declares `versoBlueprint` (e.g. `docs/`), not the math-project root — so a project that keeps its blueprint in `docs/` renders successfully instead of failing with `unknown executable vbp`. probe-lean still extracts the project root.
 - Verso adapter binds declarations authored inline in the blueprint text (`codeData.inline.code.definedDefs` / `definedTheorems[].name`) in addition to `codeData.external.decls[].canonical`; on the canonical v4.31 template this lifts bound nodes from 0 to 4.
 - Chapter is derived from each node's `href` (authoritative for single-shared-manifest renders), falling back to the manifest directory only when a node carries no href.
 - Output writes are atomic (temp file + rename) and `--output` / `--summary-output` are validated to differ from each other and from any input file.

@@ -45,6 +45,18 @@ enum ResolvedAdapter {
     Massot,
 }
 
+/// Outcome of adapter detection: which adapter, plus the directory whose lakefile
+/// declares `versoBlueprint`. That directory (the project root or its `docs/`
+/// subproject) is where the Verso render runs and where its `_out/site` output
+/// lives — distinct from the math-project root that probe-lean extracts. `None`
+/// for Massot or when no Verso signal was found (render/discovery then use the
+/// project root).
+#[derive(Debug)]
+struct Detected {
+    adapter: ResolvedAdapter,
+    verso_blueprint_root: Option<PathBuf>,
+}
+
 #[derive(Parser)]
 struct ExtractArgs {
     /// Path to the Lean project (used for auto-detection and orchestration).
@@ -116,47 +128,82 @@ fn main() -> Result<()> {
     }
 }
 
-fn detect_adapter(args: &ExtractArgs) -> Result<ResolvedAdapter> {
+/// The directory whose lakefile declares `versoBlueprint`, if any. The
+/// dependency is frequently declared in a dedicated blueprint subproject rather
+/// than the root lakefile (e.g. KVAC's `docs/lakefile.toml`), so scan the root
+/// *and* the conventional `docs/` subproject.
+fn verso_blueprint_root(project: &Path) -> Option<PathBuf> {
+    for sub in ["", "docs"] {
+        let dir = project.join(sub);
+        let signal = ["lakefile.toml", "lakefile.lean"].iter().any(|lf| {
+            std::fs::read_to_string(dir.join(lf))
+                .map(|text| text.contains("versoBlueprint") || text.contains("verso-blueprint"))
+                .unwrap_or(false)
+        });
+        if signal {
+            return Some(dir);
+        }
+    }
+    None
+}
+
+fn detect_adapter(args: &ExtractArgs) -> Result<Detected> {
     match args.adapter {
-        Adapter::Verso => return Ok(ResolvedAdapter::Verso),
-        Adapter::Massot => return Ok(ResolvedAdapter::Massot),
+        Adapter::Verso => {
+            return Ok(Detected {
+                adapter: ResolvedAdapter::Verso,
+                // Honor an explicit docs/ subproject even when forced.
+                verso_blueprint_root: verso_blueprint_root(&args.project),
+            });
+        }
+        Adapter::Massot => {
+            return Ok(Detected {
+                adapter: ResolvedAdapter::Massot,
+                verso_blueprint_root: None,
+            })
+        }
         Adapter::Auto => {}
     }
     if args.verso_manifest.is_some() {
-        return Ok(ResolvedAdapter::Verso);
+        return Ok(Detected {
+            adapter: ResolvedAdapter::Verso,
+            verso_blueprint_root: verso_blueprint_root(&args.project),
+        });
     }
     if args.blueprint_src.is_some() {
-        return Ok(ResolvedAdapter::Massot);
+        return Ok(Detected {
+            adapter: ResolvedAdapter::Massot,
+            verso_blueprint_root: None,
+        });
     }
     // Auto-detect from the project layout. Check the Verso signal (a
     // `versoBlueprint` lakefile declaration) first: a Verso project may carry a
     // leftover/migrated Massot `blueprint/` tree, and defaulting to Massot in
     // that case would silently pick the wrong ecosystem.
     let has_web_tex = args.project.join("blueprint/src/web.tex").exists();
-    // The `versoBlueprint` dependency is frequently declared in a dedicated
-    // blueprint subproject rather than the root lakefile (e.g. KVAC's
-    // `docs/lakefile.toml`), so scan the root *and* the conventional `docs/`
-    // subproject before giving up.
-    let has_verso = ["", "docs"].iter().any(|dir| {
-        ["lakefile.toml", "lakefile.lean"].iter().any(|lf| {
-            std::fs::read_to_string(args.project.join(dir).join(lf))
-                .map(|text| text.contains("versoBlueprint") || text.contains("verso-blueprint"))
-                .unwrap_or(false)
-        })
-    });
-    match (has_verso, has_web_tex) {
-        (true, true) => {
+    let verso_root = verso_blueprint_root(&args.project);
+    match (verso_root, has_web_tex) {
+        (Some(root), true) => {
             eprintln!(
                 "warning: found both a versoBlueprint lakefile signal and \
                  blueprint/src/web.tex; using Verso (pass --adapter to override)"
             );
-            Ok(ResolvedAdapter::Verso)
+            Ok(Detected {
+                adapter: ResolvedAdapter::Verso,
+                verso_blueprint_root: Some(root),
+            })
         }
-        (true, false) => Ok(ResolvedAdapter::Verso),
-        (false, true) => Ok(ResolvedAdapter::Massot),
+        (Some(root), false) => Ok(Detected {
+            adapter: ResolvedAdapter::Verso,
+            verso_blueprint_root: Some(root),
+        }),
+        (None, true) => Ok(Detected {
+            adapter: ResolvedAdapter::Massot,
+            verso_blueprint_root: None,
+        }),
         // No positive signal: fail loudly instead of defaulting to Verso and
         // then dying later with a confusing "no manifest" error.
-        (false, false) => Err(BlueprintError::AdapterUndetected.into()),
+        (None, false) => Err(BlueprintError::AdapterUndetected.into()),
     }
 }
 
@@ -270,9 +317,18 @@ fn run_probe_lean(project: &Path) -> Result<PathBuf> {
     Ok(out)
 }
 
-fn build_model(args: &ExtractArgs, adapter: ResolvedAdapter) -> Result<BlueprintModel> {
-    match adapter {
-        ResolvedAdapter::Verso => build_verso_model(args),
+fn build_model(args: &ExtractArgs, detected: &Detected) -> Result<BlueprintModel> {
+    match detected.adapter {
+        ResolvedAdapter::Verso => {
+            // Render + manifest discovery happen in the blueprint subproject (the
+            // dir whose lakefile declares versoBlueprint), which may be `docs/`,
+            // not the math-project root that probe-lean extracts.
+            let render_root = detected
+                .verso_blueprint_root
+                .clone()
+                .unwrap_or_else(|| args.project.clone());
+            build_verso_model(args, &render_root)
+        }
         ResolvedAdapter::Massot => build_massot_model(args),
     }
 }
@@ -283,7 +339,13 @@ fn build_model(args: &ExtractArgs, adapter: ResolvedAdapter) -> Result<Blueprint
 /// site (including `blueprint-manifest.json`) under `_out/site/`.
 const DEFAULT_VERSO_RENDER_CMD: &str = "lake exe vbp build";
 
-fn build_verso_model(args: &ExtractArgs) -> Result<BlueprintModel> {
+/// Canonical Verso render-output subdirectory, relative to the blueprint root.
+/// `lake exe vbp build` writes the site (and its `blueprint-manifest.json`s)
+/// here; scoping discovery to it — rather than walking the whole project — is
+/// what keeps stale sibling renders (e.g. `_out/site-v430`) from being merged in.
+const VERSO_SITE_SUBDIR: &str = "_out/site";
+
+fn build_verso_model(args: &ExtractArgs, render_root: &Path) -> Result<BlueprintModel> {
     // An explicit `--verso-manifest` is authoritative and never triggers a
     // render (the caller has pointed us at the artifact directly).
     if let Some(p) = &args.verso_manifest {
@@ -294,39 +356,44 @@ fn build_verso_model(args: &ExtractArgs) -> Result<BlueprintModel> {
         });
     }
 
-    // Bare-project path: look for an already-rendered manifest, and if none is
-    // present, render the docs so a caller can pass just a Lean project.
-    match verso::load_from_dir(&args.project) {
+    // Discovery is scoped to the canonical render-output root so a single fresh
+    // generation is read, never a merge of whatever `blueprint-manifest.json`s
+    // happen to litter the project (stale `_out/site-v430` leftovers, etc.).
+    let site = render_root.join(VERSO_SITE_SUBDIR);
+    match verso::load_from_dir(&site) {
         Ok(model) => Ok(model),
-        Err(BlueprintError::NoManifest(root)) => {
+        Err(BlueprintError::NoManifest(_)) => {
             if args.no_render {
-                return Err(BlueprintError::NoManifest(root).into());
+                return Err(BlueprintError::NoManifest(site).into());
             }
-            render_verso_docs(args)?;
-            // Retry: the render must have produced at least one manifest.
-            Ok(verso::load_from_dir(&args.project)?)
+            render_verso_docs(args, render_root)?;
+            // Retry: the render must have produced at least one manifest under
+            // the canonical site root.
+            Ok(verso::load_from_dir(&site)?)
         }
         Err(e) => Err(e.into()),
     }
 }
 
 /// Render the Verso docs in-place so `blueprint-manifest.json` exists. Runs the
-/// render command through `sh -c` in the project directory (default:
-/// `lake exe vbp build`). This is what makes the Verso path work from a bare
+/// render command through `sh -c` in the blueprint root (the dir whose lakefile
+/// declares versoBlueprint — possibly `docs/`, where `lake exe vbp build` can
+/// actually resolve `vbp`). This is what makes the Verso path work from a bare
 /// Lean project, mirroring the Massot path's embedded plasTeX emitter.
-fn render_verso_docs(args: &ExtractArgs) -> Result<()> {
+fn render_verso_docs(args: &ExtractArgs, render_root: &Path) -> Result<()> {
     let cmd = args
         .verso_render_cmd
         .as_deref()
         .unwrap_or(DEFAULT_VERSO_RENDER_CMD);
     eprintln!(
-        "No blueprint-manifest.json under {}; rendering Verso docs with `{cmd}` ...",
-        args.project.display()
+        "No blueprint-manifest.json under {}; rendering Verso docs with `{cmd}` in {} ...",
+        render_root.join(VERSO_SITE_SUBDIR).display(),
+        render_root.display()
     );
     let output = Command::new("sh")
         .arg("-c")
         .arg(cmd)
-        .current_dir(&args.project)
+        .current_dir(render_root)
         .output()
         .map_err(|source| BlueprintError::VersoRenderSpawn {
             cmd: cmd.to_string(),
@@ -452,10 +519,10 @@ fn validate_output_paths(
 }
 
 fn run_extract(args: ExtractArgs) -> Result<()> {
-    let adapter = detect_adapter(&args)?;
+    let detected = detect_adapter(&args)?;
 
     let (mut atoms, source) = load_atoms(&args)?;
-    let model = build_model(&args, adapter)?;
+    let model = build_model(&args, &detected)?;
 
     let report = enrich::enrich(&mut atoms, &model);
 
@@ -557,10 +624,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut args = verso_args(dir.path().to_path_buf());
         args.verso_render_cmd = Some("touch rendered.marker".to_string());
-        render_verso_docs(&args).unwrap();
+        render_verso_docs(&args, dir.path()).unwrap();
         assert!(
             dir.path().join("rendered.marker").exists(),
-            "render command must run in the project directory"
+            "render command must run in the render root"
         );
     }
 
@@ -569,7 +636,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut args = verso_args(dir.path().to_path_buf());
         args.verso_render_cmd = Some("exit 7".to_string());
-        let err = render_verso_docs(&args).unwrap_err();
+        let err = render_verso_docs(&args, dir.path()).unwrap_err();
         assert!(
             matches!(
                 err.downcast_ref::<BlueprintError>(),
@@ -584,7 +651,8 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut args = verso_args(dir.path().to_path_buf());
         args.no_render = true;
-        let err = build_verso_model(&args).unwrap_err();
+        let render_root = dir.path().to_path_buf();
+        let err = build_verso_model(&args, &render_root).unwrap_err();
         assert!(
             matches!(
                 err.downcast_ref::<BlueprintError>(),
@@ -607,8 +675,42 @@ mod tests {
              cp {} _out/site/html-multi/Erasure-Codes/-verso-data/blueprint-manifest.json",
             fixture.display()
         ));
-        let model = build_verso_model(&args).unwrap();
+        let render_root = dir.path().to_path_buf();
+        let model = build_verso_model(&args, &render_root).unwrap();
         assert_eq!(model.nodes.len(), 4, "rendered manifest is loaded");
+    }
+
+    #[test]
+    fn build_verso_model_ignores_stale_sibling_renders() {
+        // A fresh render under _out/site plus a stale generation under
+        // _out/site-v430. Discovery is scoped to _out/site, so the stale node
+        // must not be merged in (which would inflate the count).
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/verso/erasure-codes-manifest.json");
+        let site = root.join("_out/site/html-multi/Erasure-Codes/-verso-data");
+        std::fs::create_dir_all(&site).unwrap();
+        std::fs::copy(&fixture, site.join("blueprint-manifest.json")).unwrap();
+        // Stale sibling with a unique extra node that must NOT appear.
+        let stale = root.join("_out/site-v430/html-multi/Old/-verso-data");
+        std::fs::create_dir_all(&stale).unwrap();
+        std::fs::write(
+            stale.join("blueprint-manifest.json"),
+            r#"{"vbpInternalSchemaVersion":3,"graphs":[{"nodes":[
+                {"label":"stale_only","kind":"theorem","statementStatus":"formalized",
+                 "proofStatus":"formalizedWithAncestors"}]}],"previews":[]}"#,
+        )
+        .unwrap();
+
+        let mut args = verso_args(root.to_path_buf());
+        args.no_render = true; // a manifest already exists under _out/site
+        let model = build_verso_model(&args, root).unwrap();
+        assert_eq!(model.nodes.len(), 4, "only the _out/site render is read");
+        assert!(
+            !model.nodes.iter().any(|n| n.label == "stale_only"),
+            "stale _out/site-v430 render must not be merged in"
+        );
     }
 
     #[test]
@@ -625,9 +727,12 @@ mod tests {
         .unwrap();
         let mut args = verso_args(dir.path().to_path_buf());
         args.adapter = Adapter::Auto;
-        assert!(
-            matches!(detect_adapter(&args).unwrap(), ResolvedAdapter::Verso),
-            "verso signal in docs/lakefile.toml must be detected"
+        let detected = detect_adapter(&args).unwrap();
+        assert_eq!(detected.adapter, ResolvedAdapter::Verso);
+        assert_eq!(
+            detected.verso_blueprint_root.as_deref(),
+            Some(dir.path().join("docs").as_path()),
+            "render root must be the docs/ subproject that declares versoBlueprint"
         );
     }
 
