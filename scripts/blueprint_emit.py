@@ -24,6 +24,8 @@ def _item_kind(node):
 
 
 def extract(path):
+    import os
+
     from plasTeX.Config import defaultConfig
     from plasTeX.Compile import parse
 
@@ -33,7 +35,13 @@ def extract(path):
     config["general"]["plugins"] = ["plastexdepgraph", "leanblueprint"]
     config["files"]["log"] = False
 
-    tex = parse(path, config)
+    # plasTeX resolves the input (and any `\input`) via kpsewhich relative to the
+    # working directory, and leanblueprint writes its `lean_decls` next to it, so
+    # run from the file's directory and pass the bare filename.
+    directory, filename = os.path.split(os.path.abspath(path))
+    if directory:
+        os.chdir(directory)
+    tex = parse(filename, config)
     document = tex.ownerDocument
 
     graphs = document.userdata.get("dep_graph", {}).get("graphs", {})

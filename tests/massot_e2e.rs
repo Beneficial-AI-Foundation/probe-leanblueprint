@@ -106,7 +106,16 @@ fn massot_enrichment_from_emitter_fixture() {
 fn massot_live_emitter() {
     let python = std::env::var("PROBE_LEANBLUEPRINT_PYTHON").unwrap_or_else(|_| "python3".into());
     let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/blueprint_emit.py");
-    let web_tex = fixture("massot/web.tex");
+
+    // Copy the fixture into a throwaway `src/` dir: leanblueprint writes a
+    // `lean_decls` file next to the source tree as a side effect, so run it
+    // against a temp copy rather than polluting the committed fixtures.
+    let tmp = tempfile::tempdir().unwrap();
+    let src = tmp.path().join("src");
+    std::fs::create_dir(&src).unwrap();
+    let web_tex = src.join("web.tex");
+    std::fs::copy(fixture("massot/web.tex"), &web_tex).unwrap();
+
     let model = massot::run(&python, &script, &web_tex).unwrap();
     assert_eq!(model.nodes.len(), 4);
 }
