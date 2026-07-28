@@ -144,6 +144,12 @@ pub struct BlueprintNode {
     pub lean_decls: Vec<String>,
     pub statement_status: StatementStatus,
     pub proof_status: ProofStatus,
+    /// Raw source status when the canonical enum above loses information, e.g.
+    /// Verso `mathlib` (statement, "proved upstream in Mathlib" -> `formalized`)
+    /// or `incomplete` (proof, "sorried, in progress" -> `none`). `None` when the
+    /// canonical value is lossless.
+    pub source_statement_status: Option<String>,
+    pub source_proof_status: Option<String>,
     /// Labels used by the statement of this node.
     pub statement_uses: Vec<String>,
     /// Labels used by the proof of this node.
@@ -226,6 +232,14 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
     if incoming.proof_status > existing.proof_status {
         existing.proof_status = incoming.proof_status;
     }
+    // Raw source statuses are informational; keep the first non-None seen so a
+    // `mathlib`/`incomplete` distinction from any copy is preserved.
+    if existing.source_statement_status.is_none() {
+        existing.source_statement_status = incoming.source_statement_status.clone();
+    }
+    if existing.source_proof_status.is_none() {
+        existing.source_proof_status = incoming.source_proof_status.clone();
+    }
     // Identity (kind/title/chapter/group/discussion): a copy carrying a KNOWN
     // kind is the *defining* occurrence; a null-kind copy is a mere mention
     // (a chapter referencing a node defined elsewhere). Let the defining copy's
@@ -290,6 +304,8 @@ mod tests {
             lean_decls: decls.iter().map(|s| s.to_string()).collect(),
             statement_status: StatementStatus::NonePlanned,
             proof_status: ProofStatus::None,
+            source_statement_status: None,
+            source_proof_status: None,
             statement_uses: uses.iter().map(|s| s.to_string()).collect(),
             proof_uses: vec![],
             group: None,
@@ -399,6 +415,18 @@ pub struct BlueprintExtensions {
     pub statement_status: String,
     #[serde(rename = "blueprint-proof-status")]
     pub proof_status: String,
+    /// Raw source status preserved when the canonical value is lossy (Verso
+    /// `mathlib` / `incomplete`). Omitted when the canonical value is faithful.
+    #[serde(
+        rename = "blueprint-source-statement-status",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub source_statement_status: Option<String>,
+    #[serde(
+        rename = "blueprint-source-proof-status",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub source_proof_status: Option<String>,
     #[serde(rename = "blueprint-status-source")]
     pub status_source: String,
     #[serde(rename = "blueprint-group", skip_serializing_if = "Option::is_none")]

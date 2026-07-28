@@ -32,7 +32,7 @@ fn cli_extract_verso_writes_envelopes() {
     let extract_json: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(&extract).unwrap()).unwrap();
     assert_eq!(extract_json["schema"], "probe-leanblueprint/extract");
-    assert_eq!(extract_json["schema-version"], "2.0");
+    assert_eq!(extract_json["schema-version"], "2.1");
     // Enriched bound atom carries blueprint metadata.
     assert_eq!(
         extract_json["data"]["probe:ErasureCode.Correct"]["blueprint-label"],

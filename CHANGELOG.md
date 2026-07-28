@@ -8,10 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Schema **2.1** (additive over 2.0). Extract gains optional `blueprint-source-statement-status` / `blueprint-source-proof-status`, preserving a raw Verso status when the canonical enum is lossy (`mathlib` → `formalized`, `incomplete` → `none`). Summary gains `theorems-fully-proved-machine-confirmed` / `fraction-machine-confirmed`.
+- Verso adapter reads and validates `vbpInternalSchemaVersion` (2 = v4.30, 3 = v4.31), warning on an unknown generation and distinguishing a previews-only blueprint (0 graph nodes, N previews) from a wrong/drifted file (0 nodes, 0 previews).
 - `blueprint-shadow` extension field: marks the synthetic atom preserved for a blueprint node that loses a same-decl collision, so the extract stays node-complete and `blueprint_stats.py` is a faithful cross-check of the summary sidecar (it counts a shadow node as bound).
 - `--source-package` / `--source-version` overrides to set the atom base's identity directly; supplying both also bypasses the ambiguous-provenance check for a spine with multiple probe-lean inputs.
 
 ### Changed
+- Verso adapter binds declarations authored inline in the blueprint text (`codeData.inline.code.definedDefs` / `definedTheorems[].name`) in addition to `codeData.external.decls[].canonical`; on the canonical v4.31 template this lifts bound nodes from 0 to 4.
+- Chapter is derived from each node's `href` (authoritative for single-shared-manifest renders), falling back to the manifest directory only when a node carries no href.
+- Output writes are atomic (temp file + rename) and `--output` / `--summary-output` are validated to differ from each other and from any input file.
 - Enrichment reworked around an ownership pass. `blueprint-statement-uses` / `blueprint-proof-uses` now always resolve to a code-name that exists in the atom map (previously a `uses` edge targeting a decl-missing node resolved to an absent `probe:<decl>` key). Same-decl collision losers are preserved as `blueprint-shadow` synthetic atoms (keep-last still wins the real atom) so every model node appears in the extract, and the loser keeps its `blueprint-status-mismatch` / `blueprint-missing-decls` signal.
 - Re-enrichment is now idempotent across model changes: `enrich` scrubs prior synthetic blueprint atoms and stale `blueprint-*` fields before joining, so deleting or renaming a node no longer leaks a stale synthetic atom or label. Running on a merged spine that carries old blueprint atoms is supported (they are scrubbed); re-ingesting probe-leanblueprint's own `probe-leanblueprint/extract` as `--lean` is now rejected with a clear error.
 - The Massot adapter de-duplicates node labels via the shared merge policy (matching Verso) instead of trusting the Python emitter's dedup.
@@ -21,7 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depend on the `probe` hub via a pinned git dependency instead of a local path, so the crate builds standalone (as its `repository` field and `cargo install --path .` instructions imply).
 
 ### Fixed
-- Verso adapter accepts the ≥ v4.31 blueprint-manifest status vocabulary instead of failing with a schema-drift error: `mathlib` (statement already upstream in Mathlib) maps to `formalized` on the statement axis, and `incomplete` (Lean proof present but containing `sorry`) maps to `none` on the proof axis (an incomplete proof is not a complete one, so it never counts as proved and keeps the `blueprint-status-mismatch` check honest).
+- The summary headline reports theorems **machine-confirmed** fully proved (bound and not contradicted by probe-lean's `verification-status`), not the blueprint's own claim, so a `declared` (Massot `\leanok`) blueprint can no longer over-claim verified progress (P26). `theorems-fully-proved` is retained as the blueprint-claimed number.
+- A null-kind *mention* of a node defined in another chapter no longer freezes it as a theorem in the wrong chapter with the wrong title: a known-kind (defining) copy now wins the kind/chapter/title during merge regardless of manifest order. Corrects the secure-messaging headline from 9/56 to 8/53 (three definitions were miscounted as theorems, one of them fully proved).
+- `Cargo.lock` now pins the `probe` git `source`/rev; the committed lockfile had been generated behind a local `[patch]` and omitted it, so clean builds re-resolved to a different revision.
+- Verso adapter accepts the ≥ v4.31 blueprint-manifest status vocabulary instead of failing with a schema-drift error: `mathlib` (statement already upstream in Mathlib) maps to `formalized` on the statement axis, and `incomplete` (Lean proof present but containing `sorry`) maps to `none` on the proof axis (an incomplete proof is not a complete one, so it never counts as proved and keeps the `blueprint-status-mismatch` check honest). The raw status is preserved in `blueprint-source-*-status`.
 - `select_source` no longer misclassifies probe-leanblueprint's own `probe-leanblueprint/*` provenance as a probe-lean input (the `probe-lean/` prefix is now matched with its delimiter). The ambiguous-provenance error points at `--source-package` / `--source-version` rather than the ineffective `-o` / `--summary-output`.
 
 ## [0.2.0] - 2026-07-21

@@ -117,6 +117,10 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
             lean_decls: n.lean_decls.clone(),
             statement_status: map_statement(n),
             proof_status: map_proof(n),
+            // Massot's canonical mapping is lossless (no mathlib/incomplete
+            // equivalent), so there is no raw status to preserve.
+            source_statement_status: None,
+            source_proof_status: None,
             statement_uses: stmt_uses.get(&n.label).cloned().unwrap_or_default(),
             proof_uses: proof_uses.get(&n.label).cloned().unwrap_or_default(),
             group: None,

@@ -1,6 +1,6 @@
 {
   "schema": "probe-leanblueprint/extract",
-  "schema-version": "2.0",
+  "schema-version": "2.1",
   "tool": {
     "name": "probe-leanblueprint",
     "version": "0.2.0",
@@ -13,7 +13,7 @@
     "package": "ProjectTemplate",
     "package-version": "6561770"
   },
-  "timestamp": "2026-07-28T10:08:17Z",
+  "timestamp": "2026-07-28T10:22:52Z",
   "data": {
     "probe:ProjectTemplate.Blueprint.«the canonical document object name»": {
       "display-name": "the canonical document object name",
@@ -307,6 +307,7 @@
       "blueprint-kind": "theorem",
       "blueprint-label": "collatz_conjecture",
       "blueprint-proof-status": "none",
+      "blueprint-source-proof-status": "incomplete",
       "blueprint-statement-status": "formalized",
       "blueprint-statement-uses": [
         "probe:collatzStep"

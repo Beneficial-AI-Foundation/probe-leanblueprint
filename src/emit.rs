@@ -9,7 +9,10 @@ use serde::Serialize;
 use crate::enrich::Summary;
 
 pub const TOOL_NAME: &str = "probe-leanblueprint";
-pub const SCHEMA_VERSION: &str = "2.0";
+// 2.1 adds the optional `blueprint-source-*-status` fields (raw Verso status
+// preserved when the canonical enum is lossy) and the machine-confirmed headline
+// counts. Both are additive, so 2.0 consumers keep working.
+pub const SCHEMA_VERSION: &str = "2.1";
 pub const EXTRACT_SCHEMA: &str = "probe-leanblueprint/extract";
 pub const SUMMARY_SCHEMA: &str = "probe-leanblueprint/summary";
 

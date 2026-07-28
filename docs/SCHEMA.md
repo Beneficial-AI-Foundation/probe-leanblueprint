@@ -1,6 +1,6 @@
 # probe-leanblueprint Data Schemas
 
-Schema version: 2.0
+Schema version: 2.1
 Date: 2026-07-21
 
 This document specifies the JSON output formats produced by `probe-leanblueprint`.
@@ -28,7 +28,7 @@ Both output files share this envelope structure:
 | Field | Type | Description |
 |-------|------|-------------|
 | `schema` | string | Data type identifier (`"probe-leanblueprint/extract"` or `"probe-leanblueprint/summary"`) |
-| `schema-version` | string | Interchange spec version (`"2.0"`) |
+| `schema-version` | string | Interchange spec version (`"2.1"`) |
 | `tool.name` | string | Always `"probe-leanblueprint"` |
 | `tool.version` | string | Semver version of the binary |
 | `tool.command` | string | Always `"extract"` |
@@ -65,7 +65,7 @@ for the selection rules.
 ```json
 {
   "schema": "probe-leanblueprint/extract",
-  "schema-version": "2.0",
+  "schema-version": "2.1",
   "tool": {
     "name": "probe-leanblueprint",
     "version": "0.2.0",
@@ -180,6 +180,8 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-kind` | string | yes | Blueprint node kind: `"definition"` or `"theorem"` (lets consumers classify bound atoms whose atom `kind` is the Lean kind) |
 | `blueprint-statement-status` | string | yes | Statement axis: `"none"`, `"blocked"`, `"ready"`, or `"formalized"` |
 | `blueprint-proof-status` | string | yes | Proof axis: `"none"`, `"ready"`, `"proved"`, or `"fully-proved"` |
+| `blueprint-source-statement-status` | string | no | Raw source status when the canonical value is lossy (e.g. Verso `"mathlib"` → `formalized`). Omitted when the mapping is faithful. Added in 2.1 |
+| `blueprint-source-proof-status` | string | no | Raw source status when the canonical value is lossy (e.g. Verso `"incomplete"` → `none`). Omitted when the mapping is faithful. Added in 2.1 |
 | `blueprint-status-source` | string | yes | `"code-derived"` (Verso) or `"declared"` (Massot `\leanok`) |
 | `blueprint-group` | string | no | Sub-construction grouping label (Verso `parent`) |
 | `blueprint-chapter` | string | no | Chapter the node belongs to (one Verso manifest = one chapter) |
@@ -221,7 +223,7 @@ two-axis progress stats.
 ```json
 {
   "schema": "probe-leanblueprint/summary",
-  "schema-version": "2.0",
+  "schema-version": "2.1",
   "tool": { "name": "probe-leanblueprint", "version": "0.2.0", "command": "extract" },
   "source": { "language": "lean", "package": "SecureMessaging", "package-version": "4cfee4c", "...": "..." },
   "timestamp": "2026-07-21T19:28:49Z",
@@ -286,8 +288,10 @@ Each is a two-axis histogram over the relevant node subset:
 | Field | Type | Description |
 |-------|------|-------------|
 | `theorems-total` | integer | Number of theorem-kind nodes |
-| `theorems-fully-proved` | integer | Theorem nodes with proof axis `fully-proved` |
+| `theorems-fully-proved` | integer | Theorem nodes the *blueprint* claims `fully-proved`. For `declared` (Massot) blueprints this can over-claim; not a verified-progress number on its own |
+| `theorems-fully-proved-machine-confirmed` | integer | Theorem nodes claimed `fully-proved` that probe-lean backs: bound and not contradicted. The honest headline number (P26). Added in 2.1 |
 | `fraction` | float | `theorems-fully-proved / theorems-total` (0.0 when no theorems) |
+| `fraction-machine-confirmed` | float | `theorems-fully-proved-machine-confirmed / theorems-total`. Added in 2.1 |
 
 ### `by-chapter`
 
@@ -317,6 +321,16 @@ When changing required fields or their semantics, increment the major version
 Consumers should check `schema-version` and reject files with an unsupported
 major version. A minor bump is backward-compatible: a `2.0` consumer can read a
 `2.1` file (the new fields are optional).
+
+### 2.1
+
+Additive over 2.0:
+
+- extract: optional `blueprint-source-statement-status` / `blueprint-source-proof-status`
+  preserve a raw Verso status when the canonical enum is lossy (`mathlib`,
+  `incomplete`).
+- summary: `theorems-fully-proved-machine-confirmed` and `fraction-machine-confirmed`
+  report progress probe-lean actually backs, distinct from the blueprint's own claim.
 
 ---
 

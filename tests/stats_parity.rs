@@ -42,6 +42,8 @@ fn node(label: &str, decls: &[&str], kind: NodeKind, proof: ProofStatus) -> Blue
         lean_decls: decls.iter().map(|s| s.to_string()).collect(),
         statement_status: StatementStatus::Formalized,
         proof_status: proof,
+        source_statement_status: None,
+        source_proof_status: None,
         statement_uses: vec![],
         proof_uses: vec![],
         group: None,

@@ -159,6 +159,16 @@ const STATEMENT_STATUSES: &str = "none, blocked, ready, formalized, mathlib";
 /// Known Verso proof-status vocabulary (for error messages).
 const PROOF_STATUSES: &str = "none, ready, incomplete, formalized, formalizedWithAncestors";
 
+/// Raw source statuses whose canonical mapping loses information, so they are
+/// preserved verbatim in `blueprint-source-*-status`: `mathlib` (statement,
+/// formalized upstream in Mathlib) and `incomplete` (proof, sorried/in-progress).
+const LOSSY_SOURCE_STATUSES: &[&str] = &["mathlib", "incomplete"];
+
+fn lossy_source_status(raw: Option<&str>) -> Option<String> {
+    raw.filter(|s| LOSSY_SOURCE_STATUSES.contains(s))
+        .map(str::to_string)
+}
+
 fn map_statement(s: Option<&str>) -> Result<StatementStatus> {
     Ok(match s {
         None | Some("none") => StatementStatus::NonePlanned,
@@ -254,6 +264,8 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
                 lean_decls,
                 statement_status: map_statement(node.statement_status.as_deref())?,
                 proof_status: map_proof(node.proof_status.as_deref())?,
+                source_statement_status: lossy_source_status(node.statement_status.as_deref()),
+                source_proof_status: lossy_source_status(node.proof_status.as_deref()),
                 statement_uses: node
                     .statement_uses
                     .iter()
@@ -561,10 +573,17 @@ mod tests {
         let model = parse_manifest(text, None).unwrap();
         let m = model.nodes.iter().find(|n| n.label == "m").unwrap();
         assert_eq!(m.statement_status, StatementStatus::Formalized);
+        // The lossy raw status is preserved so "lives upstream in Mathlib" is
+        // not indistinguishable from a locally-formalized statement.
+        assert_eq!(m.source_statement_status.as_deref(), Some("mathlib"));
         let i = model.nodes.iter().find(|n| n.label == "i").unwrap();
         // An incomplete (sorried) proof is not a complete proof.
         assert_eq!(i.proof_status, ProofStatus::None);
         assert!(!i.proof_status.claims_proved());
+        // ...but "sorried, in progress" is preserved distinct from "not started".
+        assert_eq!(i.source_proof_status.as_deref(), Some("incomplete"));
+        // A lossless status carries no raw source status.
+        assert_eq!(m.source_proof_status, None);
     }
 
     #[test]
