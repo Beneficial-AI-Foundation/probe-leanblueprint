@@ -22,6 +22,51 @@ struct Manifest {
     graphs: Vec<Graph>,
     #[serde(default)]
     previews: Vec<Preview>,
+    /// Verso's internal manifest generation: 2 on v4.30, 3 on v4.31. Absent or
+    /// unrecognized values suggest a drifted or pre-graph (v4.28) file.
+    #[serde(rename = "vbpInternalSchemaVersion", default)]
+    vbp_internal_schema_version: Option<u64>,
+}
+
+/// Manifest generations whose `graphs[].nodes[]` schema this adapter understands.
+const KNOWN_SCHEMA_VERSIONS: &[u64] = &[2, 3];
+
+/// Diagnose a parsed manifest, returning human-readable warnings (empty when the
+/// manifest looks healthy). Factored out so the empty-vs-drifted distinction and
+/// the schema-generation check are unit-testable without capturing stderr.
+fn manifest_warnings(
+    schema_version: Option<u64>,
+    graph_nodes: usize,
+    previews: usize,
+) -> Vec<String> {
+    let mut out = Vec::new();
+    match schema_version {
+        Some(v) if KNOWN_SCHEMA_VERSIONS.contains(&v) => {}
+        Some(v) => out.push(format!(
+            "unrecognized vbpInternalSchemaVersion {v} (known: {KNOWN_SCHEMA_VERSIONS:?}); \
+             the blueprint graph schema may have drifted"
+        )),
+        None => out.push(
+            "manifest has no vbpInternalSchemaVersion; it may be a pre-graph (v4.28) \
+             preview manifest or a non-Verso file"
+                .to_string(),
+        ),
+    }
+    if graph_nodes == 0 {
+        if previews == 0 {
+            out.push(
+                "0 graph nodes and 0 previews — this looks like a wrong or drifted file, \
+                 not a blueprint manifest"
+                    .to_string(),
+            );
+        } else {
+            out.push(format!(
+                "0 graph nodes but {previews} previews — previews-only blueprint (no formal \
+                 graph); nothing to score"
+            ));
+        }
+    }
+    out
 }
 
 #[derive(Debug, Deserialize)]
@@ -237,6 +282,13 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
             }
         }
     }
+    for w in manifest_warnings(
+        manifest.vbp_internal_schema_version,
+        model.nodes.len(),
+        manifest.previews.len(),
+    ) {
+        eprintln!("warning: {w}");
+    }
     Ok(model)
 }
 
@@ -411,6 +463,25 @@ mod tests {
         // Manifest-level chapter is "Wrong-Dir"; the node's href wins.
         let model = parse_manifest(text, Some("Wrong-Dir")).unwrap();
         assert_eq!(model.nodes[0].chapter.as_deref(), Some("Real-Chapter"));
+    }
+
+    #[test]
+    fn manifest_warnings_distinguish_empty_from_drifted() {
+        // Healthy manifest (known generation, has nodes): no warnings.
+        assert!(manifest_warnings(Some(3), 5, 10).is_empty());
+        // Previews-only: a legitimate blueprint with no formal graph.
+        let previews_only = manifest_warnings(Some(2), 0, 12);
+        assert!(previews_only.iter().any(|w| w.contains("previews-only")));
+        // Nothing at all: wrong/drifted file.
+        let drifted = manifest_warnings(Some(3), 0, 0);
+        assert!(drifted.iter().any(|w| w.contains("wrong or drifted")));
+        // Unknown / missing generation is flagged.
+        assert!(manifest_warnings(Some(99), 5, 5)
+            .iter()
+            .any(|w| w.contains("unrecognized vbpInternalSchemaVersion")));
+        assert!(manifest_warnings(None, 5, 5)
+            .iter()
+            .any(|w| w.contains("no vbpInternalSchemaVersion")));
     }
 
     #[test]
