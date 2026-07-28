@@ -15,6 +15,7 @@ each captured with:
 
 | Example | Upstream Lean repo | verso-blueprint | Lean | Bound / formalized | Headline (machine-confirmed) |
 |---------|--------------------|-----------------|------|--------------------|------------------------------|
+| [`verso-secure-messaging`](./verso-secure-messaging/) | [`Beneficial-AI-Foundation/secure-messaging`](https://github.com/Beneficial-AI-Foundation/secure-messaging) | v4.30.0 | v4.30.0 | 33 / 33 | 8/53 (15.1%) |
 | [`verso-carleson`](./verso-carleson/) | [`fpvandoorn/carleson`](https://github.com/fpvandoorn/carleson) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.31.0/verso-carleson/)) | v4.31.0 | v4.31.0 | 152 / 160 | 146/161 (90.7%) · claims 154 |
 | [`verso-noperthedron`](./verso-noperthedron/) | [`jcreedcmu/Noperthedron`](https://github.com/jcreedcmu/Noperthedron) ([rendered](https://ejgallego.github.io/verso-noperthedron/)) | v4.32.0 | v4.32.0-rc1 | 58 / 59 | 37/59 (62.7%) |
 | [`verso-flt`](./verso-flt/) | [`ImperialCollegeLondon/FLT`](https://github.com/ImperialCollegeLondon/FLT) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.32.0/verso-flt/)) | v4.32.0 | v4.32.0-rc1 | 150 / 171 | 88/194 (45.4%) · claims 105 |

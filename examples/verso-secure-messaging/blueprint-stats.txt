@@ -1,0 +1,34 @@
+probe-leanblueprint stats — SecureMessaging 6a4fce0
+  source: https://github.com/Beneficial-AI-Foundation/secure-messaging.git@6a4fce0e9c
+
+Headline: 8/53 theorems machine-confirmed fully proved (15.1%)
+Blueprint nodes: 111   (bound 33 · planned-only 78 · decl-missing 0 · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized          33    25     8
+  ready               13    10     3
+  blocked             65    23    42
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved        33    25     8
+  proved               0     0     0
+  ready               13    10     3
+  none                65    23    42
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  Authenticated-Encryption-with-A...     14     12       3/5
+  Continuous-Key-Agreement               15     12       4/6
+  Erasure-Codes                           4      2       0/1
+  Forward-Secure-AEAD                     5      0       0/2
+  Key-Encapsulation-Mechanism             7      4       1/2
+  PRF-PRNG                                4      0       0/1
+  Ratcheting-KEM                         23      0      0/14
+  Secure-Messaging                       27      0      0/16
+  Sparse-Continuous-Key-Agreement        12      3       0/6
+
+Status mismatches: none
+Missing declarations: none
+Partial-missing declarations: none
