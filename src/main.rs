@@ -207,7 +207,13 @@ fn detect_adapter(args: &ExtractArgs) -> Result<Detected> {
     }
 }
 
-fn load_atoms(args: &ExtractArgs) -> Result<(std::collections::BTreeMap<String, Atom>, Source)> {
+/// Loads the atom base and returns it with its provenance-derived `Source` and
+/// the resolved atom-file path (explicit `--lean`, or the file `probe-lean`
+/// generated). The path is returned so output-collision validation can also
+/// protect a generated atom base, not just an explicit one.
+fn load_atoms(
+    args: &ExtractArgs,
+) -> Result<(std::collections::BTreeMap<String, Atom>, Source, PathBuf)> {
     let lean_path = match &args.lean {
         Some(p) => p.clone(),
         None => run_probe_lean(&args.project)?,
@@ -235,7 +241,7 @@ fn load_atoms(args: &ExtractArgs) -> Result<(std::collections::BTreeMap<String, 
         args.source_package.as_deref(),
         args.source_version.as_deref(),
     )?;
-    Ok((atoms, source))
+    Ok((atoms, source, lean_path))
 }
 
 /// Pick the provenance `Source` that best identifies the atom base.
@@ -503,7 +509,11 @@ fn default_output(project: &Path, source: &Source, suffix: &str) -> PathBuf {
     project.join(".verilib/probes").join(name)
 }
 
-fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> Result<()> {
+/// Serialize `value` into a temp file in `path`'s directory, fully written and
+/// flushed but *not* yet moved into place. Pair with [`commit_staged`]: staging
+/// both outputs before committing either means a serialization or disk-full
+/// error can't leave one file updated and the other stale.
+fn stage_json<T: serde::Serialize>(path: &Path, value: &T) -> Result<tempfile::NamedTempFile> {
     let dir = match path.parent() {
         Some(p) if !p.as_os_str().is_empty() => {
             std::fs::create_dir_all(p)
@@ -513,10 +523,6 @@ fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> Result<()> {
         _ => PathBuf::from("."),
     };
     let json = serde_json::to_string_pretty(value).context("failed to serialize output")?;
-    // Atomic write: serialize into a temp file in the destination directory,
-    // then rename over the target. A failure mid-write leaves the temp file, not
-    // a truncated output — so the extract/summary pair can never be left
-    // half-written and mismatched.
     use std::io::Write as _;
     let mut tmp = tempfile::NamedTempFile::new_in(&dir)
         .with_context(|| format!("failed to create temp file in {}", dir.display()))?;
@@ -525,6 +531,12 @@ fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> Result<()> {
     tmp.as_file()
         .sync_all()
         .with_context(|| format!("failed to flush {}", path.display()))?;
+    Ok(tmp)
+}
+
+/// Move a staged temp file into its final path (an atomic rename on the same
+/// filesystem).
+fn commit_staged(tmp: tempfile::NamedTempFile, path: &Path) -> Result<()> {
     tmp.persist(path)
         .map_err(|e| e.error)
         .with_context(|| format!("failed to write {}", path.display()))?;
@@ -576,7 +588,7 @@ fn validate_output_paths(
 fn run_extract(args: ExtractArgs) -> Result<()> {
     let detected = detect_adapter(&args)?;
 
-    let (mut atoms, source) = load_atoms(&args)?;
+    let (mut atoms, source, lean_path) = load_atoms(&args)?;
     let (model, provenance) = build_model(&args, &detected)?;
 
     let report = enrich::enrich(&mut atoms, &model);
@@ -606,7 +618,10 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
         &extract_path,
         &summary_path,
         &[
-            args.lean.as_ref(),
+            // The resolved atom base — an explicit `--lean`, or the file
+            // `probe-lean` just generated under `.verilib/probes/`. Either way an
+            // output must not clobber it (we already read it).
+            Some(&lean_path),
             args.verso_manifest.as_ref(),
             args.blueprint_src.as_ref(),
         ],
@@ -615,8 +630,14 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
     let extract_env = emit::build_extract_envelope(atoms, source.clone());
     let summary_env = emit::build_summary_envelope(summary, source, provenance);
 
-    write_json(&extract_path, &extract_env)?;
-    write_json(&summary_path, &summary_env)?;
+    // Stage both outputs (serialize + flush to temp files) before publishing
+    // either, so a failure staging the summary can't leave a fresh extract
+    // beside a stale/missing summary. The only residual window is a crash
+    // between the two renames below.
+    let extract_tmp = stage_json(&extract_path, &extract_env)?;
+    let summary_tmp = stage_json(&summary_path, &summary_env)?;
+    commit_staged(extract_tmp, &extract_path)?;
+    commit_staged(summary_tmp, &summary_path)?;
 
     eprintln!(
         "Blueprint nodes: {} ({} bound, {} planned-only, {} decl-missing, {} partial-missing, \

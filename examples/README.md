@@ -13,16 +13,22 @@ each captured with:
 
 ## Index
 
-| Example | Upstream Lean repo | verso-blueprint | Lean | Bound / formalized | Headline |
-|---------|--------------------|-----------------|------|--------------------|----------|
-| [`verso-carleson`](./verso-carleson/) | [`fpvandoorn/carleson`](https://github.com/fpvandoorn/carleson) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.31.0/verso-carleson/)) | v4.31.0 | v4.31.0 | 152 / 160 | 154/161 (95.7%) |
+| Example | Upstream Lean repo | verso-blueprint | Lean | Bound / formalized | Headline (machine-confirmed) |
+|---------|--------------------|-----------------|------|--------------------|------------------------------|
+| [`verso-carleson`](./verso-carleson/) | [`fpvandoorn/carleson`](https://github.com/fpvandoorn/carleson) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.31.0/verso-carleson/)) | v4.31.0 | v4.31.0 | 152 / 160 | 146/161 (90.7%) · claims 154 |
 | [`verso-noperthedron`](./verso-noperthedron/) | [`jcreedcmu/Noperthedron`](https://github.com/jcreedcmu/Noperthedron) ([rendered](https://ejgallego.github.io/verso-noperthedron/)) | v4.32.0 | v4.32.0-rc1 | 58 / 59 | 37/59 (62.7%) |
-| [`verso-flt`](./verso-flt/) | [`ImperialCollegeLondon/FLT`](https://github.com/ImperialCollegeLondon/FLT) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.32.0/verso-flt/)) | v4.32.0 | v4.32.0-rc1 | 150 / 171 | 105/194 (54.1%) |
-| [`verso-sphere-packing`](./verso-sphere-packing/) | [`thefundamentaltheor3m/Sphere-Packing-Lean`](https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.31.0/spherepackingblueprint/)) | v4.31.0 | v4.31.0 | 75 / 89 | 24/106 (22.6%) |
-| [`verso-blueprint-project-template`](./verso-blueprint-project-template/) | [verso-blueprint `project_template`](https://github.com/leanprover/verso-blueprint/tree/v4.31.0/project_template) | v4.31.0 | v4.31.0 | 0 / 6 (toy) | 1/5 (20.0%) |
+| [`verso-flt`](./verso-flt/) | [`ImperialCollegeLondon/FLT`](https://github.com/ImperialCollegeLondon/FLT) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.32.0/verso-flt/)) | v4.32.0 | v4.32.0-rc1 | 150 / 171 | 88/194 (45.4%) · claims 105 |
+| [`verso-sphere-packing`](./verso-sphere-packing/) | [`thefundamentaltheor3m/Sphere-Packing-Lean`](https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.31.0/spherepackingblueprint/)) | v4.31.0 | v4.31.0 | 75 / 89 | 21/106 (19.8%) · claims 24 |
+| [`verso-blueprint-project-template`](./verso-blueprint-project-template/) | [verso-blueprint `project_template`](https://github.com/leanprover/verso-blueprint/tree/v4.31.0/project_template) | v4.31.0 | v4.31.0 | 4 / 6 (toy) | 0/5 (0.0%) · claims 1 |
 
-Every real example has **0 status mismatches**: the blueprint's per-node proof
-claim agrees with the sorry-free status `probe-lean` computed independently.
+**Headline** is theorems *machine-confirmed* fully proved — the blueprint claims
+`fully_proved` **and** `probe-lean` backs it (bound to a present atom, not
+contradicted). `claims N` shows the blueprint's own (higher) count where
+decl-missing or contradicted nodes exist; the per-example READMEs break this
+down. Every real example has **0 status mismatches** (no node the blueprint
+claims proved is contradicted by `probe-lean`); the gap to `claims` here is
+entirely decl-missing nodes (decls that live upstream in Mathlib, outside the
+project's own atom base).
 
 ## Reading the totals
 

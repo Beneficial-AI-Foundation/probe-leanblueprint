@@ -68,7 +68,7 @@ for the selection rules.
   "schema-version": "3.0",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "command": "extract"
   },
   "source": {

@@ -13,7 +13,7 @@
 //! nodes with no Lean binding, "decl-missing" nodes whose bound decls are all
 //! absent, and "shadow" nodes that lost a same-decl collision — so the extract
 //! stays node-complete. It then re-emits a `probe-leanblueprint/extract` Schema
-//! 2.0 envelope plus a `probe-leanblueprint/summary` sidecar that aggregates
+//! 3.0 envelope plus a `probe-leanblueprint/summary` sidecar that aggregates
 //! progress over the blueprint nodes (overall, per-kind, and per-chapter counts).
 
 pub mod adapters;
