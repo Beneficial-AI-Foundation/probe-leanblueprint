@@ -3,23 +3,25 @@
   "schema-version": "2.0",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "command": "extract"
   },
   "source": {
-    "repo": "",
-    "commit": "",
+    "repo": "https://github.com/leanprover/verso-blueprint",
+    "commit": "6561770257aaf21bcb0160f832153a79bb25e161",
     "language": "lean",
     "package": "ProjectTemplate",
-    "package-version": "0.0.0"
+    "package-version": "6561770"
   },
-  "timestamp": "2026-07-23T15:54:56Z",
+  "timestamp": "2026-07-28T10:01:06Z",
   "data": {
     "totals": {
       "nodes": 9,
-      "with-lean-decl": 0,
-      "planned-only": 7,
+      "with-lean-decl": 4,
+      "planned-only": 3,
       "decl-missing": 2,
+      "partial-missing": 0,
+      "collisions": 0,
       "mismatches": 0
     },
     "all": {
@@ -70,21 +72,55 @@
       "fraction": 0.2
     },
     "by-chapter": {
-      "project_template": {
-        "nodes": 9,
+      "Addition": {
+        "nodes": 4,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 2,
+          "formalized": 2
+        },
+        "proof": {
+          "none": 0,
+          "ready": 2,
+          "proved": 2,
+          "fully-proved": 0
+        },
+        "theorems-total": 2,
+        "theorems-fully-proved": 0
+      },
+      "Collatz": {
+        "nodes": 2,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 2
+        },
+        "proof": {
+          "none": 1,
+          "ready": 0,
+          "proved": 1,
+          "fully-proved": 0
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
+      },
+      "Multiplication": {
+        "nodes": 3,
         "statement": {
           "none": 0,
           "blocked": 1,
-          "ready": 2,
-          "formalized": 6
+          "ready": 0,
+          "formalized": 2
         },
         "proof": {
-          "none": 2,
-          "ready": 2,
-          "proved": 4,
+          "none": 1,
+          "ready": 0,
+          "proved": 1,
           "fully-proved": 1
         },
-        "theorems-total": 5,
+        "theorems-total": 2,
         "theorems-fully-proved": 1
       }
     }

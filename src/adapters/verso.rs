@@ -39,6 +39,11 @@ struct Node {
     parent: Option<String>,
     #[serde(default)]
     title: Option<String>,
+    /// In-site link, e.g. `Multiplication/#--…`. Its first path segment is the
+    /// chapter, authoritative over the manifest's directory (see
+    /// [`chapter_from_href`]).
+    #[serde(default)]
+    href: Option<String>,
     #[serde(rename = "previewKey", default)]
     preview_key: Option<String>,
     #[serde(rename = "statementStatus", default)]
@@ -211,7 +216,14 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
                     .collect(),
                 proof_uses: node.proof_uses.iter().map(|u| u.label.clone()).collect(),
                 group: node.parent.clone(),
-                chapter: chapter.map(str::to_string),
+                // Prefer the chapter encoded in the node's own href (correct even
+                // for a single shared manifest); fall back to the manifest's
+                // directory only when the node carries no href (older schemas).
+                chapter: node
+                    .href
+                    .as_deref()
+                    .and_then(chapter_from_href)
+                    .or_else(|| chapter.map(str::to_string)),
                 title: node.title.clone(),
                 discussion: None,
                 status_source: StatusSource::CodeDerived,
@@ -250,6 +262,19 @@ const INFRA_DIRS: &[&str] = &[
     "_out",
     "site",
 ];
+
+/// The chapter a node belongs to, taken from the first path segment of its
+/// in-site `href` (e.g. `Multiplication/#--…` -> `Multiplication`). This is
+/// authoritative over the manifest's directory: a single shared manifest renders
+/// every chapter, so the directory name would collapse them into one bucket.
+fn chapter_from_href(href: &str) -> Option<String> {
+    let seg = href.split('/').find(|s| !s.is_empty())?.trim();
+    if seg.is_empty() {
+        None
+    } else {
+        Some(seg.to_string())
+    }
+}
 
 fn chapter_from_path(path: &Path) -> Option<String> {
     // Only a real Verso output artifact carries chapter structure in its path.
@@ -360,6 +385,32 @@ mod tests {
         let b = model.nodes.iter().find(|n| n.label == "b").unwrap();
         assert_eq!(b.statement_uses, vec!["a"]);
         assert_eq!(b.statement_status, StatementStatus::Ready);
+    }
+
+    #[test]
+    fn chapter_comes_from_node_href_over_manifest_dir() {
+        // A single shared manifest: nodes carry their real chapter in `href`,
+        // which must win over the directory name passed for the whole manifest.
+        assert_eq!(
+            chapter_from_href("Multiplication/#--x--statement").as_deref(),
+            Some("Multiplication")
+        );
+        assert_eq!(
+            chapter_from_href("Collatz/Source-Entries/#--y").as_deref(),
+            Some("Collatz")
+        );
+        assert_eq!(chapter_from_href("").as_deref(), None);
+
+        let text = r#"{
+          "graphs": [{"nodes": [
+            {"label":"a","kind":"theorem","href":"Real-Chapter/#--a",
+             "statementStatus":"formalized","proofStatus":"none"}
+          ]}],
+          "previews": []
+        }"#;
+        // Manifest-level chapter is "Wrong-Dir"; the node's href wins.
+        let model = parse_manifest(text, Some("Wrong-Dir")).unwrap();
+        assert_eq!(model.nodes[0].chapter.as_deref(), Some("Real-Chapter"));
     }
 
     #[test]

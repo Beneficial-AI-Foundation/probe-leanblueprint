@@ -3,17 +3,17 @@
   "schema-version": "2.0",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "command": "extract"
   },
   "source": {
-    "repo": "",
-    "commit": "",
+    "repo": "https://github.com/leanprover/verso-blueprint",
+    "commit": "6561770257aaf21bcb0160f832153a79bb25e161",
     "language": "lean",
     "package": "ProjectTemplate",
-    "package-version": "0.0.0"
+    "package-version": "6561770"
   },
-  "timestamp": "2026-07-23T15:54:56Z",
+  "timestamp": "2026-07-28T10:01:06Z",
   "data": {
     "probe:ProjectTemplate.Blueprint.«the canonical document object name»": {
       "display-name": "the canonical document object name",
@@ -50,8 +50,8 @@
       "code-module": "ProjectTemplate.Chapters.Addition",
       "code-path": "ProjectTemplate/Chapters/Addition.lean",
       "code-text": {
-        "lines-start": 46,
-        "lines-end": 49
+        "lines-start": 78,
+        "lines-end": 82
       },
       "kind": "def",
       "language": "lean",
@@ -71,8 +71,8 @@
       "code-module": "ProjectTemplate.Chapters.Collatz",
       "code-path": "ProjectTemplate/Chapters/Collatz.lean",
       "code-text": {
-        "lines-start": 42,
-        "lines-end": 47
+        "lines-start": 62,
+        "lines-end": 67
       },
       "kind": "def",
       "language": "lean",
@@ -118,7 +118,7 @@
       },
       "kind": "blueprint-theorem",
       "language": "blueprint",
-      "blueprint-chapter": "project_template",
+      "blueprint-chapter": "Addition",
       "blueprint-decl-missing": true,
       "blueprint-group": "addition_core",
       "blueprint-kind": "theorem",
@@ -131,29 +131,6 @@
       "blueprint-status-source": "code-derived",
       "blueprint-title": "Theorem 1.3"
     },
-    "probe:blueprint:addition_right_identity": {
-      "display-name": "addition_right_identity",
-      "dependencies": [],
-      "code-module": "addition_core",
-      "code-path": "blueprint",
-      "code-text": {
-        "lines-start": 0,
-        "lines-end": 0
-      },
-      "kind": "blueprint-theorem",
-      "language": "blueprint",
-      "blueprint-chapter": "project_template",
-      "blueprint-group": "addition_core",
-      "blueprint-kind": "theorem",
-      "blueprint-label": "addition_right_identity",
-      "blueprint-proof-status": "proved",
-      "blueprint-statement-status": "formalized",
-      "blueprint-statement-uses": [
-        "probe:blueprint:addition_spec"
-      ],
-      "blueprint-status-source": "code-derived",
-      "blueprint-title": "Theorem 1.2"
-    },
     "probe:blueprint:addition_runtime_note": {
       "display-name": "addition_runtime_note",
       "dependencies": [],
@@ -165,7 +142,7 @@
       },
       "kind": "blueprint-definition",
       "language": "blueprint",
-      "blueprint-chapter": "project_template",
+      "blueprint-chapter": "Addition",
       "blueprint-group": "addition_core",
       "blueprint-kind": "definition",
       "blueprint-label": "addition_runtime_note",
@@ -185,7 +162,7 @@
       },
       "kind": "blueprint-definition",
       "language": "blueprint",
-      "blueprint-chapter": "project_template",
+      "blueprint-chapter": "Addition",
       "blueprint-group": "addition_core",
       "blueprint-kind": "definition",
       "blueprint-label": "addition_spec",
@@ -193,53 +170,6 @@
       "blueprint-statement-status": "ready",
       "blueprint-status-source": "code-derived",
       "blueprint-title": "Definition 1.1"
-    },
-    "probe:blueprint:collatz_conjecture": {
-      "display-name": "collatz_conjecture",
-      "dependencies": [],
-      "code-module": "collatz_core",
-      "code-path": "blueprint",
-      "code-text": {
-        "lines-start": 0,
-        "lines-end": 0
-      },
-      "kind": "blueprint-theorem",
-      "language": "blueprint",
-      "blueprint-chapter": "project_template",
-      "blueprint-group": "collatz_core",
-      "blueprint-kind": "theorem",
-      "blueprint-label": "collatz_conjecture",
-      "blueprint-proof-status": "none",
-      "blueprint-statement-status": "formalized",
-      "blueprint-statement-uses": [
-        "probe:blueprint:collatz_step"
-      ],
-      "blueprint-status-source": "code-derived",
-      "blueprint-title": "Theorem 3.2.2"
-    },
-    "probe:blueprint:collatz_step": {
-      "display-name": "collatz_step",
-      "dependencies": [],
-      "code-module": "collatz_core",
-      "code-path": "blueprint",
-      "code-text": {
-        "lines-start": 0,
-        "lines-end": 0
-      },
-      "kind": "blueprint-definition",
-      "language": "blueprint",
-      "blueprint-chapter": "project_template",
-      "blueprint-group": "collatz_core",
-      "blueprint-kind": "definition",
-      "blueprint-label": "collatz_step",
-      "blueprint-proof-status": "proved",
-      "blueprint-statement-status": "formalized",
-      "blueprint-statement-uses": [
-        "probe:blueprint:multiplication_spec",
-        "probe:blueprint:addition_spec"
-      ],
-      "blueprint-status-source": "code-derived",
-      "blueprint-title": "Definition 3.2.1"
     },
     "probe:blueprint:multiplication_assoc": {
       "display-name": "multiplication_assoc",
@@ -252,7 +182,7 @@
       },
       "kind": "blueprint-theorem",
       "language": "blueprint",
-      "blueprint-chapter": "project_template",
+      "blueprint-chapter": "Multiplication",
       "blueprint-decl-missing": true,
       "blueprint-group": "multiplication_core",
       "blueprint-kind": "theorem",
@@ -261,29 +191,6 @@
       "blueprint-statement-status": "formalized",
       "blueprint-status-source": "code-derived",
       "blueprint-title": "Theorem 2.3"
-    },
-    "probe:blueprint:multiplication_one_right": {
-      "display-name": "multiplication_one_right",
-      "dependencies": [],
-      "code-module": "multiplication_core",
-      "code-path": "blueprint",
-      "code-text": {
-        "lines-start": 0,
-        "lines-end": 0
-      },
-      "kind": "blueprint-theorem",
-      "language": "blueprint",
-      "blueprint-chapter": "project_template",
-      "blueprint-group": "multiplication_core",
-      "blueprint-kind": "theorem",
-      "blueprint-label": "multiplication_one_right",
-      "blueprint-proof-status": "proved",
-      "blueprint-statement-status": "formalized",
-      "blueprint-statement-uses": [
-        "probe:blueprint:multiplication_spec"
-      ],
-      "blueprint-status-source": "code-derived",
-      "blueprint-title": "Theorem 2.2"
     },
     "probe:blueprint:multiplication_spec": {
       "display-name": "multiplication_spec",
@@ -296,7 +203,7 @@
       },
       "kind": "blueprint-definition",
       "language": "blueprint",
-      "blueprint-chapter": "project_template",
+      "blueprint-chapter": "Multiplication",
       "blueprint-group": "multiplication_core",
       "blueprint-kind": "definition",
       "blueprint-label": "multiplication_spec",
@@ -314,11 +221,23 @@
       "code-module": "ProjectTemplate.Chapters.Collatz",
       "code-path": "ProjectTemplate/Chapters/Collatz.lean",
       "code-text": {
-        "lines-start": 22,
-        "lines-end": 23
+        "lines-start": 42,
+        "lines-end": 43
       },
       "kind": "def",
       "language": "lean",
+      "blueprint-chapter": "Collatz",
+      "blueprint-group": "collatz_core",
+      "blueprint-kind": "definition",
+      "blueprint-label": "collatz_step",
+      "blueprint-proof-status": "proved",
+      "blueprint-statement-status": "formalized",
+      "blueprint-statement-uses": [
+        "probe:blueprint:multiplication_spec",
+        "probe:blueprint:addition_spec"
+      ],
+      "blueprint-status-source": "code-derived",
+      "blueprint-title": "Definition 3.2.1",
       "is-extraction-artifact": false,
       "is-hidden": false,
       "is-ignored": false,
@@ -337,11 +256,23 @@
       "code-module": "ProjectTemplate.Chapters.Collatz",
       "code-path": "ProjectTemplate/Chapters/Collatz.lean",
       "code-text": {
-        "lines-start": 25,
-        "lines-end": 26
+        "lines-start": 45,
+        "lines-end": 46
       },
       "kind": "def",
       "language": "lean",
+      "blueprint-chapter": "Collatz",
+      "blueprint-group": "collatz_core",
+      "blueprint-kind": "definition",
+      "blueprint-label": "collatz_step",
+      "blueprint-proof-status": "proved",
+      "blueprint-statement-status": "formalized",
+      "blueprint-statement-uses": [
+        "probe:blueprint:multiplication_spec",
+        "probe:blueprint:addition_spec"
+      ],
+      "blueprint-status-source": "code-derived",
+      "blueprint-title": "Definition 3.2.1",
       "is-extraction-artifact": false,
       "is-hidden": false,
       "is-ignored": false,
@@ -366,48 +297,32 @@
       "code-module": "ProjectTemplate.Chapters.Collatz",
       "code-path": "ProjectTemplate/Chapters/Collatz.lean",
       "code-text": {
-        "lines-start": 43,
-        "lines-end": 46
+        "lines-start": 63,
+        "lines-end": 66
       },
       "kind": "theorem",
       "language": "lean",
+      "blueprint-chapter": "Collatz",
+      "blueprint-group": "collatz_core",
+      "blueprint-kind": "theorem",
+      "blueprint-label": "collatz_conjecture",
+      "blueprint-proof-status": "none",
+      "blueprint-statement-status": "formalized",
+      "blueprint-statement-uses": [
+        "probe:collatzStep"
+      ],
+      "blueprint-status-source": "code-derived",
+      "blueprint-title": "Theorem 3.2.2",
       "is-extraction-artifact": false,
       "is-hidden": false,
       "is-ignored": false,
       "is-in-package": true,
       "is-relevant": true,
       "rust-source": null,
-      "term-dependencies": [
-        "probe:collatzTerminatesAtOne"
-      ],
+      "term-dependencies": [],
       "type-dependencies": [
         "probe:collatzTerminatesAtOne"
       ],
-      "verification-status": "transitively-verified"
-    },
-    "probe:main": {
-      "display-name": "main",
-      "dependencies": [
-        "probe:ProjectTemplate.Blueprint.«the canonical document object name»"
-      ],
-      "code-module": "ProjectTemplateMain",
-      "code-path": "ProjectTemplateMain.lean",
-      "code-text": {
-        "lines-start": 8,
-        "lines-end": 12
-      },
-      "kind": "def",
-      "language": "lean",
-      "is-extraction-artifact": false,
-      "is-hidden": false,
-      "is-ignored": false,
-      "is-in-package": true,
-      "is-relevant": true,
-      "rust-source": null,
-      "term-dependencies": [
-        "probe:ProjectTemplate.Blueprint.«the canonical document object name»"
-      ],
-      "type-dependencies": [],
       "verification-status": "transitively-verified"
     },
     "probe:multiplication_one_right": {
@@ -421,6 +336,17 @@
       },
       "kind": "theorem",
       "language": "lean",
+      "blueprint-chapter": "Multiplication",
+      "blueprint-group": "multiplication_core",
+      "blueprint-kind": "theorem",
+      "blueprint-label": "multiplication_one_right",
+      "blueprint-proof-status": "proved",
+      "blueprint-statement-status": "formalized",
+      "blueprint-statement-uses": [
+        "probe:blueprint:multiplication_spec"
+      ],
+      "blueprint-status-source": "code-derived",
+      "blueprint-title": "Theorem 2.2",
       "is-extraction-artifact": false,
       "is-hidden": false,
       "is-ignored": false,
@@ -437,11 +363,22 @@
       "code-module": "ProjectTemplate.Chapters.Addition",
       "code-path": "ProjectTemplate/Chapters/Addition.lean",
       "code-text": {
-        "lines-start": 36,
-        "lines-end": 37
+        "lines-start": 58,
+        "lines-end": 59
       },
       "kind": "theorem",
       "language": "lean",
+      "blueprint-chapter": "Addition",
+      "blueprint-group": "addition_core",
+      "blueprint-kind": "theorem",
+      "blueprint-label": "addition_right_identity",
+      "blueprint-proof-status": "proved",
+      "blueprint-statement-status": "formalized",
+      "blueprint-statement-uses": [
+        "probe:blueprint:addition_spec"
+      ],
+      "blueprint-status-source": "code-derived",
+      "blueprint-title": "Theorem 1.2",
       "is-extraction-artifact": false,
       "is-hidden": false,
       "is-ignored": false,
