@@ -3,7 +3,7 @@
   "schema-version": "2.1",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "command": "extract"
   },
   "source": {
@@ -13,7 +13,17 @@
     "package": "ProjectTemplate",
     "package-version": "6561770"
   },
-  "timestamp": "2026-07-28T10:22:52Z",
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      {
+        "path": "examples/verso-blueprint-project-template/blueprint-manifest.json",
+        "sha256": "a6706fd392a388f020ad1e2b05db86d7c02f9fdc94bec61b3dfb30e80178f40d",
+        "vbp-internal-schema-version": 3
+      }
+    ]
+  },
+  "timestamp": "2026-07-28T10:48:18Z",
   "data": {
     "totals": {
       "nodes": 9,

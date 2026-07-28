@@ -20,6 +20,7 @@ path = "src/main.rs"
 anyhow = "1"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
+sha2 = "0.10"
 # Git dependency on the probe hub, pinned for reproducibility (matches the rest
 # of the published ecosystem, e.g. probe-aeneas). For local development against
 # uncommitted hub changes, add a `[patch]` pointing `probe` at `../probe`.

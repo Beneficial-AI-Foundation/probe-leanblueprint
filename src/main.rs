@@ -317,7 +317,10 @@ fn run_probe_lean(project: &Path) -> Result<PathBuf> {
     Ok(out)
 }
 
-fn build_model(args: &ExtractArgs, detected: &Detected) -> Result<BlueprintModel> {
+fn build_model(
+    args: &ExtractArgs,
+    detected: &Detected,
+) -> Result<(BlueprintModel, emit::BlueprintProvenance)> {
     match detected.adapter {
         ResolvedAdapter::Verso => {
             // Render + manifest discovery happen in the blueprint subproject (the
@@ -327,10 +330,55 @@ fn build_model(args: &ExtractArgs, detected: &Detected) -> Result<BlueprintModel
                 .verso_blueprint_root
                 .clone()
                 .unwrap_or_else(|| args.project.clone());
-            build_verso_model(args, &render_root)
+            let model = build_verso_model(args, &render_root)?;
+            // Record exactly which manifest(s) fed this run (post-render).
+            let manifest_paths = match &args.verso_manifest {
+                Some(p) if p.is_file() => vec![p.clone()],
+                Some(p) => verso::discover_manifests(p)?,
+                None => verso::discover_manifests(&render_root.join(VERSO_SITE_SUBDIR))?,
+            };
+            let provenance = emit::BlueprintProvenance {
+                adapter: "verso".to_string(),
+                manifests: manifest_paths.iter().map(|p| manifest_ref(p)).collect(),
+                web_tex: None,
+            };
+            Ok((model, provenance))
         }
-        ResolvedAdapter::Massot => build_massot_model(args),
+        ResolvedAdapter::Massot => {
+            let model = build_massot_model(args)?;
+            let provenance = emit::BlueprintProvenance {
+                adapter: "massot".to_string(),
+                manifests: Vec::new(),
+                web_tex: Some(massot_web_tex(args).display().to_string()),
+            };
+            Ok((model, provenance))
+        }
     }
+}
+
+/// Build a provenance record for one manifest: its path, SHA-256, and the
+/// `vbpInternalSchemaVersion` it declares (best-effort; unreadable/unparsable
+/// files still yield a path so the record is never silently empty).
+fn manifest_ref(path: &Path) -> emit::ManifestRef {
+    use sha2::{Digest, Sha256};
+    let bytes = std::fs::read(path).unwrap_or_default();
+    let sha256 = hex(&Sha256::digest(&bytes));
+    let vbp_internal_schema_version = serde_json::from_slice::<serde_json::Value>(&bytes)
+        .ok()
+        .and_then(|v| v.get("vbpInternalSchemaVersion").and_then(|n| n.as_u64()));
+    emit::ManifestRef {
+        path: path.display().to_string(),
+        sha256,
+        vbp_internal_schema_version,
+    }
+}
+
+fn hex(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+    bytes.iter().fold(String::new(), |mut s, b| {
+        let _ = write!(s, "{b:02x}");
+        s
+    })
 }
 
 /// Default Verso render command. `vbp` is shipped by the `versoBlueprint`
@@ -410,12 +458,18 @@ fn render_verso_docs(args: &ExtractArgs, render_root: &Path) -> Result<()> {
     Ok(())
 }
 
-fn build_massot_model(args: &ExtractArgs) -> Result<BlueprintModel> {
-    let web_tex = match &args.blueprint_src {
+/// Resolve the Massot `web.tex` path: an explicit file, a directory's `web.tex`,
+/// or the conventional `<project>/blueprint/src/web.tex`.
+fn massot_web_tex(args: &ExtractArgs) -> PathBuf {
+    match &args.blueprint_src {
         Some(p) if p.is_file() => p.clone(),
         Some(p) => p.join("web.tex"),
         None => args.project.join("blueprint/src/web.tex"),
-    };
+    }
+}
+
+fn build_massot_model(args: &ExtractArgs) -> Result<BlueprintModel> {
+    let web_tex = massot_web_tex(args);
     if !web_tex.exists() {
         return Err(BlueprintError::WebTexNotFound(web_tex).into());
     }
@@ -522,7 +576,7 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
     let detected = detect_adapter(&args)?;
 
     let (mut atoms, source) = load_atoms(&args)?;
-    let model = build_model(&args, &detected)?;
+    let (model, provenance) = build_model(&args, &detected)?;
 
     let report = enrich::enrich(&mut atoms, &model);
 
@@ -558,7 +612,7 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
     )?;
 
     let extract_env = emit::build_extract_envelope(atoms, source.clone());
-    let summary_env = emit::build_summary_envelope(summary, source);
+    let summary_env = emit::build_summary_envelope(summary, source, provenance);
 
     write_json(&extract_path, &extract_env)?;
     write_json(&summary_path, &summary_env)?;

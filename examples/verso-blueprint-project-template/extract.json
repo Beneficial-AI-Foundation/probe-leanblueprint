@@ -3,7 +3,7 @@
   "schema-version": "2.1",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "command": "extract"
   },
   "source": {
@@ -13,7 +13,7 @@
     "package": "ProjectTemplate",
     "package-version": "6561770"
   },
-  "timestamp": "2026-07-28T10:22:52Z",
+  "timestamp": "2026-07-28T10:48:18Z",
   "data": {
     "probe:ProjectTemplate.Blueprint.«the canonical document object name»": {
       "display-name": "the canonical document object name",

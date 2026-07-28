@@ -358,18 +358,24 @@ fn chapter_from_path(path: &Path) -> Option<String> {
     None
 }
 
-/// Discover and merge every `blueprint-manifest.json` under `root` (recursively),
-/// de-duplicating nodes by label. Useful for Verso projects that render one
-/// manifest per chapter.
-pub fn load_from_dir(root: &Path) -> Result<BlueprintModel> {
+/// Discover every `blueprint-manifest.json` under `root` (recursively), sorted
+/// for deterministic merge order. Errors with `NoManifest` when none is found.
+pub fn discover_manifests(root: &Path) -> Result<Vec<std::path::PathBuf>> {
     let mut found = Vec::new();
     collect_manifests(root, &mut found)?;
     if found.is_empty() {
         return Err(BlueprintError::NoManifest(root.to_path_buf()));
     }
     found.sort();
+    Ok(found)
+}
+
+/// Discover and merge every `blueprint-manifest.json` under `root` (recursively),
+/// de-duplicating nodes by label. Useful for Verso projects that render one
+/// manifest per chapter.
+pub fn load_from_dir(root: &Path) -> Result<BlueprintModel> {
     let mut model = BlueprintModel::default();
-    for path in found {
+    for path in discover_manifests(root)? {
         let part = load_manifest(&path)?;
         model.merge_from(part);
     }

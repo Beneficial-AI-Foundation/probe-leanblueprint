@@ -224,8 +224,16 @@ two-axis progress stats.
 {
   "schema": "probe-leanblueprint/summary",
   "schema-version": "2.1",
-  "tool": { "name": "probe-leanblueprint", "version": "0.2.0", "command": "extract" },
+  "tool": { "name": "probe-leanblueprint", "version": "0.3.0", "command": "extract" },
   "source": { "language": "lean", "package": "SecureMessaging", "package-version": "4cfee4c", "...": "..." },
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      { "path": ".../_out/site/.../blueprint-manifest.json",
+        "sha256": "a6706fd3...",
+        "vbp-internal-schema-version": 3 }
+    ]
+  },
   "timestamp": "2026-07-21T19:28:49Z",
   "data": {
     "totals": {
@@ -244,7 +252,9 @@ two-axis progress stats.
     "headline": {
       "theorems-total": 56,
       "theorems-fully-proved": 9,
-      "fraction": 0.1607142857142857
+      "theorems-fully-proved-machine-confirmed": 9,
+      "fraction": 0.1607142857142857,
+      "fraction-machine-confirmed": 0.1607142857142857
     },
     "by-chapter": {
       "Authenticated-Encryption-with-Associated-Data": {
@@ -331,6 +341,9 @@ Additive over 2.0:
   `incomplete`).
 - summary: `theorems-fully-proved-machine-confirmed` and `fraction-machine-confirmed`
   report progress probe-lean actually backs, distinct from the blueprint's own claim.
+- summary: a top-level `blueprint-provenance` block records which blueprint inputs
+  produced the output — the `adapter`, and for Verso each manifest's `path`,
+  `sha256`, and `vbp-internal-schema-version` (or `web-tex` for Massot).
 
 ---
 

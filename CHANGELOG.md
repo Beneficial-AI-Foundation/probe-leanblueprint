@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Schema **2.1** (additive over 2.0). Extract gains optional `blueprint-source-statement-status` / `blueprint-source-proof-status`, preserving a raw Verso status when the canonical enum is lossy (`mathlib` → `formalized`, `incomplete` → `none`). Summary gains `theorems-fully-proved-machine-confirmed` / `fraction-machine-confirmed`.
+- The summary sidecar records a `blueprint-provenance` block (adapter, and for Verso each manifest's path + SHA-256 + `vbpInternalSchemaVersion`, or the `web.tex` path for Massot), so an output can substantiate which render it was based on.
 - Verso adapter reads and validates `vbpInternalSchemaVersion` (2 = v4.30, 3 = v4.31), warning on an unknown generation and distinguishing a previews-only blueprint (0 graph nodes, N previews) from a wrong/drifted file (0 nodes, 0 previews).
 - `blueprint-shadow` extension field: marks the synthetic atom preserved for a blueprint node that loses a same-decl collision, so the extract stays node-complete and `blueprint_stats.py` is a faithful cross-check of the summary sidecar (it counts a shadow node as bound).
 - `--source-package` / `--source-version` overrides to set the atom base's identity directly; supplying both also bypasses the ambiguous-provenance check for a spine with multiple probe-lean inputs.
