@@ -1,2 +1,0 @@
-[patch."https://github.com/Beneficial-AI-Foundation/probe"]
-probe = { path = "../probe" }

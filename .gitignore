@@ -3,8 +3,10 @@
 __pycache__/
 *.pyc
 .verilib/
-# Local-only probe hub patch (not committed; see .cargo/config.toml)
-/.cargo/config.toml
+# Local-only cargo config (e.g. a probe hub `[patch]` pointing at ../probe).
+# Ignore the whole dir so a renamed/disabled variant can't be committed either.
+/.cargo/
+.claude/
 *.swp
 *.swo
 *~
