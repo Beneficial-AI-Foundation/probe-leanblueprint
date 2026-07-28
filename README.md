@@ -24,6 +24,38 @@ two-axis progress summary.
 axis; the blueprint's claim is additive, and a `blueprint-status-mismatch` flag
 fires when the blueprint over-claims a proof (see the KB, property P26).
 
+## Supported Projects
+
+probe-leanblueprint enriches a `probe-lean` atom base, so it runs on any project
+`probe-lean` can analyze that **also ships a blueprint with a formal graph bound
+to Lean declarations**.
+
+| Requirement | Detail |
+|-------------|--------|
+| **A `probe-lean`-analyzable project** | The atom base comes from `probe-lean extract` (run automatically, or supplied via `--lean`). The project must meet [probe-lean's requirements](https://github.com/Beneficial-AI-Foundation/probe-lean#supported-projects) — a buildable Lean library, compatible toolchain, etc. |
+| **A blueprint in a supported ecosystem** | Either a **Verso** blueprint (`versoBlueprint` declared in the root or `docs/` lakefile) or a **Massot** `leanblueprint` (`blueprint/src/web.tex`). Auto-detected; fails with a clear error when neither is present. |
+| **Verso ≥ v4.29** | The `graphs[].nodes[]` schema this tool reads first appears in versoBlueprint v4.29 (v4.30 = `vbpInternalSchemaVersion` 2, v4.31 = 3). Earlier renderers emit only a flattened preview manifest. |
+| **A formal blueprint graph bound to decls** | Useful output requires blueprint *entries* — Verso `definition`/`theorem` nodes, or Massot `\begin{theorem}` + `\lean{...}`/`\leanok`/`\uses{...}` — that bind real Lean declarations. Progress (statement/proof status, dependency edges) lives on these nodes. |
+
+Known-working projects, captured end-to-end (manifest + `probe-lean` atoms →
+enriched extract + summary), live under [`examples/`](examples/): Sphere Packing,
+Carleson, FLT, Noperthedron, and the verso-blueprint `project_template`.
+
+### What won't work
+
+- **Projects with no blueprint** — no `versoBlueprint` lakefile signal and no
+  `blueprint/src/web.tex`. Detection fails loudly (`AdapterUndetected`) rather
+  than guessing.
+- **Verso blueprints authored only with informal previews** — a document built
+  entirely from `LeanCodePreview` blocks (no formal `definition`/`theorem`
+  entries) renders a manifest with an empty `graphs` array. The run succeeds but
+  binds **0 nodes** (the tool warns "0 graph nodes but N previews"); there is
+  nothing to score until the blueprint declares graph entries bound to decls.
+- **versoBlueprint < v4.29** — the pre-`graphs` renderer emits only a
+  `blueprint-preview-manifest.json`, which yields a zero-node model.
+- **Projects `probe-lean` cannot analyze** — no atom base means nothing to
+  enrich (see [probe-lean's constraints](https://github.com/Beneficial-AI-Foundation/probe-lean#supported-projects)).
+
 ## Install
 
 ```bash
