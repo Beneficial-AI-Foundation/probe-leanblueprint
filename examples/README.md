@@ -13,7 +13,7 @@ each captured with:
 
 ## Index
 
-| Example | Upstream Lean repo | verso-blueprint | Lean | Bound / formalized | Headline (machine-confirmed) |
+| Example | Upstream Lean repo | verso-blueprint | Lean | Bound / formalized | Headline (probe-lean-confirmed) |
 |---------|--------------------|-----------------|------|--------------------|------------------------------|
 | [`verso-secure-messaging`](./verso-secure-messaging/) | [`Beneficial-AI-Foundation/secure-messaging`](https://github.com/Beneficial-AI-Foundation/secure-messaging) | v4.30.0 | v4.30.0 | 33 / 33 | 8/53 (15.1%) |
 | [`verso-carleson`](./verso-carleson/) | [`fpvandoorn/carleson`](https://github.com/fpvandoorn/carleson) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.31.0/verso-carleson/)) | v4.31.0 | v4.31.0 | 152 / 160 | 146/161 (90.7%) · claims 154 |
@@ -22,7 +22,7 @@ each captured with:
 | [`verso-sphere-packing`](./verso-sphere-packing/) | [`thefundamentaltheor3m/Sphere-Packing-Lean`](https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean) ([rendered](https://leanprover.github.io/verso-blueprint/reference-blueprints/v4.31.0/spherepackingblueprint/)) | v4.31.0 | v4.31.0 | 75 / 89 | 21/106 (19.8%) · claims 24 |
 | [`verso-blueprint-project-template`](./verso-blueprint-project-template/) | [verso-blueprint `project_template`](https://github.com/leanprover/verso-blueprint/tree/v4.31.0/project_template) | v4.31.0 | v4.31.0 | 4 / 6 (toy) | 0/5 (0.0%) · claims 1 |
 
-**Headline** is theorems *machine-confirmed* fully proved — the blueprint claims
+**Headline** is theorems *probe-lean-confirmed* fully proved — the blueprint claims
 `fully_proved` **and** `probe-lean` backs it (bound to a present atom, not
 contradicted). `claims N` shows the blueprint's own (higher) count where
 decl-missing or contradicted nodes exist; the per-example READMEs break this

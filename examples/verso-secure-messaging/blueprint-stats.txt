@@ -1,7 +1,7 @@
 probe-leanblueprint stats — SecureMessaging 6a4fce0
   source: https://github.com/Beneficial-AI-Foundation/secure-messaging.git@6a4fce0e9c
 
-Headline: 8/53 theorems machine-confirmed fully proved (15.1%)
+Headline: 8/53 theorems probe-lean-confirmed fully proved (15.1%)
 Blueprint nodes: 111   (bound 33 · planned-only 78 · decl-missing 0 · partial-missing 0 · mismatches 0)
 
 Statement axis (is the statement formalized?)

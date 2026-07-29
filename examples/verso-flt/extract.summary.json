@@ -30,6 +30,7 @@
       "with-lean-decl": 150,
       "planned-only": 73,
       "decl-missing": 22,
+      "decl-missing-upstream-proved": 22,
       "partial-missing": 0,
       "collisions": 4,
       "mismatches": 0
@@ -79,9 +80,10 @@
     "headline": {
       "theorems-total": 194,
       "theorems-fully-proved": 105,
-      "theorems-fully-proved-machine-confirmed": 88,
+      "theorems-fully-proved-probe-lean-confirmed": 88,
+      "theorems-fully-proved-upstream-proved": 17,
       "fraction": 0.5412371134020618,
-      "fraction-machine-confirmed": 0.4536082474226804
+      "fraction-probe-lean-confirmed": 0.4536082474226804
     },
     "by-chapter": {
       "An-Example-Of-An-Automorphic-Form": {

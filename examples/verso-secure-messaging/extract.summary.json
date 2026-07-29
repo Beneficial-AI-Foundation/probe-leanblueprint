@@ -71,6 +71,7 @@
       "with-lean-decl": 33,
       "planned-only": 78,
       "decl-missing": 0,
+      "decl-missing-upstream-proved": 0,
       "partial-missing": 0,
       "collisions": 0,
       "mismatches": 0
@@ -120,9 +121,10 @@
     "headline": {
       "theorems-total": 53,
       "theorems-fully-proved": 8,
-      "theorems-fully-proved-machine-confirmed": 8,
+      "theorems-fully-proved-probe-lean-confirmed": 8,
+      "theorems-fully-proved-upstream-proved": 0,
       "fraction": 0.1509433962264151,
-      "fraction-machine-confirmed": 0.1509433962264151
+      "fraction-probe-lean-confirmed": 0.1509433962264151
     },
     "by-chapter": {
       "Authenticated-Encryption-with-Associated-Data": {

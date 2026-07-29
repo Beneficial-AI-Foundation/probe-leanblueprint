@@ -24,7 +24,7 @@ PROOF_ORDER = ["fully-proved", "proved", "ready", "none"]
 class Node:
     __slots__ = (
         "label", "kind", "chapter", "statement", "proof",
-        "bound", "decl_missing", "missing_decls", "mismatch",
+        "bound", "decl_missing", "decl_upstream_proved", "missing_decls", "mismatch",
     )
 
     def __init__(self, label):
@@ -35,6 +35,7 @@ class Node:
         self.proof = "none"
         self.bound = False
         self.decl_missing = False
+        self.decl_upstream_proved = False
         self.missing_decls = []
         self.mismatch = None
 
@@ -62,6 +63,8 @@ def collect_nodes(data):
             n.bound = True
         if atom.get("blueprint-decl-missing"):
             n.decl_missing = True
+        if atom.get("blueprint-decl-upstream-proved"):
+            n.decl_upstream_proved = True
         missing = atom.get("blueprint-missing-decls")
         if missing:
             n.missing_decls = sorted(set(n.missing_decls) | set(missing))
@@ -98,6 +101,9 @@ def build_report(env):
     total = len(nodes)
     bound = sum(1 for n in nodes if n.bound)
     decl_missing = sum(1 for n in nodes if n.decl_missing and not n.bound)
+    decl_missing_upstream = sum(
+        1 for n in nodes if n.decl_missing and not n.bound and n.decl_upstream_proved
+    )
     planned = sum(1 for n in nodes if not n.bound and not n.decl_missing)
     partial_missing = [n for n in nodes if n.missing_decls]
     mismatches = [n for n in nodes if n.mismatch]
@@ -105,10 +111,23 @@ def build_report(env):
     thms = [n for n in nodes if n.kind != "definition"]
     thm_total = len(thms)
     thm_proved = sum(1 for n in thms if n.proof == "fully-proved")
-    # Machine-confirmed: the blueprint claims fully-proved AND probe-lean backs it
-    # (bound, not contradicted). Mirrors the Rust summary; see P26.
+    # probe-lean-confirmed: the blueprint claims fully-proved, the node's whole
+    # binding is present (bound with no missing decls), and probe-lean did not
+    # contradict it (no blueprint-status-mismatch). This is a "not refuted" bar,
+    # not "affirmatively verified" — an unbound/decl-missing/partial-missing
+    # fully-proved node is dropped, but a fully-present one with no/`trusted`/
+    # locally-`verified` status still counts. Mirrors the Rust summary Headline
+    # (`missing.is_empty()` gate included); see P26.
     thm_proved_confirmed = sum(
-        1 for n in thms if n.proof == "fully-proved" and n.bound and not n.mismatch
+        1 for n in thms
+        if n.proof == "fully-proved" and n.bound and not n.missing_decls and not n.mismatch
+    )
+    # Upstream-proved: fully-proved theorems that are decl-missing here but proved
+    # out-of-workspace (a dependency, commonly Mathlib/stdlib) per the Verso
+    # renderer. Neither a local confirmation nor a gap. Always 0 for Massot.
+    thm_upstream_proved = sum(
+        1 for n in thms
+        if n.proof == "fully-proved" and n.decl_missing and not n.bound and n.decl_upstream_proved
     )
     fraction = (thm_proved / thm_total) if thm_total else 0.0
     fraction_confirmed = (thm_proved_confirmed / thm_total) if thm_total else 0.0
@@ -128,19 +147,25 @@ def build_report(env):
         "nodes": nodes,
         "totals": {
             "nodes": total, "bound": bound, "planned-only": planned,
-            "decl-missing": decl_missing, "partial-missing": len(partial_missing),
+            "decl-missing": decl_missing,
+            "decl-missing-upstream-proved": decl_missing_upstream,
+            "partial-missing": len(partial_missing),
             "mismatches": len(mismatches),
         },
         "headline": {
             "theorems-total": thm_total, "theorems-fully-proved": thm_proved,
-            "theorems-fully-proved-machine-confirmed": thm_proved_confirmed,
-            "fraction": fraction, "fraction-machine-confirmed": fraction_confirmed,
+            "theorems-fully-proved-probe-lean-confirmed": thm_proved_confirmed,
+            "theorems-fully-proved-upstream-proved": thm_upstream_proved,
+            "fraction": fraction, "fraction-probe-lean-confirmed": fraction_confirmed,
         },
         "statement": axis_counts(nodes, "statement"),
         "proof": axis_counts(nodes, "proof"),
         "by-chapter": dict(sorted(by_chapter.items())),
         "mismatch-list": [(n.label, n.mismatch) for n in mismatches],
-        "decl-missing-list": [n.label for n in nodes if n.decl_missing and not n.bound],
+        "decl-missing-list": [
+            (n.label, n.decl_upstream_proved)
+            for n in nodes if n.decl_missing and not n.bound
+        ],
         "partial-missing-list": [(n.label, n.missing_decls) for n in partial_missing],
     }
 
@@ -157,17 +182,25 @@ def print_report(env, report):
     if src.get("repo"):
         print(f"  source: {src['repo']}@{src.get('commit', '')[:10]}")
     print()
-    confirmed = h["theorems-fully-proved-machine-confirmed"]
+    confirmed = h["theorems-fully-proved-probe-lean-confirmed"]
     claimed = h["theorems-fully-proved"]
-    pct = h["fraction-machine-confirmed"] * 100
-    print(f"Headline: {confirmed}/{h['theorems-total']} theorems machine-confirmed fully proved ({pct:.1f}%)")
-    if claimed > confirmed:
+    upstream = h.get("theorems-fully-proved-upstream-proved", 0)
+    pct = h["fraction-probe-lean-confirmed"] * 100
+    upstream_suffix = f" (+{upstream} upstream-proved)" if upstream else ""
+    print(f"Headline: {confirmed}/{h['theorems-total']} theorems probe-lean-confirmed fully proved ({pct:.1f}%){upstream_suffix}")
+    unbacked = claimed - confirmed - upstream
+    if unbacked > 0:
         print(f"  (blueprint claims {claimed}/{h['theorems-total']}; "
-              f"{claimed - confirmed} not backed by probe-lean's verification status)")
+              f"{unbacked} not backed by probe-lean's verification status)")
+    dm_upstream = t.get("decl-missing-upstream-proved", 0)
+    decl_missing = (
+        f"decl-missing {t['decl-missing']} ({dm_upstream} upstream-proved)"
+        if dm_upstream else f"decl-missing {t['decl-missing']}"
+    )
     print(
         f"Blueprint nodes: {t['nodes']}   "
         f"(bound {t['bound']} · planned-only {t['planned-only']} · "
-        f"decl-missing {t['decl-missing']} · partial-missing {t['partial-missing']} · "
+        f"{decl_missing} · partial-missing {t['partial-missing']} · "
         f"mismatches {t['mismatches']})"
     )
     print()
@@ -192,8 +225,9 @@ def print_report(env, report):
 
     if report["decl-missing-list"]:
         print("Declarations bound in blueprint but missing from probe-lean:")
-        for label in report["decl-missing-list"]:
-            print(f"  ? {label}")
+        for label, upstream in report["decl-missing-list"]:
+            note = "  (proved out-of-workspace)" if upstream else ""
+            print(f"  ? {label}{note}")
     else:
         print("Missing declarations: none")
 

@@ -30,6 +30,7 @@
       "with-lean-decl": 4,
       "planned-only": 3,
       "decl-missing": 2,
+      "decl-missing-upstream-proved": 2,
       "partial-missing": 0,
       "collisions": 0,
       "mismatches": 0
@@ -79,9 +80,10 @@
     "headline": {
       "theorems-total": 5,
       "theorems-fully-proved": 1,
-      "theorems-fully-proved-machine-confirmed": 0,
+      "theorems-fully-proved-probe-lean-confirmed": 0,
+      "theorems-fully-proved-upstream-proved": 1,
       "fraction": 0.2,
-      "fraction-machine-confirmed": 0.0
+      "fraction-probe-lean-confirmed": 0.0
     },
     "by-chapter": {
       "Addition": {

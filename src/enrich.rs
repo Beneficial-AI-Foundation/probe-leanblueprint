@@ -38,6 +38,9 @@ pub struct EnrichReport {
     pub nodes_with_decl: usize,
     pub planned_only: usize,
     pub decl_missing: usize,
+    /// Subset of `decl_missing` proved upstream (the complement is a genuine
+    /// gap). See `docs/SCHEMA.md` §Semantics → Node classification.
+    pub decl_missing_upstream_proved: usize,
     /// De-duplicated by node label (one entry per node that claims a proof the
     /// machine status contradicts), matching `blueprint_stats.py`'s per-label
     /// counting.
@@ -58,12 +61,13 @@ pub struct EnrichReport {
     /// Count of synthetic keys produced more than once in a single run (later
     /// wins). Indicates duplicate labels leaking past adapter de-duplication.
     pub duplicate_synthetic: usize,
-    /// Labels of fully-proved *theorems* whose claim the machine actually backs:
-    /// bound to a present atom and not contradicted by probe-lean's
-    /// `verification-status`. This is the honest "proved" count; the blueprint's
-    /// own `fully_proved` claim (used by `theorems-fully-proved`) can be larger
-    /// for `declared` (Massot `\leanok`) blueprints. See P26.
-    pub machine_confirmed_proved: Vec<String>,
+    /// Labels of fully-proved *theorems* the machine has not contradicted (bound,
+    /// no `claims-proved-but-*` mismatch) — the "probe-lean-confirmed" bar. Exact
+    /// definition: `docs/SCHEMA.md` §Semantics → Machine reconciliation (P26).
+    pub probe_lean_confirmed_proved: Vec<String>,
+    /// Labels of fully-proved *theorems* decl-missing here but proved upstream
+    /// (see `docs/SCHEMA.md` §Machine reconciliation → upstream-proved).
+    pub upstream_proved_theorems: Vec<String>,
 }
 
 fn machine_status(atom: &Atom) -> Option<String> {
@@ -87,11 +91,13 @@ fn mismatch_marker(proof: ProofStatus, machine: Option<&str>) -> Option<String> 
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn make_extensions(
     node: &BlueprintNode,
     uses_index: &HashMap<String, String>,
     mismatch: Option<String>,
     decl_missing: bool,
+    decl_upstream_proved: bool,
     missing_decls: Vec<String>,
     shadow: bool,
 ) -> BlueprintExtensions {
@@ -122,6 +128,7 @@ fn make_extensions(
         proof_uses: resolve(&node.proof_uses),
         status_mismatch: mismatch,
         decl_missing,
+        decl_upstream_proved,
         missing_decls,
         shadow,
     }
@@ -146,6 +153,7 @@ const BLUEPRINT_KEYS: &[&str] = &[
     "blueprint-proof-uses",
     "blueprint-status-mismatch",
     "blueprint-decl-missing",
+    "blueprint-decl-upstream-proved",
     "blueprint-missing-decls",
     "blueprint-shadow",
 ];
@@ -269,7 +277,7 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         if node.lean_decls.is_empty() {
             // Planned-only: no Lean binding at all.
             report.planned_only += 1;
-            let ext = make_extensions(node, &uses_index, None, false, Vec::new(), false);
+            let ext = make_extensions(node, &uses_index, None, false, false, Vec::new(), false);
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
             report.synthesized += 1;
             continue;
@@ -277,8 +285,35 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         if present.is_empty() {
             // All bound decls absent from the atom base: represent as a
             // decl-missing synthetic node rather than fabricating a code atom.
+            //
+            // Distinguish two very different decl-missing cases: a node whose
+            // every binding is an *upstream* decl the renderer proved (Verso
+            // `outWorkspace` + present + proved) is machine-proved elsewhere and
+            // just out of this project's extract scope — not a genuine gap. Only
+            // possible for code-derived (Verso) status; Massot never sets it.
             report.decl_missing += 1;
-            let ext = make_extensions(node, &uses_index, None, true, Vec::new(), false);
+            let upstream_proved = !node.external_upstream_proved.is_empty()
+                && node
+                    .lean_decls
+                    .iter()
+                    .all(|d| node.external_upstream_proved.contains(d));
+            if upstream_proved {
+                report.decl_missing_upstream_proved += 1;
+                if node.display_kind() == NodeKind::Theorem
+                    && node.proof_status == ProofStatus::FullyProved
+                {
+                    report.upstream_proved_theorems.push(node.label.clone());
+                }
+            }
+            let ext = make_extensions(
+                node,
+                &uses_index,
+                None,
+                true,
+                upstream_proved,
+                Vec::new(),
+                false,
+            );
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
             report.synthesized += 1;
             continue;
@@ -297,13 +332,23 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         if !missing.is_empty() {
             report.partial_missing += 1;
         }
-        // A fully-proved theorem bound to a present atom counts as
-        // machine-confirmed unless the machine contradicts it (recorded below).
-        // Definitions and unbound/decl-missing nodes never reach here.
-        if node.display_kind() == NodeKind::Theorem && node.proof_status == ProofStatus::FullyProved
+        // A fully-proved theorem whose *entire* Lean binding is present counts as
+        // probe-lean-confirmed unless the machine contradicts it (recorded below).
+        // `missing.is_empty()` excludes partial-missing nodes: if any bound decl is
+        // absent from the extract, probe-lean can't back the whole claim, so it is
+        // not confirmed (it stays a partial-missing side count). Definitions and
+        // unbound/decl-missing nodes never reach here. The bar is "not
+        // contradicted", not "affirmatively verified" — normative definition in
+        // docs/SCHEMA.md §Semantics → Machine reconciliation. NB this scores before
+        // `enrich_verification_status` propagation in main; harmless under this bar
+        // (a `verified` status never fires a mismatch), but would be load-bearing
+        // if the bar ever required an affirmative status.
+        if node.display_kind() == NodeKind::Theorem
+            && node.proof_status == ProofStatus::FullyProved
+            && missing.is_empty()
         {
             // Provisionally confirmed; removed just below if a mismatch fires.
-            report.machine_confirmed_proved.push(node.label.clone());
+            report.probe_lean_confirmed_proved.push(node.label.clone());
         }
         // Mismatch is per-node: check every present atom this node binds (owned
         // or not) and record it once so counts match `blueprint_stats.py`.
@@ -314,7 +359,9 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         if let Some(m) = &mismatch {
             report.mismatches.push(format!("{}: {m}", node.label));
             // The machine contradicts the proof claim, so it is not confirmed.
-            report.machine_confirmed_proved.retain(|l| l != &node.label);
+            report
+                .probe_lean_confirmed_proved
+                .retain(|l| l != &node.label);
         }
 
         let owned: Vec<&String> = present.iter().filter(|cn| owns(&node.label, cn)).collect();
@@ -323,11 +370,11 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
             // Preserve this node as a shadow synthetic atom so the extract stays
             // node-complete (and keeps its mismatch / missing-decls signal).
             report.collision_shadowed += 1;
-            let ext = make_extensions(node, &uses_index, mismatch, false, missing, true);
+            let ext = make_extensions(node, &uses_index, mismatch, false, false, missing, true);
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
             report.synthesized += 1;
         } else {
-            let ext = make_extensions(node, &uses_index, mismatch, false, missing, false);
+            let ext = make_extensions(node, &uses_index, mismatch, false, false, missing, false);
             for cn in owned {
                 if let Some(atom) = atoms.get_mut(cn) {
                     insert_extensions(atom, &ext);
@@ -424,6 +471,10 @@ pub struct Totals {
     pub planned_only: usize,
     #[serde(rename = "decl-missing")]
     pub decl_missing: usize,
+    /// Subset of `decl-missing` proved upstream; the rest are genuine gaps.
+    /// `docs/SCHEMA.md` §Semantics → Node classification.
+    #[serde(rename = "decl-missing-upstream-proved")]
+    pub decl_missing_upstream_proved: usize,
     /// Bound nodes with a partial decl miss (see `blueprint-missing-decls`).
     #[serde(rename = "partial-missing")]
     pub partial_missing: usize,
@@ -436,21 +487,25 @@ pub struct Totals {
 pub struct Headline {
     #[serde(rename = "theorems-total")]
     pub theorems_total: usize,
-    /// Theorems the *blueprint* claims fully proved (`fully_proved`). For
-    /// `declared` (Massot `\leanok`) blueprints this can over-claim, so it is not
-    /// on its own a verified-progress number.
+    /// Theorems the *blueprint* claims fully proved; can over-claim for `declared`
+    /// (Massot) blueprints. `docs/SCHEMA.md` §headline.
     #[serde(rename = "theorems-fully-proved")]
     pub theorems_fully_proved: usize,
-    /// Theorems whose fully-proved claim probe-lean actually backs: bound and not
-    /// contradicted. Equals `theorems-fully-proved` for `code-derived` (Verso)
-    /// blueprints, and is the honest headline number (P26).
-    #[serde(rename = "theorems-fully-proved-machine-confirmed")]
-    pub theorems_fully_proved_machine_confirmed: usize,
+    /// Fully-proved theorems the machine has not refuted (bound + no mismatch) —
+    /// the honest headline number. Exact "not-refuted, not affirmatively-verified"
+    /// bar: `docs/SCHEMA.md` §Semantics → Machine reconciliation (P26).
+    #[serde(rename = "theorems-fully-proved-probe-lean-confirmed")]
+    pub theorems_fully_proved_probe_lean_confirmed: usize,
+    /// Fully-proved theorems decl-missing here but proved out-of-workspace per the
+    /// renderer (a dependency): neither confirmed locally nor a gap. Surfaced as
+    /// `+K upstream-proved`; 0 for Massot. `docs/SCHEMA.md` §Machine reconciliation.
+    #[serde(rename = "theorems-fully-proved-upstream-proved")]
+    pub theorems_fully_proved_upstream_proved: usize,
     /// Fraction of theorems the blueprint claims fully proved.
     pub fraction: f64,
-    /// Fraction of theorems machine-confirmed fully proved.
-    #[serde(rename = "fraction-machine-confirmed")]
-    pub fraction_machine_confirmed: f64,
+    /// Fraction of theorems probe-lean-confirmed fully proved.
+    #[serde(rename = "fraction-probe-lean-confirmed")]
+    pub fraction_probe_lean_confirmed: f64,
 }
 
 /// Build the summary from the model and the enrichment report.
@@ -487,14 +542,14 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
         }
     }
 
-    let theorems_fully_proved_machine_confirmed = report.machine_confirmed_proved.len();
+    let theorems_fully_proved_probe_lean_confirmed = report.probe_lean_confirmed_proved.len();
     let fraction = if theorems_total > 0 {
         theorems_fully_proved as f64 / theorems_total as f64
     } else {
         0.0
     };
-    let fraction_machine_confirmed = if theorems_total > 0 {
-        theorems_fully_proved_machine_confirmed as f64 / theorems_total as f64
+    let fraction_probe_lean_confirmed = if theorems_total > 0 {
+        theorems_fully_proved_probe_lean_confirmed as f64 / theorems_total as f64
     } else {
         0.0
     };
@@ -505,6 +560,7 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
             with_lean_decl: report.nodes_with_decl,
             planned_only: report.planned_only,
             decl_missing: report.decl_missing,
+            decl_missing_upstream_proved: report.decl_missing_upstream_proved,
             partial_missing: report.partial_missing,
             collisions: report.collisions,
             mismatches: report.mismatches.len(),
@@ -515,9 +571,10 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
         headline: Headline {
             theorems_total,
             theorems_fully_proved,
-            theorems_fully_proved_machine_confirmed,
+            theorems_fully_proved_probe_lean_confirmed,
+            theorems_fully_proved_upstream_proved: report.upstream_proved_theorems.len(),
             fraction,
-            fraction_machine_confirmed,
+            fraction_probe_lean_confirmed,
         },
         by_chapter,
     }
@@ -563,6 +620,7 @@ mod tests {
                 NodeKind::Theorem
             }),
             lean_decls: decls.iter().map(|s| s.to_string()).collect(),
+            external_upstream_proved: vec![],
             statement_status: stmt,
             proof_status: proof,
             source_statement_status: None,
@@ -650,6 +708,68 @@ mod tests {
                 .unwrap()
                 .as_bool(),
             Some(true)
+        );
+        // A plain missing decl is a genuine gap, not upstream-proved.
+        assert_eq!(report.decl_missing_upstream_proved, 0);
+        assert!(!a.extensions.contains_key("blueprint-decl-upstream-proved"));
+    }
+
+    /// A fully-proved theorem bound only to an upstream (out-of-workspace) decl
+    /// the renderer proved is decl-missing *here* but counts as upstream-proved,
+    /// not probe-lean-confirmed and not a genuine gap.
+    #[test]
+    fn classifies_upstream_proved_decl_missing() {
+        let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+        let mut model = BlueprintModel::default();
+        let mut n = node(
+            "thm:upstream",
+            &["Nat.mul_assoc"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        n.external_upstream_proved = vec!["Nat.mul_assoc".to_string()];
+        model.nodes.push(n);
+
+        let report = enrich(&mut atoms, &model);
+        assert_eq!(report.decl_missing, 1);
+        assert_eq!(report.decl_missing_upstream_proved, 1);
+        assert_eq!(report.upstream_proved_theorems, vec!["thm:upstream"]);
+        // Upstream-proved is NOT local machine-confirmation.
+        assert!(report.probe_lean_confirmed_proved.is_empty());
+        let a = &atoms["probe:blueprint:thm:upstream"];
+        assert_eq!(
+            a.extensions
+                .get("blueprint-decl-upstream-proved")
+                .and_then(|v| v.as_bool()),
+            Some(true)
+        );
+    }
+
+    /// A fully-proved theorem binding two decls with only one present is bound
+    /// (so not decl-missing) but *partial-missing*, and must NOT count as
+    /// probe-lean-confirmed: part of its Lean binding is absent, so probe-lean
+    /// can't back the whole claim.
+    #[test]
+    fn partial_missing_fully_proved_is_not_confirmed() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.present".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:partial",
+            &["Foo.present", "Foo.absent"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+
+        let report = enrich(&mut atoms, &model);
+        assert_eq!(report.nodes_with_decl, 1, "bound: one decl present");
+        assert_eq!(report.partial_missing, 1);
+        assert!(
+            report.probe_lean_confirmed_proved.is_empty(),
+            "a partial-missing fully-proved theorem must not be confirmed"
         );
     }
 

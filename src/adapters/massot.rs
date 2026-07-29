@@ -113,6 +113,9 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
             label: n.label.clone(),
             kind: Some(NodeKind::from_source(&n.kind)),
             lean_decls: n.lean_decls.clone(),
+            // Massot has no per-decl provenance/proved metadata; upstream credit
+            // is a code-derived (Verso) notion only.
+            external_upstream_proved: Vec::new(),
             statement_status: map_statement(n),
             proof_status: map_proof(n),
             // Massot's canonical mapping is lossless (no mathlib/incomplete

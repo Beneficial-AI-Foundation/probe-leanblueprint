@@ -4,7 +4,7 @@
 //! and maps its graph nodes + Lean-decl bindings into a [`BlueprintModel`].
 //! No parsing of our own — the manifest is already machine-readable.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use serde::Deserialize;
@@ -132,6 +132,36 @@ struct External {
 #[derive(Debug, Deserialize)]
 struct Decl {
     canonical: String,
+    /// These three are decl *metadata* used only to detect upstream-proved decls.
+    /// They are deliberately typed as free `Value` (not `bool`/`String`): the
+    /// renderer emits them polymorphically (e.g. `provedStatus` is the string
+    /// `"proved"` when sorry-free but an object like `{"containsSorry": …}`
+    /// otherwise). A stricter type would abort the *whole* manifest parse on one
+    /// variant decl; here an unexpected shape just fails the `is_upstream_proved`
+    /// predicate (degrades to "not upstream-proved"), never crashes.
+    #[serde(default)]
+    present: Option<serde_json::Value>,
+    #[serde(rename = "provedStatus", default)]
+    proved_status: Option<serde_json::Value>,
+    #[serde(default)]
+    provenance: Option<serde_json::Value>,
+}
+
+impl Decl {
+    /// Out-of-workspace (`provenance.outWorkspace`), present, and proved per the
+    /// renderer — the upstream-proved criterion. "Out-of-workspace" is all this
+    /// checks (a dependency, commonly but not necessarily Mathlib/stdlib); see
+    /// `docs/SCHEMA.md` §Node classification.
+    fn is_upstream_proved(&self) -> bool {
+        let out_of_workspace = self
+            .provenance
+            .as_ref()
+            .and_then(|p| p.get("outWorkspace"))
+            .is_some();
+        let present = self.present.as_ref().and_then(|v| v.as_bool()) == Some(true);
+        let proved = self.proved_status.as_ref().and_then(|v| v.as_str()) == Some("proved");
+        out_of_workspace && present && proved
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -215,13 +245,21 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
     // the blueprint text (`inline.code.definedDefs/definedTheorems[].name`);
     // collect both so inline-authored nodes join too.
     let mut decls_by_preview: HashMap<String, Vec<String>> = HashMap::new();
+    // Canonical names of external decls the renderer proved upstream (out of this
+    // workspace). A node bound only to these is decl-missing here yet proved.
+    let mut upstream_proved: HashSet<String> = HashSet::new();
     for preview in &manifest.previews {
         let Some(cd) = &preview.code_data else {
             continue;
         };
         let mut names: Vec<String> = Vec::new();
         if let Some(ext) = &cd.external {
-            names.extend(ext.decls.iter().map(|d| d.canonical.clone()));
+            for d in &ext.decls {
+                names.push(d.canonical.clone());
+                if d.is_upstream_proved() {
+                    upstream_proved.insert(d.canonical.clone());
+                }
+            }
         }
         if let Some(code) = cd.inline.as_ref().and_then(|i| i.code.as_ref()) {
             names.extend(code.defined_defs.iter().map(|d| d.name.clone()));
@@ -254,6 +292,11 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
                 // A `null` kind (a mention of a node defined in another chapter)
                 // stays unknown so the defining copy's kind wins during merge.
                 kind: node.kind.as_deref().map(NodeKind::from_source),
+                external_upstream_proved: lean_decls
+                    .iter()
+                    .filter(|d| upstream_proved.contains(*d))
+                    .cloned()
+                    .collect(),
                 lean_decls,
                 statement_status: map_statement(node.statement_status.as_deref())?,
                 proof_status: map_proof(node.proof_status.as_deref())?,
@@ -445,6 +488,96 @@ mod tests {
         let b = model.nodes.iter().find(|n| n.label == "b").unwrap();
         assert_eq!(b.statement_uses, vec!["a"]);
         assert_eq!(b.statement_status, StatementStatus::Ready);
+    }
+
+    #[test]
+    fn external_upstream_proved_read_from_provenance() {
+        // `up` binds an out-of-workspace, present, proved decl (upstream); `loc`
+        // binds an in-workspace one. Only `up` is recorded as upstream-proved.
+        let text = r#"{
+          "graphs": [{"nodes": [
+            {"label":"up","kind":"theorem","previewKey":"up--statement",
+             "statementStatus":"formalized","proofStatus":"formalizedWithAncestors"},
+            {"label":"loc","kind":"theorem","previewKey":"loc--statement",
+             "statementStatus":"formalized","proofStatus":"formalizedWithAncestors"}
+          ]}],
+          "previews": [
+            {"key":"up--statement","codeData":{"external":{"decls":[
+              {"canonical":"Nat.mul_assoc","present":true,"provedStatus":"proved",
+               "provenance":{"outWorkspace":{"moduleName":"Init.Data.Nat.Basic"}}}
+            ]}}},
+            {"key":"loc--statement","codeData":{"external":{"decls":[
+              {"canonical":"MyProj.thm","present":true,"provedStatus":"proved",
+               "provenance":{"inWorkspace":{"moduleName":"MyProj"}}}
+            ]}}}
+          ]
+        }"#;
+        let model = parse_manifest(text, None).unwrap();
+        let up = model.nodes.iter().find(|n| n.label == "up").unwrap();
+        assert_eq!(up.external_upstream_proved, vec!["Nat.mul_assoc"]);
+        let loc = model.nodes.iter().find(|n| n.label == "loc").unwrap();
+        assert!(
+            loc.external_upstream_proved.is_empty(),
+            "in-workspace decls are not upstream-proved"
+        );
+    }
+
+    /// An upstream decl that is present but *not* proved (e.g. sorried upstream)
+    /// is not upstream-proved — it stays a genuine gap.
+    #[test]
+    fn external_upstream_not_proved_is_not_credited() {
+        let text = r#"{
+          "graphs": [{"nodes": [
+            {"label":"up","kind":"theorem","previewKey":"up--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"}
+          ]}],
+          "previews": [
+            {"key":"up--statement","codeData":{"external":{"decls":[
+              {"canonical":"Up.sorried","present":true,"provedStatus":"unverified",
+               "provenance":{"outWorkspace":{"moduleName":"Up"}}}
+            ]}}}
+          ]
+        }"#;
+        let model = parse_manifest(text, None).unwrap();
+        assert!(model.nodes[0].external_upstream_proved.is_empty());
+    }
+
+    /// The renderer emits `provedStatus` polymorphically: the string `"proved"`
+    /// when sorry-free, but an OBJECT (`{"containsSorry": …}`) otherwise (real in
+    /// the flt / sphere-packing manifests). A strict `String` type here aborts the
+    /// whole parse; the decl-metadata fields must tolerate either shape. The
+    /// object form must parse *and* not be credited as proved.
+    #[test]
+    fn object_valued_proved_status_parses_and_is_not_credited() {
+        let text = r#"{
+          "graphs": [{"nodes": [
+            {"label":"up","kind":"theorem","previewKey":"up--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"},
+            {"label":"ok","kind":"theorem","previewKey":"ok--statement",
+             "statementStatus":"formalized","proofStatus":"formalizedWithAncestors"}
+          ]}],
+          "previews": [
+            {"key":"up--statement","codeData":{"external":{"decls":[
+              {"canonical":"Up.sorried","present":true,
+               "provedStatus":{"containsSorry":{"info":[{"location":"proof"}]}},
+               "provenance":{"outWorkspace":{"moduleName":"Up"}}}
+            ]}}},
+            {"key":"ok--statement","codeData":{"external":{"decls":[
+              {"canonical":"Up.done","present":true,"provedStatus":"proved",
+               "provenance":{"outWorkspace":{"moduleName":"Up"}}}
+            ]}}}
+          ]
+        }"#;
+        // Must not fail to parse despite the object-valued provedStatus.
+        let model = parse_manifest(text, None).expect("object-valued provedStatus must parse");
+        let up = model.nodes.iter().find(|n| n.label == "up").unwrap();
+        assert!(
+            up.external_upstream_proved.is_empty(),
+            "containsSorry is not proved, so not upstream-proved"
+        );
+        // A sibling with string `"proved"` in the same manifest is still credited.
+        let ok = model.nodes.iter().find(|n| n.label == "ok").unwrap();
+        assert_eq!(ok.external_upstream_proved, vec!["Up.done"]);
     }
 
     #[test]

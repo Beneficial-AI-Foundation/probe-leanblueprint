@@ -1,9 +1,8 @@
 probe-leanblueprint stats — carleson 8e93bee
   source: https://github.com/fpvandoorn/carleson@8e93bee110
 
-Headline: 146/161 theorems machine-confirmed fully proved (90.7%)
-  (blueprint claims 154/161; 8 not backed by probe-lean's verification status)
-Blueprint nodes: 161   (bound 152 · planned-only 1 · decl-missing 8 · partial-missing 0 · mismatches 0)
+Headline: 146/161 theorems probe-lean-confirmed fully proved (90.7%) (+8 upstream-proved)
+Blueprint nodes: 161   (bound 152 · planned-only 1 · decl-missing 8 (8 upstream-proved) · partial-missing 0 · mismatches 0)
 
 Statement axis (is the statement formalized?)
   status             all   def   thm
@@ -25,12 +24,12 @@ By chapter                            nodes  stmt✓  thm✓/thm
 
 Status mismatches: none
 Declarations bound in blueprint but missing from probe-lean:
-  ? «convergence-of-coeffs-summable»
-  ? «covering-separable-space»
-  ? «fourier-coeff-derivative»
-  ? «periodic-domain-shift»
-  ? «real-line-ball-measure»
-  ? «real-line-ball»
-  ? «real-line-measure»
-  ? «real-line-metric»
+  ? «convergence-of-coeffs-summable»  (proved out-of-workspace)
+  ? «covering-separable-space»  (proved out-of-workspace)
+  ? «fourier-coeff-derivative»  (proved out-of-workspace)
+  ? «periodic-domain-shift»  (proved out-of-workspace)
+  ? «real-line-ball-measure»  (proved out-of-workspace)
+  ? «real-line-ball»  (proved out-of-workspace)
+  ? «real-line-measure»  (proved out-of-workspace)
+  ? «real-line-metric»  (proved out-of-workspace)
 Partial-missing declarations: none

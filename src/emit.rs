@@ -12,7 +12,7 @@ pub const TOOL_NAME: &str = "probe-leanblueprint";
 // 3.0 aligns with the ecosystem-wide interchange bump so `probe merge`/`project`
 // accept the extract. It also carries the optional `blueprint-source-*-status`
 // fields (raw Verso status preserved when the canonical enum is lossy), the
-// machine-confirmed headline counts, and the `source` passthrough (source.class).
+// probe-lean-confirmed headline counts, and the `source` passthrough (source.class).
 pub const SCHEMA_VERSION: &str = "3.0";
 pub const EXTRACT_SCHEMA: &str = "probe-leanblueprint/extract";
 pub const SUMMARY_SCHEMA: &str = "probe-leanblueprint/summary";

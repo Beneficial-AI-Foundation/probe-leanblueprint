@@ -1,9 +1,8 @@
 probe-leanblueprint stats — SpherePacking 1828993
   source: https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean.git@1828993f87
 
-Headline: 21/106 theorems machine-confirmed fully proved (19.8%)
-  (blueprint claims 24/106; 3 not backed by probe-lean's verification status)
-Blueprint nodes: 140   (bound 75 · planned-only 51 · decl-missing 14 · partial-missing 1 · mismatches 0)
+Headline: 21/106 theorems probe-lean-confirmed fully proved (19.8%) (+3 upstream-proved)
+Blueprint nodes: 140   (bound 75 · planned-only 51 · decl-missing 14 (12 upstream-proved) · partial-missing 1 · mismatches 0)
 
 Statement axis (is the statement formalized?)
   status             all   def   thm
@@ -32,19 +31,19 @@ By chapter                            nodes  stmt✓  thm✓/thm
 
 Status mismatches: none
 Declarations bound in blueprint but missing from probe-lean:
-  ? IsZLattice
-  ? «def:Ek»
-  ? «def:Fourier-Transform»
+  ? IsZLattice  (proved out-of-workspace)
+  ? «def:Ek»  (proved out-of-workspace)
+  ? «def:Fourier-Transform»  (proved out-of-workspace)
   ? «def:Mk»
   ? «def:Schwartz-Space»
-  ? «def:automorphy-factor»
-  ? «def:dedekind_eta»
-  ? «def:dual-lattice»
-  ? «lemma:Ek-is-modular-form»
-  ? «lemma:Fourier-transform-is-automorphism»
-  ? «lemma:automorphy-factor-chain-rule»
-  ? «lemma:slash-operator-chain-rule»
-  ? «thm:lvl1_dims»
-  ? «thm:nonpos_wt»
+  ? «def:automorphy-factor»  (proved out-of-workspace)
+  ? «def:dedekind_eta»  (proved out-of-workspace)
+  ? «def:dual-lattice»  (proved out-of-workspace)
+  ? «lemma:Ek-is-modular-form»  (proved out-of-workspace)
+  ? «lemma:Fourier-transform-is-automorphism»  (proved out-of-workspace)
+  ? «lemma:automorphy-factor-chain-rule»  (proved out-of-workspace)
+  ? «lemma:slash-operator-chain-rule»  (proved out-of-workspace)
+  ? «thm:lvl1_dims»  (proved out-of-workspace)
+  ? «thm:nonpos_wt»  (proved out-of-workspace)
 Bound nodes with some declarations missing from probe-lean:
   ? «def:Gamma-generators»: ModularGroup.S, ModularGroup.T

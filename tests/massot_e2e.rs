@@ -94,7 +94,7 @@ fn massot_enrichment_from_emitter_fixture() {
         "blueprint claims bar fully proved"
     );
     assert_eq!(
-        summary.headline.theorems_fully_proved_machine_confirmed, 0,
+        summary.headline.theorems_fully_proved_probe_lean_confirmed, 0,
         "machine contradicts bar, so it is not confirmed"
     );
 }

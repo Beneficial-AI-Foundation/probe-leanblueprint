@@ -1,9 +1,8 @@
 probe-leanblueprint stats — FLT ee47fd2
   source: https://github.com/ImperialCollegeLondon/FLT.git@ee47fd2abe
 
-Headline: 88/194 theorems machine-confirmed fully proved (45.4%)
-  (blueprint claims 105/194; 17 not backed by probe-lean's verification status)
-Blueprint nodes: 245   (bound 150 · planned-only 73 · decl-missing 22 · partial-missing 0 · mismatches 0)
+Headline: 88/194 theorems probe-lean-confirmed fully proved (45.4%) (+17 upstream-proved)
+Blueprint nodes: 245   (bound 150 · planned-only 73 · decl-missing 22 (22 upstream-proved) · partial-missing 0 · mismatches 0)
 
 Statement axis (is the statement formalized?)
   status             all   def   thm
@@ -37,26 +36,26 @@ By chapter                            nodes  stmt✓  thm✓/thm
 
 Status mismatches: none
 Declarations bound in blueprint but missing from probe-lean:
-  ? fermatLastTheoremThree
-  ? «Algebra.IsInvariant.charpoly_mem_lifts»
-  ? «Algebra.IsInvariant.isIntegral»
-  ? «ContinuousMulEquiv.piUnits»
-  ? «FermatLastTheorem.of_odd_primes»
-  ? «FixedPoints.toAlgAut_surjective»
-  ? «IsAlgebraic.exists_smul_eq_mul»
-  ? «IsFractionRing.stabilizerHom_surjective»
-  ? «IsFractionRing.stabilizerHom»
-  ? «MeasureTheory.addEquivAddHaarChar_comap»
-  ? «MeasureTheory.addEquivAddHaarChar_eq»
-  ? «MeasureTheory.addEquivAddHaarChar_refl»
-  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_comap»
-  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_map»
-  ? «MeasureTheory.addEquivAddHaarChar_smul_map»
-  ? «MeasureTheory.addEquivAddHaarChar_smul_preimage»
-  ? «MeasureTheory.addEquivAddHaarChar_trans»
-  ? «MeasureTheory.addEquivAddHaarChar»
-  ? «MeasureTheory.mulEquivHaarChar_eq_one_of_compactSpace»
-  ? «MulSemiringAction.charpoly»
-  ? «MulSemiringAction.monic_charpoly»
-  ? «Submonoid.units_isCompact»
+  ? fermatLastTheoremThree  (proved out-of-workspace)
+  ? «Algebra.IsInvariant.charpoly_mem_lifts»  (proved out-of-workspace)
+  ? «Algebra.IsInvariant.isIntegral»  (proved out-of-workspace)
+  ? «ContinuousMulEquiv.piUnits»  (proved out-of-workspace)
+  ? «FermatLastTheorem.of_odd_primes»  (proved out-of-workspace)
+  ? «FixedPoints.toAlgAut_surjective»  (proved out-of-workspace)
+  ? «IsAlgebraic.exists_smul_eq_mul»  (proved out-of-workspace)
+  ? «IsFractionRing.stabilizerHom_surjective»  (proved out-of-workspace)
+  ? «IsFractionRing.stabilizerHom»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_comap»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_eq»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_refl»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_comap»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_map»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_map»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_preimage»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_trans»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar»  (proved out-of-workspace)
+  ? «MeasureTheory.mulEquivHaarChar_eq_one_of_compactSpace»  (proved out-of-workspace)
+  ? «MulSemiringAction.charpoly»  (proved out-of-workspace)
+  ? «MulSemiringAction.monic_charpoly»  (proved out-of-workspace)
+  ? «Submonoid.units_isCompact»  (proved out-of-workspace)
 Partial-missing declarations: none

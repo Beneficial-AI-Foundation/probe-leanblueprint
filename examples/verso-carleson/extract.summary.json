@@ -30,6 +30,7 @@
       "with-lean-decl": 152,
       "planned-only": 1,
       "decl-missing": 8,
+      "decl-missing-upstream-proved": 8,
       "partial-missing": 0,
       "collisions": 2,
       "mismatches": 0
@@ -79,9 +80,10 @@
     "headline": {
       "theorems-total": 161,
       "theorems-fully-proved": 154,
-      "theorems-fully-proved-machine-confirmed": 146,
+      "theorems-fully-proved-probe-lean-confirmed": 146,
+      "theorems-fully-proved-upstream-proved": 8,
       "fraction": 0.9565217391304348,
-      "fraction-machine-confirmed": 0.906832298136646
+      "fraction-probe-lean-confirmed": 0.906832298136646
     },
     "by-chapter": {
       "Formalization-of-Carleson___s-theorem": {

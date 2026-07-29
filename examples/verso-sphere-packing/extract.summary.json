@@ -30,6 +30,7 @@
       "with-lean-decl": 75,
       "planned-only": 51,
       "decl-missing": 14,
+      "decl-missing-upstream-proved": 12,
       "partial-missing": 1,
       "collisions": 0,
       "mismatches": 0
@@ -79,9 +80,10 @@
     "headline": {
       "theorems-total": 106,
       "theorems-fully-proved": 24,
-      "theorems-fully-proved-machine-confirmed": 21,
+      "theorems-fully-proved-probe-lean-confirmed": 21,
+      "theorems-fully-proved-upstream-proved": 3,
       "fraction": 0.22641509433962265,
-      "fraction-machine-confirmed": 0.19811320754716982
+      "fraction-probe-lean-confirmed": 0.19811320754716982
     },
     "by-chapter": {
       "Cohn-Elkies-Bounds": {

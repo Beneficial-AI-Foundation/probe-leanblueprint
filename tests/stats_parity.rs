@@ -40,6 +40,7 @@ fn node(label: &str, decls: &[&str], kind: NodeKind, proof: ProofStatus) -> Blue
         label: label.into(),
         kind: Some(kind),
         lean_decls: decls.iter().map(|s| s.to_string()).collect(),
+        external_upstream_proved: vec![],
         statement_status: StatementStatus::Formalized,
         proof_status: proof,
         source_statement_status: None,
@@ -66,6 +67,7 @@ fn stats_py_agrees_with_summary_under_collision() {
     let mut atoms = BTreeMap::new();
     atoms.insert("probe:Foo.bar".to_string(), atom("verified"));
     atoms.insert("probe:Foo.def".to_string(), atom("verified"));
+    atoms.insert("probe:Foo.partial".to_string(), atom("verified"));
 
     let mut model = BlueprintModel::default();
     model.nodes.push(node(
@@ -99,6 +101,15 @@ fn stats_py_agrees_with_summary_under_collision() {
         &["Foo.absent"],
         NodeKind::Theorem,
         ProofStatus::None,
+    ));
+    // Partial-missing fully-proved theorem: one decl present, one absent. Bound
+    // but not fully backed, so NOT probe-lean-confirmed on either side — this is
+    // the case that would drift if Python dropped the `missing_decls` check.
+    model.nodes.push(node(
+        "thm:partial",
+        &["Foo.partial", "Foo.absent2"],
+        NodeKind::Theorem,
+        ProofStatus::FullyProved,
     ));
 
     let report = enrich::enrich(&mut atoms, &model);
@@ -161,6 +172,11 @@ fn stats_py_agrees_with_summary_under_collision() {
         summary.totals.mismatches,
         "mismatches parity"
     );
+    assert_eq!(
+        stats["totals"]["partial-missing"].as_u64().unwrap() as usize,
+        summary.totals.partial_missing,
+        "partial-missing parity"
+    );
     // Headline theorem numbers.
     assert_eq!(
         stats["headline"]["theorems-total"].as_u64().unwrap() as usize,
@@ -173,11 +189,11 @@ fn stats_py_agrees_with_summary_under_collision() {
         "theorems-fully-proved parity"
     );
     assert_eq!(
-        stats["headline"]["theorems-fully-proved-machine-confirmed"]
+        stats["headline"]["theorems-fully-proved-probe-lean-confirmed"]
             .as_u64()
             .unwrap() as usize,
-        summary.headline.theorems_fully_proved_machine_confirmed,
-        "machine-confirmed parity"
+        summary.headline.theorems_fully_proved_probe_lean_confirmed,
+        "probe-lean-confirmed parity"
     );
     // Per-axis "all" formalized-statement count.
     assert_eq!(

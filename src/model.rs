@@ -43,21 +43,15 @@ impl NodeKind {
     }
 }
 
-/// Statement axis: is the *statement* of this node formalized in Lean?
+/// Statement axis: is the *statement* formalized in Lean? Ordered worst -> best.
 ///
-/// Ordered worst -> best. Mirrors the leanblueprint / Verso border colors.
-// @kb: kb/tools/probe-leanblueprint.md#two-axis-status-vocabulary-canonical
+/// Rung meanings + per-adapter mapping are normative in
+/// `docs/SCHEMA.md` (§Semantics → Status axes, Source-status mapping).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StatementStatus {
-    /// Informal only; no Lean formalization planned/started yet (Verso `none`;
-    /// Massot: none of `\leanok`/`can_state`/`\notready` set).
     NonePlanned,
-    /// Prerequisites not ready to state (Verso `blocked`, leanblueprint
-    /// `\notready`).
     Blocked,
-    /// Ready to be formalized; all prerequisites are done (`can_state`).
     Ready,
-    /// The statement is formalized in Lean (`\leanok` / Verso `formalized`).
     Formalized,
 }
 
@@ -72,18 +66,16 @@ impl StatementStatus {
     }
 }
 
-/// Proof axis: is the *proof* of this node complete (sorry-free)?
+/// Proof axis: is the *proof* complete (sorry-free)? Ordered worst -> best.
 ///
-/// Ordered worst -> best.
+/// `Proved` = locally sorry-free; `FullyProved` = proof and all transitive
+/// dependencies complete. Rung meanings + mapping are normative in
+/// `docs/SCHEMA.md` (§Semantics → Status axes).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ProofStatus {
-    /// No proof, or proof not ready.
     None,
-    /// Ready to be formalized; all prerequisites are done (`can_prove`).
     Ready,
-    /// Proof is formalized locally (sorry-free) (`proved`).
     Proved,
-    /// Proof and all its ancestors are formalized (`fully_proved`).
     FullyProved,
 }
 
@@ -103,13 +95,12 @@ impl ProofStatus {
     }
 }
 
-/// The origin of the status information, recorded on each atom so downstream
-/// consumers know how much to trust the blueprint proof axis.
+/// How far to trust the proof axis (see `docs/SCHEMA.md` §Semantics → Status
+/// source): `Declared` = human `\leanok` (Massot), `CodeDerived` = elaborated by
+/// the Verso renderer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StatusSource {
-    /// Human-authored `\leanok` (Massot leanblueprint). Not machine-checked.
     Declared,
-    /// Code-derived by the Verso blueprint renderer.
     CodeDerived,
 }
 
@@ -135,6 +126,12 @@ pub struct BlueprintNode {
     /// Verso `codeData.external.decls[].canonical`). Empty for planned-only
     /// nodes.
     pub lean_decls: Vec<String>,
+    /// Subset of `lean_decls` the Verso renderer reports as out-of-workspace,
+    /// present, and proved (a dependency, commonly but not necessarily
+    /// Mathlib/stdlib). Drives the upstream-proved node classification — see
+    /// `docs/SCHEMA.md` §Semantics → Node classification. Verso only; empty for
+    /// Massot.
+    pub external_upstream_proved: Vec<String>,
     pub statement_status: StatementStatus,
     pub proof_status: ProofStatus,
     /// Raw source status when the canonical enum above loses information, e.g.
@@ -214,6 +211,10 @@ impl BlueprintModel {
 /// de-duplication.
 pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
     union_extend(&mut existing.lean_decls, &incoming.lean_decls);
+    union_extend(
+        &mut existing.external_upstream_proved,
+        &incoming.external_upstream_proved,
+    );
     union_extend(&mut existing.statement_uses, &incoming.statement_uses);
     union_extend(&mut existing.proof_uses, &incoming.proof_uses);
     if incoming.statement_status > existing.statement_status {
@@ -286,6 +287,7 @@ mod tests {
             label: label.into(),
             kind: Some(NodeKind::Theorem),
             lean_decls: decls.iter().map(|s| s.to_string()).collect(),
+            external_upstream_proved: vec![],
             statement_status: StatementStatus::NonePlanned,
             proof_status: ProofStatus::None,
             source_statement_status: None,
@@ -388,7 +390,8 @@ mod tests {
 
 /// The blueprint extension fields attached to an atom, serialized (flattened)
 /// into the atom JSON per KB P10. Field names are the canonical `blueprint-*`
-/// keys.
+/// keys; their meanings are normative in `docs/SCHEMA.md` (§Blueprint extension
+/// fields and §Semantics).
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BlueprintExtensions {
     #[serde(rename = "blueprint-label")]
@@ -441,21 +444,22 @@ pub struct BlueprintExtensions {
         skip_serializing_if = "std::ops::Not::not"
     )]
     pub decl_missing: bool,
-    /// For a BOUND node, the subset of `lean_decls` that probe-lean did not emit
-    /// (partial miss). Distinct from `decl_missing`, which flags the all-absent
-    /// synthetic-node case. Empty when every bound decl is present.
+    /// Upstream-proved decl-missing marker (`docs/SCHEMA.md` §Node
+    /// classification). Always paired with `decl_missing`.
+    #[serde(
+        rename = "blueprint-decl-upstream-proved",
+        skip_serializing_if = "std::ops::Not::not"
+    )]
+    pub decl_upstream_proved: bool,
+    /// For a BOUND node, the subset of `lean_decls` probe-lean did not emit
+    /// (partial miss); the all-absent case uses `decl_missing` instead.
     #[serde(
         rename = "blueprint-missing-decls",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub missing_decls: Vec<String>,
-    /// `true` on a synthetic **shadow** atom emitted for a node that binds a
-    /// present Lean decl already claimed by a later node (a same-decl
-    /// collision). The shadow keeps the losing node's label in the extract so
-    /// the atom set stays node-complete (every model node has a record), which
-    /// is what makes `blueprint_stats.py` a faithful cross-check of the summary
-    /// sidecar. A shadowed node is genuinely bound (it has a present decl), so
-    /// consumers should count it as bound despite its `language: "blueprint"`.
+    /// Collision-shadow marker (`docs/SCHEMA.md` §Node classification): a
+    /// genuinely-bound node whose real atom a later node claimed. Count as bound.
     #[serde(
         rename = "blueprint-shadow",
         skip_serializing_if = "std::ops::Not::not"

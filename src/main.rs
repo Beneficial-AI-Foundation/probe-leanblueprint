@@ -748,32 +748,58 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
     commit_staged(extract_tmp, &extract_path)?;
     commit_staged(summary_tmp, &summary_path)?;
 
+    // Split decl-missing into "proved out-of-workspace" (a dependency) vs a
+    // genuine gap so a project that merely cites upstream lemmas isn't shown as
+    // absent.
+    let decl_missing = if report.decl_missing_upstream_proved > 0 {
+        format!(
+            "{} decl-missing ({} upstream-proved)",
+            report.decl_missing, report.decl_missing_upstream_proved
+        )
+    } else {
+        format!("{} decl-missing", report.decl_missing)
+    };
     eprintln!(
-        "Blueprint nodes: {} ({} bound, {} planned-only, {} decl-missing, {} partial-missing, \
+        "Blueprint nodes: {} ({} bound, {} planned-only, {decl_missing}, {} partial-missing, \
          {} collisions); mismatches: {}",
         report.nodes_total,
         report.nodes_with_decl,
         report.planned_only,
-        report.decl_missing,
         report.partial_missing,
         report.collisions,
         report.mismatches.len()
     );
     let h = &summary_env.data.headline;
+    // Append upstream-proved to the headline: proved elsewhere, so not a local
+    // confirmation but not a gap either.
+    let upstream = if h.theorems_fully_proved_upstream_proved > 0 {
+        format!(
+            " (+{} upstream-proved)",
+            h.theorems_fully_proved_upstream_proved
+        )
+    } else {
+        String::new()
+    };
     eprintln!(
-        "Headline: {}/{} theorems machine-confirmed fully proved ({:.1}%)",
-        h.theorems_fully_proved_machine_confirmed,
+        "Headline: {}/{} theorems probe-lean-confirmed fully proved ({:.1}%){upstream}",
+        h.theorems_fully_proved_probe_lean_confirmed,
         h.theorems_total,
-        h.fraction_machine_confirmed * 100.0
+        h.fraction_probe_lean_confirmed * 100.0
     );
     // Surface the blueprint's own claim only when it exceeds what the machine
-    // backs, so a `declared` blueprint's over-claim is visible, not hidden.
-    if h.theorems_fully_proved > h.theorems_fully_proved_machine_confirmed {
+    // backs *and* is not accounted for upstream, so a `declared` blueprint's
+    // over-claim is visible without flagging legitimate upstream proofs.
+    // saturating_sub: the invariant confirmed + upstream <= claimed holds today
+    // (disjoint subsets of claimed), but this is a log path — never panic/wrap it
+    // if a future classification change breaks the invariant.
+    let unbacked = h
+        .theorems_fully_proved
+        .saturating_sub(h.theorems_fully_proved_probe_lean_confirmed)
+        .saturating_sub(h.theorems_fully_proved_upstream_proved);
+    if unbacked > 0 {
         eprintln!(
-            "  (blueprint claims {}/{}; {} not backed by probe-lean's verification status)",
-            h.theorems_fully_proved,
-            h.theorems_total,
-            h.theorems_fully_proved - h.theorems_fully_proved_machine_confirmed
+            "  (blueprint claims {}/{}; {unbacked} not backed by probe-lean's verification status)",
+            h.theorems_fully_proved, h.theorems_total,
         );
     }
     eprintln!("Wrote {}", extract_path.display());

@@ -46,12 +46,12 @@ Full report: [`blueprint-stats.txt`](./blueprint-stats.txt) · machine summary:
 [`extract.summary.json`](./extract.summary.json).
 
 ```
-Headline: 8/53 theorems machine-confirmed fully proved (15.1%)
+Headline: 8/53 theorems probe-lean-confirmed fully proved (15.1%)
 Blueprint nodes: 111   (bound 33 · planned-only 78 · decl-missing 0 · partial-missing 0 · mismatches 0)
 ```
 
 - **58 definitions + 53 theorems = 111 nodes** across 9 chapters. The status is
-  code-derived (Verso), so machine-confirmed equals the blueprint's own claim —
+  code-derived (Verso), so probe-lean-confirmed equals the blueprint's own claim —
   there are **0 mismatches**.
 - **78 planned-only** nodes: this is an early-stage formalization with a large
   roadmap of not-yet-bound results (65 statements still `blocked`).

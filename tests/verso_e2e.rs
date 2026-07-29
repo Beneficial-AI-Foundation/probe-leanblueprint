@@ -123,8 +123,8 @@ fn verso_secure_messaging_full_project() {
     // Verso status is code-derived, so every claim is machine-backed: confirmed
     // equals claimed (no `blueprint-status-mismatch`).
     assert_eq!(
-        summary.headline.theorems_fully_proved_machine_confirmed, 8,
-        "code-derived: machine-confirmed equals claimed"
+        summary.headline.theorems_fully_proved_probe_lean_confirmed, 8,
+        "code-derived: probe-lean-confirmed equals claimed"
     );
 
     // Per-chapter breakdown is populated and consistent with the whole.

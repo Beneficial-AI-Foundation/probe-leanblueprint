@@ -62,7 +62,7 @@ probe-leanblueprint extract path/to/project_template \
 ## probe-leanblueprint result
 
 ```
-Headline: 0/5 theorems machine-confirmed fully proved (0.0%)
+Headline: 0/5 theorems probe-lean-confirmed fully proved (0.0%)
   (blueprint claims 1/5; 1 not backed by probe-lean's verification status)
 Blueprint nodes: 9   (bound 4 · planned-only 3 · decl-missing 2 · partial-missing 0 · mismatches 0)
 
@@ -94,11 +94,11 @@ The Verso build renders a **Blueprint Summary** page
 | Informal-only / ready | "Ready now 3"; `Informal-only entries 3` | statement `ready` = 2, `blocked` = 1 |
 
 The blueprint's claim (**1/5 theorems fully proved**) matches the rendered
-summary ("Fully closed 1" of 5). probe-leanblueprint's *machine-confirmed*
+summary ("Fully closed 1" of 5). probe-leanblueprint's *probe-lean-confirmed*
 headline is **0/5**, because the one fully-proved theorem is `multiplication_assoc`,
 bound to the stdlib decl `Nat.mul_assoc` — which is not in this project's own
 probe-lean extract, so the machine cannot confirm it here. Both numbers are
-emitted; the machine-confirmed one is the honest verified-progress figure (P26).
+emitted; the probe-lean-confirmed one is the honest verified-progress figure (P26).
 
 ### Decl binding
 
