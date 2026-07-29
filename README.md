@@ -32,7 +32,7 @@ to Lean declarations**.
 
 | Requirement | Detail |
 |-------------|--------|
-| **A `probe-lean`-analyzable project** | The atom base comes from `probe-lean extract` (run automatically, or supplied via `--lean`). The project must meet [probe-lean's requirements](https://github.com/Beneficial-AI-Foundation/probe-lean#supported-projects) — a buildable Lean library, compatible toolchain, etc. |
+| **A `probe-lean`-analyzable project** | The atom base comes from `probe-lean extract` (run automatically, or supplied via `--lean`). The project must meet [probe-lean's requirements](https://github.com/Beneficial-AI-Foundation/probe-lean#supported-projects) — a buildable Lean library, compatible toolchain, etc. probe-lean ≥ v0.10.0 emits Schema 3.0 (consumed directly); older releases (≤ v0.9.6) and cached extracts emit 2.x and are auto-migrated, so no re-extraction is needed. |
 | **A blueprint in a supported ecosystem** | Either a **Verso** blueprint (`versoBlueprint` declared in the root or `docs/` lakefile) or a **Massot** `leanblueprint` (`blueprint/src/web.tex`). Auto-detected; fails with a clear error when neither is present. |
 | **Verso ≥ v4.29** | The `graphs[].nodes[]` schema this tool reads first appears in versoBlueprint v4.29 (v4.30 = `vbpInternalSchemaVersion` 2, v4.31 = 3). Earlier renderers emit only a flattened preview manifest. |
 | **A formal blueprint graph bound to decls** | Useful output requires blueprint *entries* — Verso `definition`/`theorem` nodes, or Massot `\begin{theorem}` + `\lean{...}`/`\leanok`/`\uses{...}` — that bind real Lean declarations. Progress (statement/proof status, dependency edges) lives on these nodes. |
@@ -144,7 +144,7 @@ python3 scripts/blueprint_stats.py path/to/leanblueprint_<pkg>.json --json  # ma
 Example (secure-messaging):
 
 ```
-Headline: 8/53 theorems machine-confirmed fully proved (15.1%)
+Headline: 8/53 theorems probe-lean-confirmed fully proved (15.1%)
 Blueprint nodes: 111   (bound 33 · planned-only 78 · decl-missing 0 · partial-missing 0 · mismatches 0)
 
 By chapter                            nodes  stmt✓  thm✓/thm
@@ -155,9 +155,24 @@ By chapter                            nodes  stmt✓  thm✓/thm
 ```
 
 (58 definitions + 53 theorems = 111 nodes. The headline reports theorems
-*machine-confirmed* fully proved — for a code-derived Verso blueprint this equals
-the blueprint's own claim; for a `declared` Massot blueprint it excludes any
-`\leanok` the machine contradicts.)
+*probe-lean-confirmed* fully proved: bound to a present atom and not contradicted by
+probe-lean. This is a "the machine hasn't refuted this" bar, not "affirmatively
+verified" — a bound theorem with no `verification-status`, a `trusted` one, or
+one only locally `verified` still counts. It is *not* the same as the blueprint's
+own claim (`theorems-fully-proved`), even for a code-derived Verso blueprint: a
+fully-proved node that is decl-missing or unbound inflates the claim but is never
+confirmed. For a `declared` Massot blueprint it additionally drops any `\leanok`
+the machine contradicts.
+
+A decl-missing node is split further: one whose binding is an *out-of-workspace*
+decl the Verso renderer reports present and proved (a dependency — commonly
+Mathlib/stdlib, but only out-of-workspace is actually checked) is proved
+elsewhere, just not in this project's extract — a genuine gap it is not.
+Those are reported separately as `+K upstream-proved` on the headline (and
+`decl-missing-upstream-proved` in the totals) so "proved upstream" is never
+conflated with "not found". The blueprint-project-template reads `0/5
+probe-lean-confirmed (+1 upstream-proved)`: its one fully-proved theorem binds
+`Nat.mul_assoc`, proved in stdlib, absent from the template's own atoms.)
 
 ## How it works
 
