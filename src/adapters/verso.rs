@@ -368,7 +368,14 @@ const INFRA_DIRS: &[&str] = &[
 /// authoritative over the manifest's directory: a single shared manifest renders
 /// every chapter, so the directory name would collapse them into one bucket.
 fn chapter_from_href(href: &str) -> Option<String> {
-    let seg = href.split('/').find(|s| !s.is_empty())?.trim();
+    // The chapter is the first real path segment. Skip empty segments and any
+    // anchor-only segment (`#…`): an href like `#--x--statement` carries no
+    // chapter, so it must fall through to the manifest-directory fallback rather
+    // than become a junk `#…` chapter bucket.
+    let seg = href
+        .split('/')
+        .find(|s| !s.is_empty() && !s.starts_with('#'))?
+        .trim();
     if seg.is_empty() {
         None
     } else {
@@ -593,6 +600,9 @@ mod tests {
             Some("Collatz")
         );
         assert_eq!(chapter_from_href("").as_deref(), None);
+        // Anchor-only href carries no chapter path segment: must NOT become a
+        // `#…` chapter (it should fall through to the directory fallback).
+        assert_eq!(chapter_from_href("#--x--statement").as_deref(), None);
 
         let text = r#"{
           "graphs": [{"nodes": [
@@ -604,6 +614,18 @@ mod tests {
         // Manifest-level chapter is "Wrong-Dir"; the node's href wins.
         let model = parse_manifest(text, Some("Wrong-Dir")).unwrap();
         assert_eq!(model.nodes[0].chapter.as_deref(), Some("Real-Chapter"));
+
+        // A node whose only href is an anchor falls back to the manifest dir,
+        // not a "#…" chapter bucket.
+        let anchor = r##"{
+          "graphs": [{"nodes": [
+            {"label":"b","kind":"theorem","href":"#--b--statement",
+             "statementStatus":"formalized","proofStatus":"none"}
+          ]}],
+          "previews": []
+        }"##;
+        let model = parse_manifest(anchor, Some("Fallback-Dir")).unwrap();
+        assert_eq!(model.nodes[0].chapter.as_deref(), Some("Fallback-Dir"));
     }
 
     #[test]

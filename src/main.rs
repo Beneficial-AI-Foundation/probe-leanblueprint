@@ -112,7 +112,8 @@ struct ExtractArgs {
 
     /// Override the source package name (identity of the atom base). Use with
     /// `--source-version` to disambiguate a spine with multiple probe-lean
-    /// inputs.
+    /// inputs. Note: these set only the package name/version; repo/commit/language
+    /// still come from the first probe-lean input (a warning fires if they differ).
     #[arg(long)]
     source_package: Option<String>,
 
@@ -306,16 +307,16 @@ fn load_atoms(
     // probe-lean <= v0.9.6 emits interchange `schema-version` "2.0", but the
     // pinned hub loader accepts only "3.x". `migrate_lean_envelope` re-stamps a
     // 2.x `probe-lean/extract` to a temp 3.0 copy (leaving the original file
-    // untouched); `_migrated` keeps that temp alive for the loads below.
-    let _migrated = migrate_lean_envelope(&lean_path)?;
-    let load_path = _migrated
+    // untouched); `migrated` keeps that temp alive for the loads below.
+    let migrated = migrate_lean_envelope(&lean_path)?;
+    let load_path = migrated
         .as_ref()
         .map(|t| t.path())
         .unwrap_or(lean_path.as_path());
     // Migration deliberately skips 2.x inputs of other schemas (e.g. a merged
     // spine) — detect that here so a load failure gets actionable guidance
     // instead of the hub's bare "expected 3.x".
-    let skipped_2x = _migrated.is_none() && envelope_schema_version(&lean_path).starts_with("2.");
+    let skipped_2x = migrated.is_none() && envelope_schema_version(&lean_path).starts_with("2.");
     let load_err = |e: String| {
         if skipped_2x {
             anyhow::anyhow!(
@@ -375,7 +376,23 @@ fn select_source(
     let both_overridden = pkg_override.is_some() && ver_override.is_some();
 
     let mut source = if let Some(first) = lean.first() {
-        if !both_overridden {
+        if both_overridden {
+            // The overrides set only package identity (below); repo/commit/language
+            // still come from the FIRST probe-lean input. If inputs disagree on
+            // repo/commit, warn — the output would otherwise silently carry the
+            // origin of an arbitrary (possibly unrelated) input.
+            let origin_diverges = lean.iter().any(|p| {
+                p.source.repo != first.source.repo || p.source.commit != first.source.commit
+            });
+            if origin_diverges {
+                eprintln!(
+                    "warning: --source-package/--source-version set the package identity, \
+                     but repo/commit are taken from the first of {} probe-lean inputs that \
+                     disagree on origin",
+                    lean.len()
+                );
+            }
+        } else {
             let all_same = lean.iter().all(|p| {
                 p.source.package == first.source.package
                     && p.source.package_version == first.source.package_version

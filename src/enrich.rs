@@ -9,7 +9,7 @@
 //! - A `blueprint-status-mismatch` flag is set when the blueprint claims a proof
 //!   is done but probe-lean found it unverified/failed.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use probe::types::{Atom, CodeText};
 use serde_json::Value;
@@ -323,10 +323,17 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         // it wins any atom against a colliding later node). Compute the ext
         // content once, the same way for the bound and collision-shadow cases.
         report.nodes_with_decl += 1;
+        // Decls absent from the atom base, EXCLUDING ones the renderer proved
+        // out-of-workspace: an upstream-proved decl is expected to be absent here
+        // (it lives in a dependency), so it is not a gap. Without this filter a
+        // *mixed* node (one present local decl + one absent upstream-proved decl)
+        // would be mislabeled partial-missing and dropped from the confirmed
+        // count, defeating the upstream-proved split for bound nodes.
         let missing: Vec<String> = node
             .lean_decls
             .iter()
             .filter(|d| !atoms.contains_key(&code_name_for_decl(d)))
+            .filter(|d| !node.external_upstream_proved.contains(*d))
             .cloned()
             .collect();
         if !missing.is_empty() {
@@ -384,9 +391,9 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
     }
 
     // Insert synthetic atoms (idempotent re-run), and flag duplicate keys.
-    let mut seen_synthetic: HashMap<String, ()> = HashMap::new();
+    let mut seen_synthetic: HashSet<String> = HashSet::new();
     for (key, atom) in to_insert {
-        if seen_synthetic.insert(key.clone(), ()).is_some() {
+        if !seen_synthetic.insert(key.clone()) {
             report.duplicate_synthetic += 1;
             eprintln!("warning: duplicate synthetic blueprint atom {key}; keeping the last");
         }
@@ -771,6 +778,43 @@ mod tests {
             report.probe_lean_confirmed_proved.is_empty(),
             "a partial-missing fully-proved theorem must not be confirmed"
         );
+    }
+
+    /// A *mixed* fully-proved theorem — one present local decl plus one absent
+    /// decl the renderer proved out-of-workspace — is fully backed (present
+    /// locally and proved upstream), NOT partial-missing. The upstream decl must
+    /// be excluded from `missing` so the node is confirmed and that decl isn't
+    /// mislabeled a gap.
+    #[test]
+    fn mixed_local_present_plus_upstream_proved_is_confirmed() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:MyProj.thm".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        let mut n = node(
+            "thm:mixed",
+            &["MyProj.thm", "Nat.mul_assoc"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        n.external_upstream_proved = vec!["Nat.mul_assoc".to_string()];
+        model.nodes.push(n);
+
+        let report = enrich(&mut atoms, &model);
+        assert_eq!(
+            report.nodes_with_decl, 1,
+            "bound via the present local decl"
+        );
+        assert_eq!(
+            report.partial_missing, 0,
+            "the absent decl is upstream-proved, not a gap"
+        );
+        assert_eq!(report.probe_lean_confirmed_proved, vec!["thm:mixed"]);
+        // The present local atom must not list the upstream decl as missing.
+        let a = &atoms["probe:MyProj.thm"];
+        assert!(!a.extensions.contains_key("blueprint-missing-decls"));
     }
 
     #[test]

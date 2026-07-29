@@ -2,7 +2,7 @@ probe-leanblueprint stats — SpherePacking 1828993
   source: https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean.git@1828993f87
 
 Headline: 21/106 theorems probe-lean-confirmed fully proved (19.8%) (+3 upstream-proved)
-Blueprint nodes: 140   (bound 75 · planned-only 51 · decl-missing 14 (12 upstream-proved) · partial-missing 1 · mismatches 0)
+Blueprint nodes: 140   (bound 75 · planned-only 51 · decl-missing 14 (12 upstream-proved) · partial-missing 0 · mismatches 0)
 
 Statement axis (is the statement formalized?)
   status             all   def   thm
@@ -45,5 +45,4 @@ Declarations bound in blueprint but missing from probe-lean:
   ? «lemma:slash-operator-chain-rule»  (proved out-of-workspace)
   ? «thm:lvl1_dims»  (proved out-of-workspace)
   ? «thm:nonpos_wt»  (proved out-of-workspace)
-Bound nodes with some declarations missing from probe-lean:
-  ? «def:Gamma-generators»: ModularGroup.S, ModularGroup.T
+Partial-missing declarations: none

@@ -31,7 +31,7 @@
       "planned-only": 51,
       "decl-missing": 14,
       "decl-missing-upstream-proved": 12,
-      "partial-missing": 1,
+      "partial-missing": 0,
       "collisions": 0,
       "mismatches": 0
     },

@@ -68,6 +68,7 @@ fn stats_py_agrees_with_summary_under_collision() {
     atoms.insert("probe:Foo.bar".to_string(), atom("verified"));
     atoms.insert("probe:Foo.def".to_string(), atom("verified"));
     atoms.insert("probe:Foo.partial".to_string(), atom("verified"));
+    atoms.insert("probe:Foo.mixedlocal".to_string(), atom("verified"));
 
     let mut model = BlueprintModel::default();
     model.nodes.push(node(
@@ -111,6 +112,17 @@ fn stats_py_agrees_with_summary_under_collision() {
         NodeKind::Theorem,
         ProofStatus::FullyProved,
     ));
+    // Mixed node: present local decl + absent upstream-proved decl. Confirmed on
+    // both sides (fully backed), and the upstream decl must not appear as a
+    // missing decl — the parity case for the bound-branch upstream exclusion.
+    let mut mixed = node(
+        "thm:mixed",
+        &["Foo.mixedlocal", "Up.mul"],
+        NodeKind::Theorem,
+        ProofStatus::FullyProved,
+    );
+    mixed.external_upstream_proved = vec!["Up.mul".to_string()];
+    model.nodes.push(mixed);
 
     let report = enrich::enrich(&mut atoms, &model);
     let summary = enrich::summarize(&model, &report);

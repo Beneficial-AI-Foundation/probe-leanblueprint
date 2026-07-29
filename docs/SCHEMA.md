@@ -370,6 +370,7 @@ two-axis progress stats.
       "with-lean-decl": 29,
       "planned-only": 76,
       "decl-missing": 9,
+      "decl-missing-upstream-proved": 0,
       "partial-missing": 0,
       "collisions": 0,
       "mismatches": 0
@@ -382,6 +383,7 @@ two-axis progress stats.
       "theorems-total": 56,
       "theorems-fully-proved": 9,
       "theorems-fully-proved-probe-lean-confirmed": 9,
+      "theorems-fully-proved-upstream-proved": 0,
       "fraction": 0.1607142857142857,
       "fraction-probe-lean-confirmed": 0.1607142857142857
     },

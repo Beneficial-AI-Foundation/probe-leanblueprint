@@ -65,7 +65,6 @@ def extract(path):
                 "proved": bool(data.get("proved", False)),
                 "fully_proved": bool(data.get("fully_proved", False)),
                 "issue": data.get("issue"),
-                "has_proof": bool(data.get("proved_by")),
             }
         for s, t in graph.edges:
             edges.append({"source": s.id, "target": t.id, "axis": "statement"})
