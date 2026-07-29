@@ -205,6 +205,93 @@ fn detect_adapter(args: &ExtractArgs) -> Result<Detected> {
     }
 }
 
+/// Migrate a probe-lean atom envelope from interchange `schema-version` 2.x to
+/// 3.0 so the hub loader (which accepts only 3.x) can read it.
+///
+/// probe-lean >= v0.10.0 emits "3.0" natively (passes straight through); this is
+/// backward-compat for older releases (<= v0.9.6 emit "2.0") and for extracts
+/// already on disk. The re-stamp is a pure `schema-version` bump (the sole place
+/// the version lives; `inputs[]` provenance carries no per-entry version).
+///
+/// It is deliberately scoped to `probe-lean/extract` inputs, whose 2->3 delta is
+/// provably empty at the field level: the hub's only 2->3 field change was
+/// renaming the atom-scope field `is-disabled` to `untracked`, and probe-lean
+/// never emitted that field. A 2.x file of any OTHER schema (a `probe/merged-*`
+/// spine, or another producer's extract) may carry `is-disabled` and needs a
+/// real field migration we don't do here, so it is left untouched — the hub
+/// loader then rejects it with a clear `expected 3.x` error rather than us
+/// silently mislabeling a 2.0-field file as 3.0.
+///
+/// Returns `Some(temp file)` holding the migrated JSON when a 2.x
+/// `probe-lean/extract` was re-stamped (the caller keeps it alive for the load),
+/// else `None` (loaded as-is; the hub loader accepts or rejects it).
+fn migrate_lean_envelope(path: &Path) -> Result<Option<tempfile::NamedTempFile>> {
+    let content = std::fs::read_to_string(path)
+        .with_context(|| format!("failed to read {}", path.display()))?;
+    let mut raw: serde_json::Value = serde_json::from_str(&content)
+        .with_context(|| format!("failed to parse JSON in {}", path.display()))?;
+    let version = raw
+        .get("schema-version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let schema = raw.get("schema").and_then(|v| v.as_str()).unwrap_or("");
+    // Only re-stamp probe-lean's own extract; other 2.x schemas may carry
+    // `is-disabled` and need a real field migration (see doc comment).
+    if !version.starts_with("2.") || schema != "probe-lean/extract" {
+        return Ok(None);
+    }
+    // Concrete guard, not just prose: the one atom-field the 2->3 interchange
+    // renamed is `is-disabled` -> `untracked`. probe-lean never emitted it, so a
+    // pure version re-stamp is sound — but verify rather than assume. If any atom
+    // actually carries `is-disabled`, refuse instead of silently mislabeling a
+    // 2.0-field file as 3.0.
+    if let Some(data) = raw.get("data").and_then(|d| d.as_object()) {
+        if data.values().any(|atom| atom.get("is-disabled").is_some()) {
+            anyhow::bail!(
+                "{}: schema-version {version} atoms carry the 2.x `is-disabled` field, \
+                 which the 2->3 interchange renamed to `untracked`; refusing to re-stamp \
+                 (this needs a real field migration). Re-extract with probe-lean >= v0.10.0.",
+                path.display()
+            );
+        }
+    }
+    eprintln!(
+        "note: migrating probe-lean input {} from schema-version {version} to 3.0 \
+         (version re-stamp to a temp copy; the original file is left unchanged, and \
+         probe-lean atom fields are unchanged across 2->3)",
+        path.display()
+    );
+    raw["schema-version"] = serde_json::Value::String("3.0".to_string());
+    let tmp = tempfile::NamedTempFile::new()
+        .context("failed to create temp file for migrated probe-lean input")?;
+    std::fs::write(
+        tmp.path(),
+        serde_json::to_vec(&raw).context("failed to serialize migrated probe-lean input")?,
+    )
+    .with_context(|| {
+        format!(
+            "failed to write migrated probe-lean input to {}",
+            tmp.path().display()
+        )
+    })?;
+    Ok(Some(tmp))
+}
+
+/// Best-effort read of an envelope's `schema-version` for diagnostics. Returns
+/// `""` on any read/parse error (the caller then falls back to the generic path
+/// and the real error surfaces from the hub loader).
+fn envelope_schema_version(path: &Path) -> String {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| {
+            v.get("schema-version")
+                .and_then(|s| s.as_str())
+                .map(String::from)
+        })
+        .unwrap_or_default()
+}
+
 /// Load the atom base, returning it with its provenance-derived `Source` and the
 /// resolved atom-file path (an explicit `--lean`, or the file `probe-lean`
 /// generated). The path lets output-collision validation protect the atom base
@@ -216,11 +303,36 @@ fn load_atoms(
         Some(p) => p.clone(),
         None => run_probe_lean(&args.project)?,
     };
+    // probe-lean <= v0.9.6 emits interchange `schema-version` "2.0", but the
+    // pinned hub loader accepts only "3.x". `migrate_lean_envelope` re-stamps a
+    // 2.x `probe-lean/extract` to a temp 3.0 copy (leaving the original file
+    // untouched); `_migrated` keeps that temp alive for the loads below.
+    let _migrated = migrate_lean_envelope(&lean_path)?;
+    let load_path = _migrated
+        .as_ref()
+        .map(|t| t.path())
+        .unwrap_or(lean_path.as_path());
+    // Migration deliberately skips 2.x inputs of other schemas (e.g. a merged
+    // spine) — detect that here so a load failure gets actionable guidance
+    // instead of the hub's bare "expected 3.x".
+    let skipped_2x = _migrated.is_none() && envelope_schema_version(&lean_path).starts_with("2.");
+    let load_err = |e: String| {
+        if skipped_2x {
+            anyhow::anyhow!(
+                "failed to load {}: {e}\n  note: only a raw `probe-lean/extract` at \
+                 schema-version 2.x is auto-migrated to 3.0. This input is a different 2.x \
+                 schema (e.g. a `probe/merged-*` spine); re-extract with probe-lean \
+                 >= v0.10.0, or migrate the spine to 3.0 first.",
+                lean_path.display()
+            )
+        } else {
+            anyhow::anyhow!("failed to load {}: {e}", lean_path.display())
+        }
+    };
     // Reject this tool's own output as the atom base: enriching it again would
     // double-count blueprint nodes. A merged spine (schema `probe/merged-*`)
     // that happens to carry old blueprint atoms is fine — `enrich` scrubs it.
-    let meta = load_envelope(&lean_path)
-        .map_err(|e| anyhow::anyhow!("failed to load {}: {e}", lean_path.display()))?;
+    let meta = load_envelope(load_path).map_err(load_err)?;
     if meta.schema.starts_with("probe-leanblueprint") {
         return Err(BlueprintError::NotLeanBase {
             path: lean_path.clone(),
@@ -228,7 +340,7 @@ fn load_atoms(
         }
         .into());
     }
-    let (atoms, provenance) = load_atom_file(&lean_path).map_err(|e| {
+    let (atoms, provenance) = load_atom_file(load_path).map_err(|e| {
         anyhow::anyhow!(
             "failed to load probe-lean atoms from {}: {e}",
             lean_path.display()
