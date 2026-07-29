@@ -78,9 +78,13 @@ struct ExtractArgs {
     verso_manifest: Option<PathBuf>,
 
     /// Command used to render the Verso docs when no `blueprint-manifest.json`
-    /// is found under the project (run via `sh -c` in the project directory).
-    /// Defaults to `lake exe vbp build`, the render entry point that every
-    /// `versoBlueprint`-dependent project exposes.
+    /// is found under `<blueprint-root>/_out/site`. Run via `sh -c` in the
+    /// blueprint root — the project root, or its `docs/` subproject when
+    /// `versoBlueprint` is declared there. It MUST write its
+    /// `blueprint-manifest.json` under `_out/site` (where discovery is scoped);
+    /// output written elsewhere is not found. Defaults to `lake exe vbp build`,
+    /// the render entry point that every `versoBlueprint`-dependent project
+    /// exposes. To use a manifest in another location, pass `--verso-manifest`.
     #[arg(long)]
     verso_render_cmd: Option<String>,
 

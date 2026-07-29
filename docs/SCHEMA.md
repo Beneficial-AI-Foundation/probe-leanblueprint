@@ -354,38 +354,38 @@ two-axis progress stats.
   "schema": "probe-leanblueprint/summary",
   "schema-version": "3.0",
   "tool": { "name": "probe-leanblueprint", "version": "0.3.0", "command": "extract" },
-  "source": { "language": "lean", "package": "SecureMessaging", "package-version": "4cfee4c", "...": "..." },
+  "source": { "language": "lean", "package": "SecureMessaging", "package-version": "6a4fce0", "class": "security-protocol", "...": "..." },
   "blueprint-provenance": {
     "adapter": "verso",
     "manifests": [
       { "path": ".../_out/site/.../blueprint-manifest.json",
-        "sha256": "a6706fd3...",
+        "sha256": "72be94e5...",
         "vbp-internal-schema-version": 3 }
     ]
   },
   "timestamp": "2026-07-21T19:28:49Z",
   "data": {
     "totals": {
-      "nodes": 114,
-      "with-lean-decl": 29,
-      "planned-only": 76,
-      "decl-missing": 9,
+      "nodes": 111,
+      "with-lean-decl": 33,
+      "planned-only": 78,
+      "decl-missing": 0,
       "decl-missing-upstream-proved": 0,
       "partial-missing": 0,
       "collisions": 0,
       "mismatches": 0
     },
-    "all":         { "statement": { "none": 0, "blocked": 64, "ready": 12, "formalized": 38 },
-                     "proof":     { "none": 64, "ready": 12, "proved": 1, "fully-proved": 37 } },
+    "all":         { "statement": { "none": 0, "blocked": 65, "ready": 13, "formalized": 33 },
+                     "proof":     { "none": 65, "ready": 13, "proved": 0, "fully-proved": 33 } },
     "definitions": { "statement": { "...": 0 }, "proof": { "...": 0 } },
     "theorems":    { "statement": { "...": 0 }, "proof": { "...": 0 } },
     "headline": {
-      "theorems-total": 56,
-      "theorems-fully-proved": 9,
-      "theorems-fully-proved-probe-lean-confirmed": 9,
+      "theorems-total": 53,
+      "theorems-fully-proved": 8,
+      "theorems-fully-proved-probe-lean-confirmed": 8,
       "theorems-fully-proved-upstream-proved": 0,
-      "fraction": 0.1607142857142857,
-      "fraction-probe-lean-confirmed": 0.1607142857142857
+      "fraction": 0.1509433962264151,
+      "fraction-probe-lean-confirmed": 0.1509433962264151
     },
     "by-chapter": {
       "Authenticated-Encryption-with-Associated-Data": {

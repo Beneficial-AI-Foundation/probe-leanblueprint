@@ -97,6 +97,14 @@ From that alone the tool:
 See [the tool KB](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/tools/probe-leanblueprint.md#zero-config-contract-only-a-lean-project-in)
 for the full contract.
 
+> **Trust note.** Steps 2–3 execute the target project's own build code
+> (`probe-lean extract`, and `lake exe vbp build` via `sh -c`). Only run
+> zero-config against projects you trust. To ingest an untrusted or third-party
+> repository, render/extract it under your own sandbox first and pass the
+> results in: `--lean <atoms.json>` for the atom base, and `--no-render` with
+> `--verso-manifest <manifest>` (or `--blueprint-src` for Massot) for the
+> blueprint side, so this tool runs no project code.
+
 ### Manual flags
 
 Everything auto-detected can be overridden:
@@ -107,7 +115,9 @@ probe-leanblueprint extract path/to/project \
     --lean lean_atoms.json \
     --verso-manifest path/to/blueprint-manifest.json
 
-# Custom Verso render command (run via `sh -c` in the project dir), or opt out
+# Custom Verso render command (run via `sh -c` in the blueprint root — the project
+# root, or its docs/ subproject when versoBlueprint is declared there). It must write
+# its blueprint-manifest.json under _out/site; otherwise pass --verso-manifest.
 probe-leanblueprint extract path/to/project --verso-render-cmd "scripts/render-docs-site.sh"
 probe-leanblueprint extract path/to/project --no-render   # require a pre-rendered manifest
 
