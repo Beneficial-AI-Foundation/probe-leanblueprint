@@ -459,12 +459,14 @@ pub struct BlueprintExtensions {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub missing_decls: Vec<String>,
-    /// The subset of the node's bound decls the Verso renderer proved
-    /// out-of-workspace (present + proved in a dependency). On a bound atom this
-    /// marks a *mixed* binding (part local, part upstream): the node is
-    /// probe-lean-confirmed and these decls are deliberately kept out of
-    /// `missing_decls`, so this field is the wire evidence that part of the
-    /// backing is upstream rather than local. code-derived (Verso) only.
+    /// The node's bound decls that are ABSENT from the atom base but the Verso
+    /// renderer proved out-of-workspace (present + proved in a dependency). On a
+    /// bound atom this marks a *mixed* binding (part local, part upstream): the
+    /// node stays probe-lean-confirmed and these decls are deliberately kept out
+    /// of `missing_decls`, so this is the wire evidence that part of the backing
+    /// is upstream rather than local. Also lists the upstream part of a
+    /// decl-missing node's binding. Never includes a locally-present decl.
+    /// code-derived (Verso) only.
     #[serde(
         rename = "blueprint-upstream-decls",
         skip_serializing_if = "Vec::is_empty"

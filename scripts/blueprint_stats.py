@@ -24,7 +24,8 @@ PROOF_ORDER = ["fully-proved", "proved", "ready", "none"]
 class Node:
     __slots__ = (
         "label", "kind", "chapter", "statement", "proof",
-        "bound", "decl_missing", "decl_upstream_proved", "missing_decls", "mismatch",
+        "bound", "decl_missing", "decl_upstream_proved", "missing_decls",
+        "upstream_decls", "mismatch",
     )
 
     def __init__(self, label):
@@ -37,6 +38,7 @@ class Node:
         self.decl_missing = False
         self.decl_upstream_proved = False
         self.missing_decls = []
+        self.upstream_decls = []
         self.mismatch = None
 
 
@@ -68,6 +70,9 @@ def collect_nodes(data):
         missing = atom.get("blueprint-missing-decls")
         if missing:
             n.missing_decls = sorted(set(n.missing_decls) | set(missing))
+        upstream = atom.get("blueprint-upstream-decls")
+        if upstream:
+            n.upstream_decls = sorted(set(n.upstream_decls) | set(upstream))
         if atom.get("blueprint-status-mismatch"):
             n.mismatch = atom["blueprint-status-mismatch"]
     return list(nodes.values())
@@ -106,6 +111,9 @@ def build_report(env):
     )
     planned = sum(1 for n in nodes if not n.bound and not n.decl_missing)
     partial_missing = [n for n in nodes if n.missing_decls]
+    # Nodes with part of their binding proved out-of-workspace (upstream) rather
+    # than by local probe-lean — the `blueprint-upstream-decls` wire evidence.
+    upstream_backed = [n for n in nodes if n.upstream_decls]
     mismatches = [n for n in nodes if n.mismatch]
 
     thms = [n for n in nodes if n.kind != "definition"]
@@ -167,6 +175,7 @@ def build_report(env):
             for n in nodes if n.decl_missing and not n.bound
         ],
         "partial-missing-list": [(n.label, n.missing_decls) for n in partial_missing],
+        "upstream-decls-list": [(n.label, n.upstream_decls) for n in upstream_backed],
     }
 
 
@@ -237,6 +246,10 @@ def print_report(env, report):
             print(f"  ? {label}: {', '.join(decls)}")
     else:
         print("Partial-missing declarations: none")
+    # `upstream-decls-list` is intentionally emitted only in --json, not the human
+    # report: it keeps the machine-readable cross-check faithful to the new
+    # `blueprint-upstream-decls` wire field without changing the committed
+    # human-report snapshots (examples/**/blueprint-stats.txt).
 
 
 def main(argv):

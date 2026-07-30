@@ -117,7 +117,10 @@ a Lean decl present in the atom base:
     out-of-workspace package); "upstream" is shorthand for that, not a namespace
     claim. Flagged `blueprint-decl-upstream-proved`. code-derived only (Massot
     carries no per-decl provenance).
-  - **genuine gap** — everything else decl-missing.
+  - **genuine gap** — everything else decl-missing (at least one binding is absent
+    and not upstream-proved). Such a node is *not* flagged
+    `blueprint-decl-upstream-proved`, but if *some* of its bindings are
+    upstream-proved those are still listed in `blueprint-upstream-decls`.
 - **partial-missing** — a *bound* node where some (not all) decls are absent from
   the atom base, **excluding** decls the renderer proved out-of-workspace (an
   upstream decl is expected to be absent here — it lives in a dependency — so it
@@ -337,7 +340,7 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-decl-missing` | bool | no | `true` when **all** bound Lean decls are absent (synthetic planned node) |
 | `blueprint-decl-upstream-proved` | bool | no | `true` on a decl-missing atom whose every binding is an *out-of-workspace* decl the Verso renderer reports present and proved (proved in a dependency, commonly Mathlib/stdlib but not verified as such — see §Node classification); absent from this project's extract, not a genuine gap. Always paired with `blueprint-decl-missing`. Additive (see Schema Evolution) |
 | `blueprint-missing-decls` | array of strings | no | For a bound node, the subset of `\lean{...}` decls absent from the atom base (partial miss), **excluding** upstream-proved decls (those go in `blueprint-upstream-decls`); recorded on the present atom(s) |
-| `blueprint-upstream-decls` | array of strings | no | The subset of the node's bound decls the Verso renderer proved **out-of-workspace** (present + proved in a dependency). On a *bound* atom this marks a **mixed** binding (part local, part upstream): the node stays probe-lean-confirmed and these decls are kept out of `blueprint-missing-decls`, so this is the wire evidence distinguishing mixed from fully-local backing. Also emitted alongside `blueprint-decl-upstream-proved` on a fully-upstream decl-missing atom. code-derived (Verso) only. Additive (see Schema Evolution) |
+| `blueprint-upstream-decls` | array of strings | no | The node's bound decls that are **absent from the atom base** but the Verso renderer proved **out-of-workspace** (present + proved in a dependency) — i.e. the part of the binding backed upstream rather than by local probe-lean. Never includes a locally-present decl, and is always disjoint from `blueprint-missing-decls`. On a *bound* atom it marks a **mixed** binding (part local, part upstream): the node stays probe-lean-confirmed and these decls are kept out of `blueprint-missing-decls`, so this is the wire evidence distinguishing mixed from fully-local backing. On a **decl-missing** atom it lists the upstream part of the binding — present together with `blueprint-decl-upstream-proved` when *every* binding is upstream, or on its own (no bool) when only *some* are (a partial gap). code-derived (Verso) only. Additive (see Schema Evolution) |
 | `blueprint-shadow` | bool | no | `true` on the synthetic atom preserved for a node that lost a same-decl collision (its real atom was claimed by a later node). Keeps the extract node-complete; count a shadow node as bound despite its `language: "blueprint"` |
 
 Synthetic atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint"`, `code-text` = `{0,0}`, empty `dependencies`, and `code-module` set to the node's group (may be empty). They never carry `verification-status`.
@@ -512,6 +515,9 @@ Added later (still `3.0`):
   (atom), `decl-missing-upstream-proved` (totals), and
   `theorems-fully-proved-upstream-proved` (headline) — separating a decl-missing
   node proved out-of-workspace (per the Verso renderer) from a genuine gap.
+- extract: `blueprint-upstream-decls` — the node's bound decls that are absent
+  from the atom base but proved out-of-workspace, distinguishing a mixed
+  (part-local, part-upstream) binding from a fully-local one.
 
 ---
 

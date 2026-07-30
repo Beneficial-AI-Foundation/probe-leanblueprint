@@ -99,6 +99,7 @@ fn make_extensions(
     decl_missing: bool,
     decl_upstream_proved: bool,
     missing_decls: Vec<String>,
+    upstream_decls: Vec<String>,
     shadow: bool,
 ) -> BlueprintExtensions {
     let resolve = |labels: &[String]| -> Vec<String> {
@@ -130,10 +131,11 @@ fn make_extensions(
         decl_missing,
         decl_upstream_proved,
         missing_decls,
-        // Wire evidence that part of a bound node's binding is proved upstream
-        // rather than locally (a mixed node); intrinsic to the node, so surfaced
-        // on every atom it produces (empty and skipped for fully-local nodes).
-        upstream_decls: node.external_upstream_proved.clone(),
+        // Wire evidence that part of a node's binding is proved upstream rather
+        // than locally: the upstream-proved decls ABSENT from the atom base
+        // (computed per-branch by the caller). Empty (skipped) for a fully-local
+        // node; never lists a locally-present decl.
+        upstream_decls,
         shadow,
     }
 }
@@ -282,7 +284,16 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         if node.lean_decls.is_empty() {
             // Planned-only: no Lean binding at all.
             report.planned_only += 1;
-            let ext = make_extensions(node, &uses_index, None, false, false, Vec::new(), false);
+            let ext = make_extensions(
+                node,
+                &uses_index,
+                None,
+                false,
+                false,
+                Vec::new(),
+                Vec::new(),
+                false,
+            );
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
             report.synthesized += 1;
             continue;
@@ -310,6 +321,9 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
                     report.upstream_proved_theorems.push(node.label.clone());
                 }
             }
+            // Every binding is absent here, so the absent-upstream set is exactly
+            // the node's upstream-proved decls (lists them whether or not ALL
+            // bindings are upstream — a partial gap still names its upstream part).
             let ext = make_extensions(
                 node,
                 &uses_index,
@@ -317,6 +331,7 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
                 true,
                 upstream_proved,
                 Vec::new(),
+                node.external_upstream_proved.clone(),
                 false,
             );
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
@@ -328,19 +343,27 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         // it wins any atom against a colliding later node). Compute the ext
         // content once, the same way for the bound and collision-shadow cases.
         report.nodes_with_decl += 1;
-        // Decls absent from the atom base, EXCLUDING ones the renderer proved
-        // out-of-workspace: an upstream-proved decl is expected to be absent here
-        // (it lives in a dependency), so it is not a gap. Without this filter a
-        // *mixed* node (one present local decl + one absent upstream-proved decl)
-        // would be mislabeled partial-missing and dropped from the confirmed
-        // count, defeating the upstream-proved split for bound nodes.
-        let missing: Vec<String> = node
-            .lean_decls
-            .iter()
-            .filter(|d| !atoms.contains_key(&code_name_for_decl(d)))
-            .filter(|d| !node.external_upstream_proved.contains(*d))
-            .cloned()
-            .collect();
+        // Partition the absent bindings into a genuine gap (`missing`) vs. decls
+        // the renderer proved out-of-workspace (`upstream_absent`). An
+        // upstream-proved decl is expected to be absent here (it lives in a
+        // dependency), so it is NOT a gap: it is recorded in
+        // `blueprint-upstream-decls` instead. Without this split a *mixed* node
+        // (one present local decl + one absent upstream-proved decl) would be
+        // mislabeled partial-missing and dropped from the confirmed count. A
+        // present decl (even if upstream-proved, e.g. via a merged spine) is
+        // neither, so it never appears in either list.
+        let mut missing: Vec<String> = Vec::new();
+        let mut upstream_absent: Vec<String> = Vec::new();
+        for d in &node.lean_decls {
+            if atoms.contains_key(&code_name_for_decl(d)) {
+                continue; // present locally
+            }
+            if node.external_upstream_proved.contains(d) {
+                upstream_absent.push(d.clone());
+            } else {
+                missing.push(d.clone());
+            }
+        }
         if !missing.is_empty() {
             report.partial_missing += 1;
         }
@@ -382,11 +405,29 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
             // Preserve this node as a shadow synthetic atom so the extract stays
             // node-complete (and keeps its mismatch / missing-decls signal).
             report.collision_shadowed += 1;
-            let ext = make_extensions(node, &uses_index, mismatch, false, false, missing, true);
+            let ext = make_extensions(
+                node,
+                &uses_index,
+                mismatch,
+                false,
+                false,
+                missing,
+                upstream_absent,
+                true,
+            );
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
             report.synthesized += 1;
         } else {
-            let ext = make_extensions(node, &uses_index, mismatch, false, false, missing, false);
+            let ext = make_extensions(
+                node,
+                &uses_index,
+                mismatch,
+                false,
+                false,
+                missing,
+                upstream_absent,
+                false,
+            );
             for cn in owned {
                 if let Some(atom) = atoms.get_mut(cn) {
                     insert_extensions(atom, &ext);
@@ -754,6 +795,54 @@ mod tests {
                 .get("blueprint-decl-upstream-proved")
                 .and_then(|v| v.as_bool()),
             Some(true)
+        );
+        // The (all-absent, all-upstream) binding is listed on the wire too.
+        assert_eq!(
+            a.extensions
+                .get("blueprint-upstream-decls")
+                .and_then(|v| v.as_array())
+                .map(|a| a.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>()),
+            Some(vec!["Nat.mul_assoc"])
+        );
+    }
+
+    /// A *partially*-upstream decl-missing node (binds one out-of-workspace-proved
+    /// decl plus one genuinely-absent decl, none present) is a genuine gap: it must
+    /// NOT be flagged `blueprint-decl-upstream-proved`, but it must still list its
+    /// upstream part in `blueprint-upstream-decls`. This is the shape Finding 2
+    /// was about — the field is "upstream-proved AND absent", not "all bindings
+    /// upstream".
+    #[test]
+    fn partially_upstream_decl_missing_lists_upstream_without_bool() {
+        let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+        let mut model = BlueprintModel::default();
+        let mut n = node(
+            "thm:partial_upstream",
+            &["Up.done", "Foo.absent"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        n.external_upstream_proved = vec!["Up.done".to_string()];
+        model.nodes.push(n);
+
+        let report = enrich(&mut atoms, &model);
+        assert_eq!(report.decl_missing, 1);
+        // Not ALL bindings are upstream, so it is a genuine gap.
+        assert_eq!(report.decl_missing_upstream_proved, 0);
+        assert!(report.upstream_proved_theorems.is_empty());
+        assert!(report.probe_lean_confirmed_proved.is_empty());
+        let a = &atoms["probe:blueprint:thm:partial_upstream"];
+        assert!(
+            !a.extensions.contains_key("blueprint-decl-upstream-proved"),
+            "a partial gap is not a fully-upstream node"
+        );
+        assert_eq!(
+            a.extensions
+                .get("blueprint-upstream-decls")
+                .and_then(|v| v.as_array())
+                .map(|a| a.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>()),
+            Some(vec!["Up.done"]),
+            "the upstream part is still listed, the genuine gap is not"
         );
     }
 

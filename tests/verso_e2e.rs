@@ -162,4 +162,45 @@ fn verso_secure_messaging_full_project() {
             .as_str(),
         Some("transitively-verified")
     );
+
+    // Wire invariants for the upstream/missing partition (guards every atom on
+    // every run, so the Finding-2 semantics can't silently regress on real
+    // fixtures — even ones that later gain upstream decls):
+    //   (a) `blueprint-upstream-decls` and `blueprint-missing-decls` are disjoint;
+    //   (b) a listed upstream decl is never present locally (`probe:<decl>`);
+    //   (c) the `blueprint-decl-upstream-proved` bool implies a non-empty list.
+    let str_list = |a: &probe::types::Atom, key: &str| -> Vec<String> {
+        a.extensions
+            .get(key)
+            .and_then(|v| v.as_array())
+            .map(|xs| {
+                xs.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    for (key, atom) in &atoms {
+        let upstream = str_list(atom, "blueprint-upstream-decls");
+        let missing = str_list(atom, "blueprint-missing-decls");
+        for d in &upstream {
+            assert!(
+                !missing.contains(d),
+                "{key}: {d} is in both upstream-decls and missing-decls"
+            );
+            assert!(
+                !atoms.contains_key(&format!("probe:{d}")),
+                "{key}: upstream decl {d} is present locally, so must not be listed as upstream"
+            );
+        }
+        let bool_set = atom
+            .extensions
+            .get("blueprint-decl-upstream-proved")
+            .and_then(|v| v.as_bool())
+            == Some(true);
+        assert!(
+            !bool_set || !upstream.is_empty(),
+            "{key}: decl-upstream-proved is set but upstream-decls is empty"
+        );
+    }
 }
