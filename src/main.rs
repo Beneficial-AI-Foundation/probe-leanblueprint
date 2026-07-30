@@ -673,11 +673,22 @@ fn commit_staged(tmp: tempfile::NamedTempFile, path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Absolute, `.`/`..`-resolved form of `p`, computed lexically (no filesystem
-/// access) so it is independent of whether `p` exists. `foo`, `./foo`, and
-/// `bar/../foo` all normalize to the same `<cwd>/foo`.
-fn to_absolute_lexical(p: &Path) -> PathBuf {
-    use std::path::Component;
+/// Best-effort canonical path for comparison, so different spellings of the same
+/// file are recognized as equal by the output-collision check — otherwise
+/// `-o out.json --summary-output ./out.json` slips past it and the summary
+/// clobbers the extract.
+///
+/// The path is made absolute (joining the cwd) up front so a bare filename has a
+/// real parent to canonicalize. `.`/`..`/symlinks are then resolved by the
+/// filesystem, never collapsed textually: `link/..` where `link` is a symlink
+/// must resolve via the link target, which a lexical `..` collapse would get
+/// wrong. Existing paths canonicalize whole; a not-yet-created file canonicalizes
+/// its (real) parent — folding a symlinked component and a trailing `..` in it —
+/// then re-appends the name. If even the parent doesn't exist yet (e.g. a `..`
+/// through a not-yet-created dir), the absolute-but-unresolved path is returned
+/// as-is; that leaves a contrived alias of that shape uncaught, which is not a
+/// plausible accidental self-overwrite.
+fn normalize_for_compare(p: &Path) -> PathBuf {
     let abs = if p.is_absolute() {
         p.to_path_buf()
     } else {
@@ -685,38 +696,11 @@ fn to_absolute_lexical(p: &Path) -> PathBuf {
             .map(|cwd| cwd.join(p))
             .unwrap_or_else(|_| p.to_path_buf())
     };
-    let mut out = PathBuf::new();
-    for comp in abs.components() {
-        match comp {
-            Component::CurDir => {}
-            Component::ParentDir => {
-                out.pop();
-            }
-            other => out.push(other.as_os_str()),
-        }
-    }
-    out
-}
-
-/// Best-effort canonical path for comparison. Output paths may not exist yet, so
-/// first normalize lexically to an absolute path (so `.`/`..`/relative spellings
-/// of the same file compare equal — otherwise `-o out.json --summary-output
-/// ./out.json` would slip past the collision check and the summary would clobber
-/// the extract), then canonicalize when possible to also fold symlinks.
-fn normalize_for_compare(p: &Path) -> PathBuf {
-    let abs = to_absolute_lexical(p);
-    // Existing file: canonicalize resolves symlinks for the strongest comparison.
     if let Ok(c) = abs.canonicalize() {
         return c;
     }
-    // Not-yet-created file: canonicalize the (existing) parent to fold any
-    // symlinked directory, then re-append the file name. Falls back to the
-    // lexical absolute path if even the parent is absent.
     match (abs.parent(), abs.file_name()) {
-        (Some(parent), Some(name)) => parent
-            .canonicalize()
-            .map(|c| c.join(name))
-            .unwrap_or_else(|_| abs.clone()),
+        (Some(parent), Some(name)) => parent.canonicalize().map(|c| c.join(name)).unwrap_or(abs),
         _ => abs,
     }
 }
@@ -1056,15 +1040,46 @@ mod tests {
     #[test]
     fn normalize_for_compare_folds_aliases() {
         // Different spellings of the same not-yet-created file must compare equal,
-        // so the collision check can't be bypassed by `.`/`..`/relative aliasing.
+        // so the collision check can't be bypassed by `.`/relative aliasing.
         let plain = normalize_for_compare(Path::new("out.json"));
         assert_eq!(plain, normalize_for_compare(Path::new("./out.json")));
-        assert_eq!(plain, normalize_for_compare(Path::new("sub/../out.json")));
-        // Absolute forms fold too.
+
+        // `..` through a REAL directory folds (canonicalize resolves it). Use a
+        // tempdir so the intermediate directory actually exists.
+        let dir = tempfile::tempdir().unwrap();
+        let sub = dir.path().join("sub");
+        std::fs::create_dir(&sub).unwrap();
         assert_eq!(
-            normalize_for_compare(Path::new("/tmp/a/../b.json")),
-            normalize_for_compare(Path::new("/tmp/b.json"))
+            normalize_for_compare(&dir.path().join("out.json")),
+            normalize_for_compare(&sub.join("../out.json")),
+            "`..` through a real dir must fold to the same path"
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn normalize_for_compare_resolves_symlinked_parent_with_dotdot() {
+        // Regression: `link/../out.json` where `link` is a symlink physically
+        // resolves via the link target, so a textual `..` collapse (which would
+        // give `<link's lexical parent>/out.json`) is wrong. It must compare
+        // equal to the direct path, else the collision guard is bypassable.
+        let dir = tempfile::tempdir().unwrap();
+        let real = dir.path().join("real");
+        let sub = real.join("subdir");
+        std::fs::create_dir_all(&sub).unwrap();
+        let link = dir.path().join("link");
+        std::os::unix::fs::symlink(&sub, &link).unwrap();
+
+        // link -> real/subdir, so link/../out.json == real/out.json.
+        let via_link = link.join("../out.json");
+        let direct = real.join("out.json");
+        assert_eq!(
+            normalize_for_compare(&via_link),
+            normalize_for_compare(&direct),
+            "a symlinked parent + `..` must resolve to the same file"
+        );
+        // ...and the collision guard must therefore reject the aliased pair.
+        assert!(validate_output_paths(&via_link, &direct, &[]).is_err());
     }
 
     #[test]
@@ -1082,10 +1097,14 @@ mod tests {
 
     #[test]
     fn validate_output_paths_rejects_aliased_input() {
-        // An output that aliases an input via `.`/`..` must also be rejected.
+        // An output that aliases an input via `..` through a real dir must also
+        // be rejected (the intermediate dir must exist for canonicalize to fold
+        // it — a not-yet-created `..` segment is out of scope, see
+        // `normalize_for_compare`).
         let dir = tempfile::tempdir().unwrap();
         let input = dir.path().join("atoms.json");
         std::fs::write(&input, "{}").unwrap();
+        std::fs::create_dir(dir.path().join("sub")).unwrap();
         let aliased_output = dir.path().join("sub/../atoms.json");
         let summary = dir.path().join("summary.json");
         assert!(
