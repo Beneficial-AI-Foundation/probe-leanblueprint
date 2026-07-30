@@ -673,36 +673,72 @@ fn commit_staged(tmp: tempfile::NamedTempFile, path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// The current directory with symlinks resolved, so relative paths and the
+/// lexical fallback below share one symlink-free base.
+fn current_dir_canonical() -> PathBuf {
+    std::env::current_dir()
+        .map(|d| d.canonicalize().unwrap_or(d))
+        .unwrap_or_default()
+}
+
+/// Make `p` absolute (joining the canonical cwd if relative) WITHOUT collapsing
+/// `.`/`..` — collapsing across a symlink is wrong, so that is left to
+/// `canonicalize` in [`normalize_for_compare`].
+fn absolutize(p: &Path) -> PathBuf {
+    if p.is_absolute() {
+        p.to_path_buf()
+    } else {
+        current_dir_canonical().join(p)
+    }
+}
+
+/// Absolute, `.`/`..`-resolved form computed lexically (no filesystem access) —
+/// the fallback for a path whose parent does not exist yet, so `.`/`..` spellings
+/// of the same not-yet-created file still compare equal.
+fn to_absolute_lexical(p: &Path) -> PathBuf {
+    use std::path::Component;
+    let mut out = PathBuf::new();
+    for comp in absolutize(p).components() {
+        match comp {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                out.pop();
+            }
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
+}
+
 /// Best-effort canonical path for comparison, so different spellings of the same
 /// file are recognized as equal by the output-collision check — otherwise
 /// `-o out.json --summary-output ./out.json` slips past it and the summary
 /// clobbers the extract.
 ///
-/// The path is made absolute (joining the cwd) up front so a bare filename has a
-/// real parent to canonicalize. `.`/`..`/symlinks are then resolved by the
-/// filesystem, never collapsed textually: `link/..` where `link` is a symlink
-/// must resolve via the link target, which a lexical `..` collapse would get
-/// wrong. Existing paths canonicalize whole; a not-yet-created file canonicalizes
-/// its (real) parent — folding a symlinked component and a trailing `..` in it —
-/// then re-appends the name. If even the parent doesn't exist yet (e.g. a `..`
-/// through a not-yet-created dir), the absolute-but-unresolved path is returned
-/// as-is; that leaves a contrived alias of that shape uncaught, which is not a
-/// plausible accidental self-overwrite.
+/// `.`/`..`/symlinks are resolved by the filesystem, never collapsed textually
+/// first: `link/..` where `link` is a symlink must resolve via the link target,
+/// which a lexical `..` collapse would get wrong. Existing paths canonicalize
+/// whole; a not-yet-created file canonicalizes its (real) parent — folding a
+/// symlinked component and a trailing `..` in it — then re-appends the name.
+///
+/// When even the parent doesn't exist yet (e.g. `newdir/../out.json` with
+/// `newdir` absent) we fall back to a lexical-absolute form. This case is NOT
+/// out of scope: `stage_json` `create_dir_all`s the output parent before
+/// committing, so `newdir/../out.json` really does resolve to `out.json` at write
+/// time — without the lexical fallback the guard would miss it and the summary
+/// could clobber the extract. (A symlinked *ancestor* beyond the deepest existing
+/// dir is the only residual gap; far more contrived than a plain `..`.)
 fn normalize_for_compare(p: &Path) -> PathBuf {
-    let abs = if p.is_absolute() {
-        p.to_path_buf()
-    } else {
-        std::env::current_dir()
-            .map(|cwd| cwd.join(p))
-            .unwrap_or_else(|_| p.to_path_buf())
-    };
+    let abs = absolutize(p);
     if let Ok(c) = abs.canonicalize() {
         return c;
     }
-    match (abs.parent(), abs.file_name()) {
-        (Some(parent), Some(name)) => parent.canonicalize().map(|c| c.join(name)).unwrap_or(abs),
-        _ => abs,
+    if let (Some(parent), Some(name)) = (abs.parent(), abs.file_name()) {
+        if let Ok(c) = parent.canonicalize() {
+            return c.join(name);
+        }
     }
+    to_absolute_lexical(p)
 }
 
 /// Reject output paths that collide with each other or with an input file, so
@@ -1083,6 +1119,27 @@ mod tests {
     }
 
     #[test]
+    fn validate_output_paths_rejects_dotdot_through_absent_dir() {
+        // Regression (round 4): `--output newdir/../out.json --summary-output
+        // out.json` with `newdir` ABSENT must still be rejected. `stage_json`
+        // `create_dir_all`s the parent before committing, so both paths resolve to
+        // out.json at write time; the guard's lexical fallback must catch it up
+        // front rather than let the summary clobber the extract.
+        let dir = tempfile::tempdir().unwrap();
+        let extract = dir.path().join("newdir/../out.json"); // newdir does not exist
+        let summary = dir.path().join("out.json");
+        assert_eq!(
+            normalize_for_compare(&extract),
+            normalize_for_compare(&summary),
+            "`..` through an absent dir must normalize to the same file"
+        );
+        assert!(
+            validate_output_paths(&extract, &summary, &[]).is_err(),
+            "aliased extract/summary via an absent-dir `..` must be rejected"
+        );
+    }
+
+    #[test]
     fn validate_output_paths_rejects_aliased_extract_and_summary() {
         // Regression: `-o out.json --summary-output ./out.json` previously passed
         // validation (raw vs `.`-canonicalized strings differed) and the summary
@@ -1097,10 +1154,8 @@ mod tests {
 
     #[test]
     fn validate_output_paths_rejects_aliased_input() {
-        // An output that aliases an input via `..` through a real dir must also
-        // be rejected (the intermediate dir must exist for canonicalize to fold
-        // it — a not-yet-created `..` segment is out of scope, see
-        // `normalize_for_compare`).
+        // An output that aliases an input via `..` (here through a real dir) must
+        // also be rejected.
         let dir = tempfile::tempdir().unwrap();
         let input = dir.path().join("atoms.json");
         std::fs::write(&input, "{}").unwrap();
