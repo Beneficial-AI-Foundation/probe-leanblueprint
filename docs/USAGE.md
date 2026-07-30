@@ -40,9 +40,6 @@ From that alone the tool:
    ships with the `versoBlueprint` dependency); for Massot it runs the bundled
    plasTeX emitter (embedded in the binary). No manual render step is required.
 
-See [the tool KB](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/tools/probe-leanblueprint.md#zero-config-contract-only-a-lean-project-in)
-for the full contract.
-
 > **Trust note.** Steps 2–3 execute the target project's own build code
 > (`probe-lean extract`, and `lake exe vbp build` via `sh -c`). Only run
 > zero-config against projects you trust. To ingest an untrusted or third-party
@@ -80,8 +77,9 @@ Default under `<project>/.verilib/probes/`:
 - `leanblueprint_<pkg>[_<version>].json` — enriched atoms (`probe-leanblueprint/extract`)
 - `leanblueprint_<pkg>[_<version>]_summary.json` — two-axis progress counts, incl. a per-chapter breakdown (`probe-leanblueprint/summary`)
 
-The extract envelope is an atoms-category Schema 3.0 file, so `probe merge` /
-`probe project` accept it and preserve the `blueprint-*` extension fields.
+The extract envelope is a standard atoms-category Schema 3.0 file, so
+downstream merge/project tooling accepts it and preserves the `blueprint-*`
+extension fields.
 
 Both output formats — the enriched-atom envelope and the summary sidecar,
 including every `blueprint-*` field — are specified in [`SCHEMA.md`](SCHEMA.md).

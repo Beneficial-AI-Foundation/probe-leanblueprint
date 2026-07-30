@@ -79,11 +79,3 @@ Full install (incl. the Massot Python path), manual flags, output formats, the
 `blueprint_stats.py` reporter, and development commands are in
 [`docs/USAGE.md`](docs/USAGE.md). Output schemas are in
 [`docs/SCHEMA.md`](docs/SCHEMA.md).
-
-## How it works
-
-See the ecosystem knowledge base:
-
-- [`kb/tools/probe-leanblueprint.md`](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/tools/probe-leanblueprint.md) — tool spec (pipeline, join rules, extension fields)
-- [`kb/decisions/004-probe-leanblueprint.md`](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/decisions/004-probe-leanblueprint.md) — design rationale (ADR-004)
-- [`kb/engineering/properties.md`](https://github.com/Beneficial-AI-Foundation/probe/blob/main/kb/engineering/properties.md) — P26 (additive blueprint status), P3 (stub detection)
