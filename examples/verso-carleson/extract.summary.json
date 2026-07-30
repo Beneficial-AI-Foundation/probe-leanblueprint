@@ -1,0 +1,125 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "3.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.3.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/fpvandoorn/carleson",
+    "commit": "8e93bee110628f230e2b6e11611d231ede5981ab",
+    "language": "lean",
+    "package": "carleson",
+    "package-version": "8e93bee"
+  },
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      {
+        "path": "/home/lacra/git_repos/baif/verso-blueprint-experiments/real/verso-carleson/_out/site/html-multi/-verso-data/blueprint-manifest.json",
+        "sha256": "fdcff051ab90b4bd73f64fb29ef10abe6d77491cc2aa9ae959d8ea3f8411d540",
+        "vbp-internal-schema-version": 2
+      }
+    ]
+  },
+  "timestamp": "2026-07-28T12:01:38Z",
+  "data": {
+    "totals": {
+      "nodes": 161,
+      "with-lean-decl": 152,
+      "planned-only": 1,
+      "decl-missing": 8,
+      "decl-missing-upstream-proved": 8,
+      "partial-missing": 0,
+      "collisions": 2,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 0,
+        "formalized": 160
+      },
+      "proof": {
+        "none": 1,
+        "ready": 0,
+        "proved": 6,
+        "fully-proved": 154
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 0,
+        "formalized": 0
+      },
+      "proof": {
+        "none": 0,
+        "ready": 0,
+        "proved": 0,
+        "fully-proved": 0
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 0,
+        "formalized": 160
+      },
+      "proof": {
+        "none": 1,
+        "ready": 0,
+        "proved": 6,
+        "fully-proved": 154
+      }
+    },
+    "headline": {
+      "theorems-total": 161,
+      "theorems-fully-proved": 154,
+      "theorems-fully-proved-probe-lean-confirmed": 146,
+      "theorems-fully-proved-upstream-proved": 8,
+      "fraction": 0.9565217391304348,
+      "fraction-probe-lean-confirmed": 0.906832298136646
+    },
+    "by-chapter": {
+      "Formalization-of-Carleson___s-theorem": {
+        "nodes": 160,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 160
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 6,
+          "fully-proved": 154
+        },
+        "theorems-total": 160,
+        "theorems-fully-proved": 154
+      },
+      "verso-carleson": {
+        "nodes": 1,
+        "statement": {
+          "none": 0,
+          "blocked": 1,
+          "ready": 0,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 1,
+          "ready": 0,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
+      }
+    }
+  }
+}

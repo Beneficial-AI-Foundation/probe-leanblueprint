@@ -1,0 +1,35 @@
+{
+  "schema": "probe-lean/extract",
+  "schema-version": "3.0",
+  "tool": { "name": "probe-lean", "version": "0.0.0", "command": "extract" },
+  "source": {
+    "repo": "https://example.com/foo",
+    "commit": "0000000000000000000000000000000000000000",
+    "language": "lean",
+    "package": "Foo",
+    "package-version": "0.1.0"
+  },
+  "timestamp": "2026-01-01T00:00:00Z",
+  "data": {
+    "probe:Foo.foo": {
+      "display-name": "Foo.foo",
+      "dependencies": [],
+      "code-module": "Foo.Basic",
+      "code-path": "Foo/Basic.lean",
+      "code-text": { "lines-start": 1, "lines-end": 3 },
+      "kind": "def",
+      "language": "lean",
+      "verification-status": "verified"
+    },
+    "probe:Foo.bar": {
+      "display-name": "Foo.bar",
+      "dependencies": ["probe:Foo.foo"],
+      "code-module": "Foo.Basic",
+      "code-path": "Foo/Basic.lean",
+      "code-text": { "lines-start": 5, "lines-end": 9 },
+      "kind": "theorem",
+      "language": "lean",
+      "verification-status": "unverified"
+    }
+  }
+}

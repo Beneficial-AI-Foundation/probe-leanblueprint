@@ -1,0 +1,84 @@
+{
+  "edges": [
+    {
+      "axis": "statement",
+      "source": "def:foo",
+      "target": "thm:bar"
+    },
+    {
+      "axis": "statement",
+      "source": "def:baz",
+      "target": "thm:qux"
+    },
+    {
+      "axis": "statement",
+      "source": "thm:bar",
+      "target": "thm:qux"
+    },
+    {
+      "axis": "proof",
+      "source": "def:foo",
+      "target": "thm:bar"
+    }
+  ],
+  "nodes": [
+    {
+      "can_prove": false,
+      "can_state": true,
+      "fully_proved": true,
+      "issue": null,
+      "kind": "definition",
+      "label": "def:foo",
+      "lean_decls": [
+        "Foo.foo"
+      ],
+      "leanok": true,
+      "mathlibok": false,
+      "notready": false,
+      "proved": false
+    },
+    {
+      "can_prove": true,
+      "can_state": true,
+      "fully_proved": true,
+      "issue": "42",
+      "kind": "theorem",
+      "label": "thm:bar",
+      "lean_decls": [
+        "Foo.bar"
+      ],
+      "leanok": false,
+      "mathlibok": false,
+      "notready": false,
+      "proved": true
+    },
+    {
+      "can_prove": false,
+      "can_state": true,
+      "fully_proved": true,
+      "issue": null,
+      "kind": "definition",
+      "label": "def:baz",
+      "lean_decls": [
+        "Foo.baz"
+      ],
+      "leanok": false,
+      "mathlibok": false,
+      "notready": false,
+      "proved": false
+    },
+    {
+      "can_prove": false,
+      "can_state": false,
+      "fully_proved": false,
+      "issue": null,
+      "kind": "theorem",
+      "label": "thm:qux",
+      "lean_decls": [],
+      "leanok": false,
+      "mathlibok": false,
+      "notready": false,
+      "proved": false
+    }
+  ]
+}

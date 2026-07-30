@@ -1,0 +1,8 @@
+# Python dependencies for the Massot leanblueprint adapter (scripts/blueprint_emit.py).
+# The Verso adapter is pure Rust and needs none of these.
+#
+# System prerequisite for pygraphviz: graphviz + libgraphviz-dev
+#   Debian/Ubuntu: sudo apt-get install graphviz libgraphviz-dev
+#
+# Installing leanblueprint pulls in plasTeX, plastexdepgraph and pygraphviz.
+leanblueprint>=0.0.20

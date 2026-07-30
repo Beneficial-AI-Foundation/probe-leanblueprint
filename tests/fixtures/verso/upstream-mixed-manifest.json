@@ -1,0 +1,42 @@
+{
+  "vbpInternalSchemaVersion": 3,
+  "graphs": [
+    {
+      "nodes": [
+        {
+          "label": "thm:mixed",
+          "kind": "theorem",
+          "href": "Mix/#--m--statement",
+          "previewKey": "m--statement",
+          "statementStatus": "formalized",
+          "proofStatus": "formalizedWithAncestors",
+          "statementUses": [],
+          "proofUses": []
+        }
+      ]
+    }
+  ],
+  "previews": [
+    {
+      "key": "m--statement",
+      "codeData": {
+        "external": {
+          "decls": [
+            {
+              "canonical": "MyProj.local",
+              "present": true,
+              "provedStatus": "proved",
+              "provenance": { "inWorkspace": { "moduleName": "MyProj" } }
+            },
+            {
+              "canonical": "Nat.upstream",
+              "present": true,
+              "provedStatus": "proved",
+              "provenance": { "outWorkspace": { "moduleName": "Init.Data.Nat" } }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

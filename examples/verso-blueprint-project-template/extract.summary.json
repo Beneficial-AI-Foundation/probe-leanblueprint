@@ -1,0 +1,142 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "3.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.3.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/leanprover/verso-blueprint",
+    "commit": "6561770257aaf21bcb0160f832153a79bb25e161",
+    "language": "lean",
+    "package": "ProjectTemplate",
+    "package-version": "6561770"
+  },
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      {
+        "path": "examples/verso-blueprint-project-template/blueprint-manifest.json",
+        "sha256": "a6706fd392a388f020ad1e2b05db86d7c02f9fdc94bec61b3dfb30e80178f40d",
+        "vbp-internal-schema-version": 3
+      }
+    ]
+  },
+  "timestamp": "2026-07-28T12:01:37Z",
+  "data": {
+    "totals": {
+      "nodes": 9,
+      "with-lean-decl": 4,
+      "planned-only": 3,
+      "decl-missing": 2,
+      "decl-missing-upstream-proved": 2,
+      "partial-missing": 0,
+      "collisions": 0,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 2,
+        "formalized": 6
+      },
+      "proof": {
+        "none": 2,
+        "ready": 2,
+        "proved": 4,
+        "fully-proved": 1
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 1,
+        "ready": 2,
+        "formalized": 1
+      },
+      "proof": {
+        "none": 1,
+        "ready": 2,
+        "proved": 1,
+        "fully-proved": 0
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 0,
+        "formalized": 5
+      },
+      "proof": {
+        "none": 1,
+        "ready": 0,
+        "proved": 3,
+        "fully-proved": 1
+      }
+    },
+    "headline": {
+      "theorems-total": 5,
+      "theorems-fully-proved": 1,
+      "theorems-fully-proved-probe-lean-confirmed": 0,
+      "theorems-fully-proved-upstream-proved": 1,
+      "fraction": 0.2,
+      "fraction-probe-lean-confirmed": 0.0
+    },
+    "by-chapter": {
+      "Addition": {
+        "nodes": 4,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 2,
+          "formalized": 2
+        },
+        "proof": {
+          "none": 0,
+          "ready": 2,
+          "proved": 2,
+          "fully-proved": 0
+        },
+        "theorems-total": 2,
+        "theorems-fully-proved": 0
+      },
+      "Collatz": {
+        "nodes": 2,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 2
+        },
+        "proof": {
+          "none": 1,
+          "ready": 0,
+          "proved": 1,
+          "fully-proved": 0
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
+      },
+      "Multiplication": {
+        "nodes": 3,
+        "statement": {
+          "none": 0,
+          "blocked": 1,
+          "ready": 0,
+          "formalized": 2
+        },
+        "proof": {
+          "none": 1,
+          "ready": 0,
+          "proved": 1,
+          "fully-proved": 1
+        },
+        "theorems-total": 2,
+        "theorems-fully-proved": 1
+      }
+    }
+  }
+}

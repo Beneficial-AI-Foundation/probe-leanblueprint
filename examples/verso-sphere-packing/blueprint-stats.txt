@@ -1,0 +1,48 @@
+probe-leanblueprint stats — SpherePacking 1828993
+  source: https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean.git@1828993f87
+
+Headline: 21/106 theorems probe-lean-confirmed fully proved (19.8%) (+3 upstream-proved)
+Blueprint nodes: 140   (bound 75 · planned-only 51 · decl-missing 14 (12 upstream-proved) · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized          89    27    62
+  ready               22     3    19
+  blocked             29     4    25
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved        42    18    24
+  proved              38     9    29
+  ready               18     3    15
+  none                42     4    38
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  Cohn-Elkies-Bounds                      3      2       0/3
+  Density-of-Packings                     5      5       3/5
+  Fourier-Analysis                        8      4       1/6
+  Fourier-Eigenfunctions-with-Dou...     30      8      1/25
+  Modular-Forms                          52     38     12/38
+  Proof-of-the-Optimal-Function-I...     14      7      0/13
+  Sphere-Packings                        16     14       0/7
+  The-E8-Lattice                         11     11       7/8
+  verso-sphere-packing                    1      0       0/1
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? IsZLattice  (proved out-of-workspace)
+  ? «def:Ek»  (proved out-of-workspace)
+  ? «def:Fourier-Transform»  (proved out-of-workspace)
+  ? «def:Mk»
+  ? «def:Schwartz-Space»
+  ? «def:automorphy-factor»  (proved out-of-workspace)
+  ? «def:dedekind_eta»  (proved out-of-workspace)
+  ? «def:dual-lattice»  (proved out-of-workspace)
+  ? «lemma:Ek-is-modular-form»  (proved out-of-workspace)
+  ? «lemma:Fourier-transform-is-automorphism»  (proved out-of-workspace)
+  ? «lemma:automorphy-factor-chain-rule»  (proved out-of-workspace)
+  ? «lemma:slash-operator-chain-rule»  (proved out-of-workspace)
+  ? «thm:lvl1_dims»  (proved out-of-workspace)
+  ? «thm:nonpos_wt»  (proved out-of-workspace)
+Partial-missing declarations: none

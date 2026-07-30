@@ -1,0 +1,434 @@
+{"vbpInternalSchemaVersion": 3, 
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "theorem",
+     "label": "rkem_from_ddh_fs_correctness",
+     "parent": "rkem_rkem_from_ddh_fs",
+     "previewKey": "rkem_from_ddh_fs_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_ddh_fs_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_correctness"
+      }
+     ],
+     "title": "Theorem 3.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "plain_katana_rkem_forward_security",
+     "parent": "rkem_katana_rkem_plain",
+     "previewKey": "plain_katana_rkem_forward_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "plain_katana_rkem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_forward_security"
+      }
+     ],
+     "title": "Theorem 5.3"
+    },
+    {
+     "kind": "definition",
+     "label": "rkem_correctness",
+     "parent": "rkem",
+     "previewKey": "rkem_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 1.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "rkem_from_ddh_nonfs_correctness",
+     "parent": "rkem_rkem_from_ddh_non_fs",
+     "previewKey": "rkem_from_ddh_nonfs_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_ddh_nonfs_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_correctness"
+      }
+     ],
+     "title": "Theorem 2.2"
+    },
+    {
+     "kind": "definition",
+     "label": "optimised_katana_rkem_spec",
+     "parent": "rkem_katana_rkem_optimised",
+     "previewKey": "optimised_katana_rkem_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 6.1"
+    },
+    {
+     "kind": "definition",
+     "label": "rkem_ratchet_sim",
+     "parent": "rkem",
+     "previewKey": "rkem_ratchet_sim--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 1.2"
+    },
+    {
+     "kind": "definition",
+     "label": "rkem_forward_security",
+     "parent": "rkem",
+     "previewKey": "rkem_forward_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 1.3"
+    },
+    {
+     "kind": "definition",
+     "label": "rkem_scheme",
+     "parent": "rkem",
+     "previewKey": "rkem_scheme--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "rkem_from_kem_correctness",
+     "parent": "rkem_rkem_from_kem",
+     "previewKey": "rkem_from_kem_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_kem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_correctness"
+      }
+     ],
+     "title": "Theorem 4.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "rkem_from_kem_ratchet_sim",
+     "parent": "rkem_rkem_from_kem",
+     "previewKey": "rkem_from_kem_ratchet_sim--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_kem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_ratchet_sim"
+      }
+     ],
+     "title": "Theorem 4.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "plain_katana_rkem_correctness",
+     "parent": "rkem_katana_rkem_plain",
+     "previewKey": "plain_katana_rkem_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "plain_katana_rkem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_correctness"
+      }
+     ],
+     "title": "Theorem 5.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "optimised_katana_rkem_correctness",
+     "parent": "rkem_katana_rkem_optimised",
+     "previewKey": "optimised_katana_rkem_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "optimised_katana_rkem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_correctness"
+      }
+     ],
+     "title": "Theorem 6.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "optimised_katana_rkem_ratchet_sim",
+     "parent": "rkem_katana_rkem_optimised",
+     "previewKey": "optimised_katana_rkem_ratchet_sim--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "optimised_katana_rkem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_ratchet_sim"
+      }
+     ],
+     "title": "Theorem 6.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "optimised_katana_rkem_forward_security",
+     "parent": "rkem_katana_rkem_optimised",
+     "previewKey": "optimised_katana_rkem_forward_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "optimised_katana_rkem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_forward_security"
+      }
+     ],
+     "title": "Theorem 6.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "rkem_from_ddh_fs_forward_security",
+     "parent": "rkem_rkem_from_ddh_fs",
+     "previewKey": "rkem_from_ddh_fs_forward_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_ddh_fs_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_forward_security"
+      }
+     ],
+     "title": "Theorem 3.3"
+    },
+    {
+     "kind": "definition",
+     "label": "rkem_from_ddh_nonfs_spec",
+     "parent": "rkem_rkem_from_ddh_non_fs",
+     "previewKey": "rkem_from_ddh_nonfs_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": "definition",
+     "label": "rkem_from_kem_spec",
+     "parent": "rkem_rkem_from_kem",
+     "previewKey": "rkem_from_kem_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 4.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "rkem_from_ddh_nonfs_ratchet_sim",
+     "parent": "rkem_rkem_from_ddh_non_fs",
+     "previewKey": "rkem_from_ddh_nonfs_ratchet_sim--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_ddh_nonfs_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_ratchet_sim"
+      }
+     ],
+     "title": "Theorem 2.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "plain_katana_rkem_ratchet_sim",
+     "parent": "rkem_katana_rkem_plain",
+     "previewKey": "plain_katana_rkem_ratchet_sim--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "plain_katana_rkem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_ratchet_sim"
+      }
+     ],
+     "title": "Theorem 5.4"
+    },
+    {
+     "kind": "definition",
+     "label": "rkem_from_ddh_fs_spec",
+     "parent": "rkem_rkem_from_ddh_fs",
+     "previewKey": "rkem_from_ddh_fs_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 3.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "rkem_from_kem_forward_security",
+     "parent": "rkem_rkem_from_kem",
+     "previewKey": "rkem_from_kem_forward_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_kem_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_forward_security"
+      }
+     ],
+     "title": "Theorem 4.3"
+    },
+    {
+     "kind": "definition",
+     "label": "plain_katana_rkem_spec",
+     "parent": "rkem_katana_rkem_plain",
+     "previewKey": "plain_katana_rkem_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_scheme"
+      }
+     ],
+     "title": "Definition 5.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "rkem_from_ddh_fs_ratchet_sim",
+     "parent": "rkem_rkem_from_ddh_fs",
+     "previewKey": "rkem_from_ddh_fs_ratchet_sim--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "rkem_from_ddh_fs_spec"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "rkem_ratchet_sim"
+      }
+     ],
+     "title": "Theorem 3.4"
+    }
+   ]
+  }
+ ],
+ "previews": []
+}

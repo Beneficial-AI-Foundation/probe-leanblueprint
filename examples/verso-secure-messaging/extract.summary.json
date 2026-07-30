@@ -1,0 +1,285 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "3.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.3.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/Beneficial-AI-Foundation/secure-messaging.git",
+    "commit": "6a4fce0e9c9b21d8afbb3fdb940a2acaca3a70bd",
+    "language": "lean",
+    "package": "SecureMessaging",
+    "package-version": "6a4fce0",
+    "class": "security-protocol"
+  },
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Authenticated-Encryption-with-Associated-Data/blueprint-manifest.json",
+        "sha256": "72be94e5d5db06c0e32598762a4072ac575b6dc10643646e8ba56e77c774e1b3",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Continuous-Key-Agreement/blueprint-manifest.json",
+        "sha256": "ac9c32ff24e22812bffd8185c2508cb2bf374d72c00b231860575942fe0ae33c",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Erasure-Codes/blueprint-manifest.json",
+        "sha256": "6ab1c121798a20bb3b06d67f9675782ca1b50c49646f56b56b152ef671c1e10a",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Forward-Secure-AEAD/blueprint-manifest.json",
+        "sha256": "36f63093cf176f5e105f474a25290f573e53f957c1c262843a6dd03e3060405a",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Key-Encapsulation-Mechanism/blueprint-manifest.json",
+        "sha256": "402ffdeb0ee4e42c22494c73ea27adaac9fdc400dd0e033654c4cd4fad2b5032",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/PRF-PRNG/blueprint-manifest.json",
+        "sha256": "0bc0e50c2c34e3f0c3d5f56502f0ce26abd4612e10caf796f350bc8e4ae759b4",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Ratcheting-KEM/blueprint-manifest.json",
+        "sha256": "96bde4fa8f9ef58591dd0a65e5eb22949abfa229c810a3ec5a225b6c9d1dad12",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Secure-Messaging/blueprint-manifest.json",
+        "sha256": "b599604c18983556fa13c37d401563edbf7071388672fb14fbc913d086c19043",
+        "vbp-internal-schema-version": 3
+      },
+      {
+        "path": "tests/fixtures/verso/secure-messaging/Sparse-Continuous-Key-Agreement/blueprint-manifest.json",
+        "sha256": "97c50881d1491b6270b6baaf5d9210d0366dbaa15cfe510371145954f7665e78",
+        "vbp-internal-schema-version": 3
+      }
+    ]
+  },
+  "timestamp": "2026-07-28T14:37:51Z",
+  "data": {
+    "totals": {
+      "nodes": 111,
+      "with-lean-decl": 33,
+      "planned-only": 78,
+      "decl-missing": 0,
+      "decl-missing-upstream-proved": 0,
+      "partial-missing": 0,
+      "collisions": 0,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 65,
+        "ready": 13,
+        "formalized": 33
+      },
+      "proof": {
+        "none": 65,
+        "ready": 13,
+        "proved": 0,
+        "fully-proved": 33
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 23,
+        "ready": 10,
+        "formalized": 25
+      },
+      "proof": {
+        "none": 23,
+        "ready": 10,
+        "proved": 0,
+        "fully-proved": 25
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 42,
+        "ready": 3,
+        "formalized": 8
+      },
+      "proof": {
+        "none": 42,
+        "ready": 3,
+        "proved": 0,
+        "fully-proved": 8
+      }
+    },
+    "headline": {
+      "theorems-total": 53,
+      "theorems-fully-proved": 8,
+      "theorems-fully-proved-probe-lean-confirmed": 8,
+      "theorems-fully-proved-upstream-proved": 0,
+      "fraction": 0.1509433962264151,
+      "fraction-probe-lean-confirmed": 0.1509433962264151
+    },
+    "by-chapter": {
+      "Authenticated-Encryption-with-Associated-Data": {
+        "nodes": 14,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 2,
+          "formalized": 12
+        },
+        "proof": {
+          "none": 0,
+          "ready": 2,
+          "proved": 0,
+          "fully-proved": 12
+        },
+        "theorems-total": 5,
+        "theorems-fully-proved": 3
+      },
+      "Continuous-Key-Agreement": {
+        "nodes": 15,
+        "statement": {
+          "none": 0,
+          "blocked": 2,
+          "ready": 1,
+          "formalized": 12
+        },
+        "proof": {
+          "none": 2,
+          "ready": 1,
+          "proved": 0,
+          "fully-proved": 12
+        },
+        "theorems-total": 6,
+        "theorems-fully-proved": 4
+      },
+      "Erasure-Codes": {
+        "nodes": 4,
+        "statement": {
+          "none": 0,
+          "blocked": 1,
+          "ready": 1,
+          "formalized": 2
+        },
+        "proof": {
+          "none": 1,
+          "ready": 1,
+          "proved": 0,
+          "fully-proved": 2
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
+      },
+      "Forward-Secure-AEAD": {
+        "nodes": 5,
+        "statement": {
+          "none": 0,
+          "blocked": 4,
+          "ready": 1,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 4,
+          "ready": 1,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 2,
+        "theorems-fully-proved": 0
+      },
+      "Key-Encapsulation-Mechanism": {
+        "nodes": 7,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 3,
+          "formalized": 4
+        },
+        "proof": {
+          "none": 0,
+          "ready": 3,
+          "proved": 0,
+          "fully-proved": 4
+        },
+        "theorems-total": 2,
+        "theorems-fully-proved": 1
+      },
+      "PRF-PRNG": {
+        "nodes": 4,
+        "statement": {
+          "none": 0,
+          "blocked": 3,
+          "ready": 1,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 3,
+          "ready": 1,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 1,
+        "theorems-fully-proved": 0
+      },
+      "Ratcheting-KEM": {
+        "nodes": 23,
+        "statement": {
+          "none": 0,
+          "blocked": 22,
+          "ready": 1,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 22,
+          "ready": 1,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 14,
+        "theorems-fully-proved": 0
+      },
+      "Secure-Messaging": {
+        "nodes": 27,
+        "statement": {
+          "none": 0,
+          "blocked": 24,
+          "ready": 3,
+          "formalized": 0
+        },
+        "proof": {
+          "none": 24,
+          "ready": 3,
+          "proved": 0,
+          "fully-proved": 0
+        },
+        "theorems-total": 16,
+        "theorems-fully-proved": 0
+      },
+      "Sparse-Continuous-Key-Agreement": {
+        "nodes": 12,
+        "statement": {
+          "none": 0,
+          "blocked": 9,
+          "ready": 0,
+          "formalized": 3
+        },
+        "proof": {
+          "none": 9,
+          "ready": 0,
+          "proved": 0,
+          "fully-proved": 3
+        },
+        "theorems-total": 6,
+        "theorems-fully-proved": 0
+      }
+    }
+  }
+}

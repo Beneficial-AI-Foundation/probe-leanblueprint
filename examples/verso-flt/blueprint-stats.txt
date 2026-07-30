@@ -1,0 +1,61 @@
+probe-leanblueprint stats — FLT ee47fd2
+  source: https://github.com/ImperialCollegeLondon/FLT.git@ee47fd2abe
+
+Headline: 88/194 theorems probe-lean-confirmed fully proved (45.4%) (+17 upstream-proved)
+Blueprint nodes: 245   (bound 150 · planned-only 73 · decl-missing 22 (22 upstream-proved) · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized         171    33   138
+  ready               39     9    30
+  blocked             35     9    26
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved       137    32   105
+  proved              25     1    24
+  ready               32     9    23
+  none                51     9    42
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  An-Example-Of-An-Automorphic-Form      35     34     24/28
+  An-overview-of-the-proof                1      0       0/1
+  Appendix___-A-collection-of-res...     29      0      0/17
+  Automorphic-forms-and-the-Langl...     10      3       0/2
+  First-Reductions-Of-The-Problem        10      8       4/8
+  Miniproject___-Adeles                  48     36     26/42
+  Miniproject___-Frobenius-Elements      12      8      5/10
+  Miniproject___-Fujisaki___s-Lemma      16     16      6/11
+  Miniproject___-Haar-Characters         37     36     25/35
+  Miniproject___-Hecke-Operators         21     17     15/20
+  Miniproject___-Quaternion-algebras      6      6       0/1
+  Reducibility-Of-p-Torsion-Of-Th...      8      7       0/7
+  Stating-the-modularity-lifting-...      2      0       0/2
+  verso-flt                              10      0      0/10
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? fermatLastTheoremThree  (proved out-of-workspace)
+  ? «Algebra.IsInvariant.charpoly_mem_lifts»  (proved out-of-workspace)
+  ? «Algebra.IsInvariant.isIntegral»  (proved out-of-workspace)
+  ? «ContinuousMulEquiv.piUnits»  (proved out-of-workspace)
+  ? «FermatLastTheorem.of_odd_primes»  (proved out-of-workspace)
+  ? «FixedPoints.toAlgAut_surjective»  (proved out-of-workspace)
+  ? «IsAlgebraic.exists_smul_eq_mul»  (proved out-of-workspace)
+  ? «IsFractionRing.stabilizerHom_surjective»  (proved out-of-workspace)
+  ? «IsFractionRing.stabilizerHom»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_comap»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_eq»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_refl»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_comap»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_integral_map»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_map»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_smul_preimage»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar_trans»  (proved out-of-workspace)
+  ? «MeasureTheory.addEquivAddHaarChar»  (proved out-of-workspace)
+  ? «MeasureTheory.mulEquivHaarChar_eq_one_of_compactSpace»  (proved out-of-workspace)
+  ? «MulSemiringAction.charpoly»  (proved out-of-workspace)
+  ? «MulSemiringAction.monic_charpoly»  (proved out-of-workspace)
+  ? «Submonoid.units_isCompact»  (proved out-of-workspace)
+Partial-missing declarations: none

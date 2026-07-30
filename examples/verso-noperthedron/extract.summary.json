@@ -1,0 +1,227 @@
+{
+  "schema": "probe-leanblueprint/summary",
+  "schema-version": "3.0",
+  "tool": {
+    "name": "probe-leanblueprint",
+    "version": "0.3.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/jcreedcmu/Noperthedron.git",
+    "commit": "8350205440d66d19afe774346edaaed13f61b416",
+    "language": "lean",
+    "package": "Noperthedron",
+    "package-version": "8350205"
+  },
+  "blueprint-provenance": {
+    "adapter": "verso",
+    "manifests": [
+      {
+        "path": "/home/lacra/git_repos/baif/verso-blueprint-experiments/real/verso-noperthedron/_out/site/html-multi/-verso-data/blueprint-manifest.json",
+        "sha256": "204495798ce85275ad83b5dc038eaaa3a5446a8ebe67fb9f191b16313df99069",
+        "vbp-internal-schema-version": 2
+      }
+    ]
+  },
+  "timestamp": "2026-07-28T12:01:37Z",
+  "data": {
+    "totals": {
+      "nodes": 68,
+      "with-lean-decl": 58,
+      "planned-only": 9,
+      "decl-missing": 1,
+      "decl-missing-upstream-proved": 0,
+      "partial-missing": 0,
+      "collisions": 0,
+      "mismatches": 0
+    },
+    "all": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 9,
+        "formalized": 59
+      },
+      "proof": {
+        "none": 2,
+        "ready": 7,
+        "proved": 15,
+        "fully-proved": 44
+      }
+    },
+    "definitions": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 1,
+        "formalized": 8
+      },
+      "proof": {
+        "none": 0,
+        "ready": 1,
+        "proved": 1,
+        "fully-proved": 7
+      }
+    },
+    "theorems": {
+      "statement": {
+        "none": 0,
+        "blocked": 0,
+        "ready": 8,
+        "formalized": 51
+      },
+      "proof": {
+        "none": 2,
+        "ready": 6,
+        "proved": 14,
+        "fully-proved": 37
+      }
+    },
+    "headline": {
+      "theorems-total": 59,
+      "theorems-fully-proved": 37,
+      "theorems-fully-proved-probe-lean-confirmed": 37,
+      "theorems-fully-proved-upstream-proved": 0,
+      "fraction": 0.6271186440677966,
+      "fraction-probe-lean-confirmed": 0.6271186440677966
+    },
+    "by-chapter": {
+      "Bounding-Rotations": {
+        "nodes": 7,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 7
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 0,
+          "fully-proved": 7
+        },
+        "theorems-total": 7,
+        "theorems-fully-proved": 7
+      },
+      "Computational-Step": {
+        "nodes": 5,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 1,
+          "formalized": 4
+        },
+        "proof": {
+          "none": 0,
+          "ready": 1,
+          "proved": 4,
+          "fully-proved": 0
+        },
+        "theorems-total": 5,
+        "theorems-fully-proved": 0
+      },
+      "Main-Theorems": {
+        "nodes": 6,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 6
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 6,
+          "fully-proved": 0
+        },
+        "theorems-total": 6,
+        "theorems-fully-proved": 0
+      },
+      "Preliminaries": {
+        "nodes": 5,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 2,
+          "formalized": 3
+        },
+        "proof": {
+          "none": 1,
+          "ready": 1,
+          "proved": 0,
+          "fully-proved": 3
+        },
+        "theorems-total": 5,
+        "theorems-fully-proved": 3
+      },
+      "Rational-Versions": {
+        "nodes": 15,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 1,
+          "formalized": 14
+        },
+        "proof": {
+          "none": 0,
+          "ready": 1,
+          "proved": 2,
+          "fully-proved": 12
+        },
+        "theorems-total": 13,
+        "theorems-fully-proved": 10
+      },
+      "The-Global-Theorem": {
+        "nodes": 5,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 2,
+          "formalized": 3
+        },
+        "proof": {
+          "none": 0,
+          "ready": 2,
+          "proved": 1,
+          "fully-proved": 2
+        },
+        "theorems-total": 5,
+        "theorems-fully-proved": 2
+      },
+      "The-Local-Theorem": {
+        "nodes": 14,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 0,
+          "formalized": 14
+        },
+        "proof": {
+          "none": 0,
+          "ready": 0,
+          "proved": 0,
+          "fully-proved": 14
+        },
+        "theorems-total": 11,
+        "theorems-fully-proved": 11
+      },
+      "The-Noperthedron": {
+        "nodes": 11,
+        "statement": {
+          "none": 0,
+          "blocked": 0,
+          "ready": 3,
+          "formalized": 8
+        },
+        "proof": {
+          "none": 1,
+          "ready": 2,
+          "proved": 2,
+          "fully-proved": 6
+        },
+        "theorems-total": 7,
+        "theorems-fully-proved": 4
+      }
+    }
+  }
+}

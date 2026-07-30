@@ -1,0 +1,30 @@
+probe-leanblueprint stats — ProjectTemplate 6561770
+  source: https://github.com/leanprover/verso-blueprint@6561770257
+
+Headline: 0/5 theorems probe-lean-confirmed fully proved (0.0%) (+1 upstream-proved)
+Blueprint nodes: 9   (bound 4 · planned-only 3 · decl-missing 2 (2 upstream-proved) · partial-missing 0 · mismatches 0)
+
+Statement axis (is the statement formalized?)
+  status             all   def   thm
+  formalized           6     1     5
+  ready                2     2     0
+  blocked              1     1     0
+  none                 0     0     0
+
+Proof axis (is the proof complete?)
+  status             all   def   thm
+  fully-proved         1     0     1
+  proved               4     1     3
+  ready                2     2     0
+  none                 2     1     1
+
+By chapter                            nodes  stmt✓  thm✓/thm
+  Addition                                4      2       0/2
+  Collatz                                 2      2       0/1
+  Multiplication                          3      2       1/2
+
+Status mismatches: none
+Declarations bound in blueprint but missing from probe-lean:
+  ? addition_assoc  (proved out-of-workspace)
+  ? multiplication_assoc  (proved out-of-workspace)
+Partial-missing declarations: none

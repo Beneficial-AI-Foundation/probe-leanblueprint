@@ -1,0 +1,96 @@
+{"vbpInternalSchemaVersion": 3, 
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "definition",
+     "label": "erasure_code_scheme",
+     "parent": "erasure_codes",
+     "previewKey": "erasure_code_scheme--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    },
+    {
+     "kind": "definition",
+     "label": "reed_solomon_erasure_code",
+     "parent": "erasure_codes_reed_solomon",
+     "previewKey": "reed_solomon_erasure_code--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [
+      {
+       "label": "erasure_code_scheme"
+      }
+     ],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": "definition",
+     "label": "erasure_code_correctness",
+     "parent": "erasure_codes",
+     "previewKey": "erasure_code_correctness--statement",
+     "proofStatus": "formalizedWithAncestors",
+     "proofUses": [],
+     "statementStatus": "formalized",
+     "statementUses": [
+      {
+       "label": "erasure_code_scheme"
+      }
+     ],
+     "title": "Definition 1.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "reed_solomon_erasure_code_correctness",
+     "parent": "erasure_codes_reed_solomon",
+     "previewKey": "reed_solomon_erasure_code_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "reed_solomon_erasure_code"
+      },
+      {
+       "label": "erasure_code_correctness"
+      }
+     ],
+     "title": "Theorem 2.2"
+    }
+   ]
+  }
+ ],
+ "previews": [
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "ErasureCode.Correct"
+      },
+      {
+       "canonical": "ErasureCode.encodeChunks"
+      }
+     ]
+    }
+   },
+   "key": "erasure_code_correctness--statement"
+  },
+  {
+   "codeData": {
+    "external": {
+     "decls": [
+      {
+       "canonical": "ErasureCode"
+      }
+     ]
+    }
+   },
+   "key": "erasure_code_scheme--statement"
+  }
+ ]
+}

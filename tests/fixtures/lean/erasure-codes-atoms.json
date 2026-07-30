@@ -1,0 +1,49 @@
+{
+  "schema": "probe-lean/extract",
+  "schema-version": "3.0",
+  "tool": {
+    "name": "probe-lean",
+    "version": "0.0.0",
+    "command": "extract"
+  },
+  "source": {
+    "repo": "https://github.com/Beneficial-AI-Foundation/secure-messaging",
+    "commit": "0000000000000000000000000000000000000000",
+    "language": "lean",
+    "package": "SecureMessaging",
+    "package-version": "0.1.0"
+  },
+  "timestamp": "2026-01-01T00:00:00Z",
+  "data": {
+    "probe:ErasureCode": {
+      "display-name": "ErasureCode",
+      "dependencies": [],
+      "code-module": "SecureMessaging.ErasureCode.Defs",
+      "code-path": "SecureMessaging/ErasureCode/Defs.lean",
+      "code-text": { "lines-start": 10, "lines-end": 20 },
+      "kind": "structure",
+      "language": "lean",
+      "verification-status": "trusted"
+    },
+    "probe:ErasureCode.encodeChunks": {
+      "display-name": "ErasureCode.encodeChunks",
+      "dependencies": ["probe:ErasureCode"],
+      "code-module": "SecureMessaging.ErasureCode.Defs",
+      "code-path": "SecureMessaging/ErasureCode/Defs.lean",
+      "code-text": { "lines-start": 25, "lines-end": 35 },
+      "kind": "def",
+      "language": "lean",
+      "verification-status": "verified"
+    },
+    "probe:ErasureCode.Correct": {
+      "display-name": "ErasureCode.Correct",
+      "dependencies": ["probe:ErasureCode", "probe:ErasureCode.encodeChunks"],
+      "code-module": "SecureMessaging.ErasureCode.Defs",
+      "code-path": "SecureMessaging/ErasureCode/Defs.lean",
+      "code-text": { "lines-start": 40, "lines-end": 55 },
+      "kind": "theorem",
+      "language": "lean",
+      "verification-status": "verified"
+    }
+  }
+}

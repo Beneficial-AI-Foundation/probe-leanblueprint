@@ -1,0 +1,3400 @@
+{
+ "data": {
+  "probe:AEADScheme": {
+   "classification": {
+    "category": "scheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 101,
+    "lines-start": 90
+   },
+   "dependencies": [],
+   "display-name": "AEADScheme",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:AEADScheme.guessAdvantage_eq_distAdvantage_div_two",
+    "probe:AEADScheme.securityExp_probOutput_eq_branch",
+    "probe:AEADScheme.securityExp_toReal_sub_half"
+   ],
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.Correct": {
+   "classification": {
+    "category": "correctness",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 112,
+    "lines-start": 108
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.decrypt",
+    "probe:AEADScheme.encrypt"
+   ],
+   "display-name": "Correct",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "primary-spec": "probe:etmAEAD_correct",
+   "rust-source": null,
+   "specs": [
+    "probe:etmAEAD_correct"
+   ],
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.decrypt",
+    "probe:AEADScheme.encrypt"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.OneTimeCCAAdversary": {
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 162,
+    "lines-start": 157
+   },
+   "dependencies": [
+    "probe:AEADScheme.aeadOneTimeCCASpec"
+   ],
+   "display-name": "OneTimeCCAAdversary",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "abbrev",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:AEADScheme.guessAdvantage_eq_distAdvantage_div_two",
+    "probe:AEADScheme.securityExp_probOutput_eq_branch",
+    "probe:AEADScheme.securityExp_toReal_sub_half",
+    "probe:etmAEAD_security",
+    "probe:forgeReduction_isQueryBoundP",
+    "probe:game0_eq_prfRealExp",
+    "probe:game0_eq_real",
+    "probe:game0_game1_le_prf",
+    "probe:game1_eq_prfIdealExp",
+    "probe:game1_game2_le_auth",
+    "probe:game2'_eq_game2",
+    "probe:game2_game3_le_enc",
+    "probe:game3_eq_rand",
+    "probe:probForge_authInst_le_forgeReduction",
+    "probe:tvDist_authInst_le_probForge"
+   ],
+   "term-dependencies": [
+    "probe:AEADScheme.aeadOneTimeCCASpec"
+   ],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.aeadSecurityImpl": {
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 223,
+    "lines-start": 218
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.aeadOneTimeCCASpec",
+    "probe:AEADScheme.oracleDecrypt",
+    "probe:AEADScheme.oracleEncrypt",
+    "probe:AEADScheme.oracleUnif"
+   ],
+   "display-name": "aeadSecurityImpl",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.oracleDecrypt",
+    "probe:AEADScheme.oracleEncrypt",
+    "probe:AEADScheme.oracleUnif"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.aeadOneTimeCCASpec"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.decryptQueryBound": {
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 173,
+    "lines-start": 165
+   },
+   "dependencies": [
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.aeadOneTimeCCASpec"
+   ],
+   "display-name": "decryptQueryBound",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:etmAEAD_security",
+    "probe:forgeReduction_isQueryBoundP",
+    "probe:game1_game2_le_auth"
+   ],
+   "term-dependencies": [
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.aeadOneTimeCCASpec"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme.OneTimeCCAAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.distAdvantage": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 276,
+    "lines-start": 266
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.securityExpFixedBit"
+   ],
+   "display-name": "distAdvantage",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:AEADScheme.guessAdvantage_eq_distAdvantage_div_two",
+    "probe:etmAEAD_security"
+   ],
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.securityExpFixedBit"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.guessAdvantage": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 248,
+    "lines-start": 243
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.securityExp"
+   ],
+   "display-name": "guessAdvantage",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "primary-spec": "probe:AEADScheme.guessAdvantage_eq_distAdvantage_div_two",
+   "rust-source": null,
+   "specs": [
+    "probe:AEADScheme.guessAdvantage_eq_distAdvantage_div_two"
+   ],
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.securityExp"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.guessAdvantage_eq_distAdvantage_div_two": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 341,
+    "lines-start": 329
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.distAdvantage",
+    "probe:AEADScheme.guessAdvantage"
+   ],
+   "display-name": "guessAdvantage_eq_distAdvantage_div_two",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.distAdvantage",
+    "probe:AEADScheme.guessAdvantage"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.oracleDecrypt": {
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 215,
+    "lines-start": 203
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.decrypt"
+   ],
+   "display-name": "oracleDecrypt",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.decrypt"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.oracleEncrypt": {
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 200,
+    "lines-start": 183
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.encrypt"
+   ],
+   "display-name": "oracleEncrypt",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.encrypt"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.securityExp": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 240,
+    "lines-start": 228
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.aeadOneTimeCCASpec",
+    "probe:AEADScheme.aeadSecurityImpl",
+    "probe:AEADScheme.keygen"
+   ],
+   "display-name": "securityExp",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:AEADScheme.securityExp_probOutput_eq_branch",
+    "probe:AEADScheme.securityExp_toReal_sub_half"
+   ],
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.aeadOneTimeCCASpec",
+    "probe:AEADScheme.aeadSecurityImpl",
+    "probe:AEADScheme.keygen"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:AEADScheme.securityExpFixedBit": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.Defs",
+   "code-path": "SecureMessaging/AEAD/Defs.lean",
+   "code-text": {
+    "lines-end": 263,
+    "lines-start": 253
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.aeadOneTimeCCASpec",
+    "probe:AEADScheme.aeadSecurityImpl",
+    "probe:AEADScheme.keygen"
+   ],
+   "display-name": "securityExpFixedBit",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:AEADScheme.securityExp_probOutput_eq_branch",
+    "probe:AEADScheme.securityExp_toReal_sub_half",
+    "probe:game0_eq_real",
+    "probe:game3_eq_rand"
+   ],
+   "term-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.aeadOneTimeCCASpec",
+    "probe:AEADScheme.aeadSecurityImpl",
+    "probe:AEADScheme.keygen"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:AEADScheme.OneTimeCCAAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme": {
+   "classification": {
+    "category": "scheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 224,
+    "lines-start": 202
+   },
+   "dependencies": [],
+   "display-name": "CKAScheme",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:CKAScheme.ckaGuessAdvantage_eq_ckaDistAdvantage_div_two",
+    "probe:CKAScheme.securityExp_probOutput_eq_branch",
+    "probe:CKAScheme.securityExp_toReal_sub_half"
+   ],
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.CKAAdversary": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 780,
+    "lines-start": 778
+   },
+   "dependencies": [
+    "probe:CKAScheme.ckaSecuritySpec"
+   ],
+   "display-name": "CKAAdversary",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "abbrev",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:CKAScheme.ckaGuessAdvantage_eq_ckaDistAdvantage_div_two",
+    "probe:CKAScheme.securityExp_probOutput_eq_branch",
+    "probe:CKAScheme.securityExp_toReal_sub_half",
+    "probe:ddhCKA.evalDist_ckaSecurityImpl_lazy_eq_eager",
+    "probe:ddhCKA.probFailure_securityExpFixedBit_eq",
+    "probe:ddhCKA.probOutput_ddhExpRand_securityReduction",
+    "probe:ddhCKA.probOutput_ddhExpReal_securityReduction",
+    "probe:ddhCKA.probOutput_general_per_x\u2080",
+    "probe:ddhCKA.probOutput_general_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_general_pointwise",
+    "probe:ddhCKA.probOutput_general_pointwise_rand",
+    "probe:ddhCKA.probOutput_lazy_honest_eq",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_false",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_true",
+    "probe:ddhCKA.probOutput_securityReductionRandGame_eq_honestTrue",
+    "probe:ddhCKA.probOutput_securityReductionRealGame_eq_honestFalse",
+    "probe:ddhCKA.probOutput_special_per_x\u2080",
+    "probe:ddhCKA.probOutput_special_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_special_pointwise",
+    "probe:ddhCKA.probOutput_special_pointwise_rand",
+    "probe:ddhCKA.security",
+    "probe:ddhCKA.securityReduction_rand",
+    "probe:ddhCKA.securityReduction_real",
+    "probe:ddhCKA.security_le_ddh_plus_failGap"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.ckaSecuritySpec"
+   ],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.CKACorrectnessAdversary": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 775,
+    "lines-start": 773
+   },
+   "dependencies": [
+    "probe:CKAScheme.ckaCorrectnessSpec"
+   ],
+   "display-name": "CKACorrectnessAdversary",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "abbrev",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.always_correct",
+    "probe:ddhCKA.correctness",
+    "probe:ddhCKA.nofail",
+    "probe:kemCKA.correctness"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.ckaCorrectnessSpec"
+   ],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.GameParams": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 317,
+    "lines-start": 307
+   },
+   "dependencies": [],
+   "display-name": "GameParams",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:CKAScheme.ckaGuessAdvantage_eq_ckaDistAdvantage_div_two",
+    "probe:CKAScheme.securityExp_probOutput_eq_branch",
+    "probe:CKAScheme.securityExp_toReal_sub_half",
+    "probe:ddhCKA.allowCorr_of_allowCorr_tA_succ",
+    "probe:ddhCKA.allowCorr_of_allowCorr_tB_succ",
+    "probe:ddhCKA.evalDist_ckaSecurityImpl_lazy_eq_eager",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_reduction_lazy_eq",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_rand_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallB_param_eq_oracleChallB_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendA_param_eq_oracleSendA_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendB_param_eq_oracleSendB_at_chal_A",
+    "probe:ddhCKA.evalDist_reduction_honest_param_rand_eq",
+    "probe:ddhCKA.evalDist_reduction_honest_param_rand_special_eq",
+    "probe:ddhCKA.evalDist_reduction_honest_param_real_eq",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_eq_eager",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_rand_eq_eager",
+    "probe:ddhCKA.hindepA_param_honest",
+    "probe:ddhCKA.hindepB_param_honest",
+    "probe:ddhCKA.honestChallA_param_b_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_mode_run_eq_at_chal_A_inr",
+    "probe:ddhCKA.honestChallA_param_rand_b_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_rand_gT_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallA_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestChallA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_b_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_mode_run_eq_at_chal_B_inr",
+    "probe:ddhCKA.honestChallB_param_rand_b_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_rand_gT_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestChallB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_post_sendA",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_post_sendB",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_special",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challA_special",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_rand_gT_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_rand_gT_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_rand_preserves_post_challA_special",
+    "probe:ddhCKA.honestImpl_param_rand_t_monotone",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_post_sendA",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_post_sendB",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_special",
+    "probe:ddhCKA.honestImpl_param_real_b_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_real_b_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_real_t_monotone",
+    "probe:ddhCKA.honestSendA_param_a_indep_post_event",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_B_inr",
+    "probe:ddhCKA.honestSendA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestSendB_param_a_indep_post_event",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_A_inr",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestSendB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.oracleCorrupt_state_unchanged",
+    "probe:ddhCKA.probFailure_securityExpFixedBit_eq",
+    "probe:ddhCKA.probOutput_ddhExpRand_securityReduction",
+    "probe:ddhCKA.probOutput_ddhExpReal_securityReduction",
+    "probe:ddhCKA.probOutput_general_per_x\u2080",
+    "probe:ddhCKA.probOutput_general_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_general_pointwise",
+    "probe:ddhCKA.probOutput_general_pointwise_rand",
+    "probe:ddhCKA.probOutput_lazy_honest_eq",
+    "probe:ddhCKA.probOutput_rand_challenge_coupling",
+    "probe:ddhCKA.probOutput_rand_send_coupling",
+    "probe:ddhCKA.probOutput_real_challenge_coupling",
+    "probe:ddhCKA.probOutput_real_send_coupling",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_false",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_true",
+    "probe:ddhCKA.probOutput_securityReductionRandGame_eq_honestTrue",
+    "probe:ddhCKA.probOutput_securityReductionRealGame_eq_honestFalse",
+    "probe:ddhCKA.probOutput_special_per_x\u2080",
+    "probe:ddhCKA.probOutput_special_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_special_pointwise",
+    "probe:ddhCKA.probOutput_special_pointwise_rand",
+    "probe:ddhCKA.reductionHonestRel_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_after_recvB",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvB",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_step_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_unif_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_real_step_rel",
+    "probe:ddhCKA.reduction_honest_param_real_unif_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptA_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptB_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendA_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendB_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionChallA_pred_false_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionChallB_pred_false_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionSendA_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionSendB_invalid_of_state_rel",
+    "probe:ddhCKA.security",
+    "probe:ddhCKA.securityReduction_rand",
+    "probe:ddhCKA.securityReduction_real",
+    "probe:ddhCKA.security_le_ddh_plus_failGap",
+    "probe:ddhCKA.simulateQ_honest_param_a_indep_post_sendA",
+    "probe:ddhCKA.simulateQ_honest_param_a_indep_post_sendB",
+    "probe:ddhCKA.simulateQ_honest_param_b_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_b_indep_post_challB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_a_indep_post_sendA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_a_indep_post_sendB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challA_special",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_gT_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_gT_indep_post_challB",
+    "probe:kemCKA.AdmissibleParams.challenge_epoch_compatible",
+    "probe:kemCKA.AdmissibleParams.deltaFS_zero",
+    "probe:kemCKA.AdmissibleParams.two_le_deltaPCS",
+    "probe:kemCKA.allowCorrPCS_false_of_two_le_deltaPCS_of_tA_pred",
+    "probe:kemCKA.allowCorrPCS_false_of_two_le_deltaPCS_of_tB_pred",
+    "probe:kemCKA.allowCorr_receiverA_false_after_challB",
+    "probe:kemCKA.allowCorr_receiverB_false_after_challA",
+    "probe:kemCKA.challA_run_support_counters",
+    "probe:kemCKA.challA_sampled_keygen_rel",
+    "probe:kemCKA.challA_sampled_reduction_cont_probOutput_true_eq",
+    "probe:kemCKA.challA_sampled_reduction_cont_run'_relTriple",
+    "probe:kemCKA.challA_sampled_reduction_query_rel",
+    "probe:kemCKA.challA_sampled_reduction_random_cont_probOutput_true_eq",
+    "probe:kemCKA.challA_sampled_reduction_random_cont_run'_relTriple",
+    "probe:kemCKA.challB_run_support_counters",
+    "probe:kemCKA.challB_sampled_keygen_rel",
+    "probe:kemCKA.challB_sampled_reduction_cont_probOutput_true_eq",
+    "probe:kemCKA.challB_sampled_reduction_cont_run'_relTriple",
+    "probe:kemCKA.challB_sampled_reduction_query_rel",
+    "probe:kemCKA.challB_sampled_reduction_random_cont_probOutput_true_eq",
+    "probe:kemCKA.challB_sampled_reduction_random_cont_run'_relTriple",
+    "probe:kemCKA.challengePrefix_run_done_of_challengePassed",
+    "probe:kemCKA.ckaReductionINDCPABranchRaw_keygen_swapped_gap_eq",
+    "probe:kemCKA.ckaReductionINDCPABranchRaw_keygen_swapped_probOutput_true",
+    "probe:kemCKA.ckaReductionINDCPABranch_eq_not_map_raw",
+    "probe:kemCKA.ckaReductionINDCPABranch_gap_eq_raw_gap",
+    "probe:kemCKA.ckaSecurityFixedBranchWithChallengeKey_injected_gap_eq",
+    "probe:kemCKA.ckaSecurityFixedBranchWithChallengeKey_injected_probOutput_true_eq",
+    "probe:kemCKA.ckaSecurityFixedBranchWithInjectedChallengeKey_eq_split",
+    "probe:kemCKA.ckaSecurityFixedBranch_challenge_key_gap_eq",
+    "probe:kemCKA.ckaSecurityFixedBranch_challenge_key_probOutput_true_eq",
+    "probe:kemCKA.ckaToINDCPAReduction_IND_CPA_Exp_probOutput_true_eq_branch",
+    "probe:kemCKA.cka_injected_honest_gap_eq_keygen_swapped_raw_gap",
+    "probe:kemCKA.coupleRelA_step_chall",
+    "probe:kemCKA.coupleRelA_step_inj",
+    "probe:kemCKA.coupleRelA_step_pre",
+    "probe:kemCKA.coupleRelB_step_chall",
+    "probe:kemCKA.coupleRelB_step_inj",
+    "probe:kemCKA.coupleRelB_step_pre",
+    "probe:kemCKA.finishChallengeStep_eq_not_map_raw",
+    "probe:kemCKA.indCPAExpProb_ckaToINDCPAReduction_eq_branch",
+    "probe:kemCKA.injResumeKilled_pausedA_probOutput_true_eq",
+    "probe:kemCKA.injResumeKilled_pausedB_probOutput_true_eq",
+    "probe:kemCKA.injResume_probOutput_decomp",
+    "probe:kemCKA.injectPrefix_run_support_effInject",
+    "probe:kemCKA.injectResume_pausedA_combine",
+    "probe:kemCKA.injectResume_pausedB_combine",
+    "probe:kemCKA.injectedChallengePrefix_run_done_of_challengePassed",
+    "probe:kemCKA.injectedKilledGame_probOutput_true_eq_A",
+    "probe:kemCKA.injectedKilledGame_probOutput_true_eq_B",
+    "probe:kemCKA.injectedPrefix_couples_challengePrefix_A",
+    "probe:kemCKA.injectedPrefix_couples_challengePrefix_B",
+    "probe:kemCKA.injected_probOutput_eq_killed_add_done",
+    "probe:kemCKA.keygen_commute_after_install_tail",
+    "probe:kemCKA.lastAction_of_willChallengeA",
+    "probe:kemCKA.lastAction_of_willChallengeB",
+    "probe:kemCKA.oracleSendAWithChallengeKeyPair_run_eq_of_not_inject",
+    "probe:kemCKA.oracleSendAWithChallengeKeyPair_run_sendReady",
+    "probe:kemCKA.oracleSendAWithChallengePk_run_eq_of_not_inject",
+    "probe:kemCKA.oracleSendAWithChallengePk_run_sendReady",
+    "probe:kemCKA.oracleSendA_rleak_fst_eq_oracleSendA",
+    "probe:kemCKA.oracleSendBWithChallengeKeyPair_run_eq_of_not_inject",
+    "probe:kemCKA.oracleSendBWithChallengeKeyPair_run_sendReady",
+    "probe:kemCKA.oracleSendBWithChallengePk_run_eq_of_not_inject",
+    "probe:kemCKA.oracleSendBWithChallengePk_run_sendReady",
+    "probe:kemCKA.oracleSendB_rleak_fst_eq_oracleSendB",
+    "probe:kemCKA.pausedA_killed_probOutput_true_eq",
+    "probe:kemCKA.pausedB_killed_probOutput_true_eq",
+    "probe:kemCKA.postChallengeImpl_corruptA_run",
+    "probe:kemCKA.postChallengeImpl_corruptB_run",
+    "probe:kemCKA.postChallengeImpl_none_run_eq",
+    "probe:kemCKA.postChallengeImpl_recvA_bToA_of_valid",
+    "probe:kemCKA.postChallengeImpl_recvB_aToB_of_valid",
+    "probe:kemCKA.postRel_aToB_after_challA",
+    "probe:kemCKA.postRel_aToB_after_challA_of_mem_support",
+    "probe:kemCKA.postRel_aToB_recvB",
+    "probe:kemCKA.postRel_aToB_recvB_noPending",
+    "probe:kemCKA.postRel_attach",
+    "probe:kemCKA.postRel_attach_none",
+    "probe:kemCKA.postRel_bToA_after_challB",
+    "probe:kemCKA.postRel_bToA_after_challB_of_mem_support",
+    "probe:kemCKA.postRel_bToA_recvA",
+    "probe:kemCKA.postRel_bToA_recvA_noPending",
+    "probe:kemCKA.postRel_none_step",
+    "probe:kemCKA.postRel_run'_relTriple",
+    "probe:kemCKA.postRel_step",
+    "probe:kemCKA.preInvA_preserved_recvA",
+    "probe:kemCKA.preInvA_preserved_recvB",
+    "probe:kemCKA.preInvA_preserved_sendA",
+    "probe:kemCKA.preInvA_preserved_sendA_rleak",
+    "probe:kemCKA.preInvA_preserved_sendB_of_not_inject",
+    "probe:kemCKA.preInvA_preserved_sendB_rleak",
+    "probe:kemCKA.preInvB_preserved_recvA",
+    "probe:kemCKA.preInvB_preserved_recvB",
+    "probe:kemCKA.preInvB_preserved_sendA_of_not_inject",
+    "probe:kemCKA.preInvB_preserved_sendA_rleak",
+    "probe:kemCKA.preInvB_preserved_sendB",
+    "probe:kemCKA.preInvB_preserved_sendB_rleak",
+    "probe:kemCKA.prefixImpl_run_counters_mono",
+    "probe:kemCKA.probOutput_simulateQ_keygen_commute",
+    "probe:kemCKA.probOutput_simulateQ_securityImplWithChallengeKeyPair_run_eq_of_injectionPassed",
+    "probe:kemCKA.probOutput_simulateQ_true_false_run'_eq_of_challengePassed",
+    "probe:kemCKA.probOutput_simulateQ_wck_run'_eq_of_injectionPassed",
+    "probe:kemCKA.rawResume_probOutput_decomp",
+    "probe:kemCKA.reductionBranchImpl_challA_preAToB_run_of_will",
+    "probe:kemCKA.reductionBranchImpl_challB_preBToA_run_of_will",
+    "probe:kemCKA.reductionBranchImpl_post_run",
+    "probe:kemCKA.reductionBranchImpl_post_simulateQ_run",
+    "probe:kemCKA.reductionBranchImpl_pre_challA_run_of_will",
+    "probe:kemCKA.reductionBranchImpl_pre_challB_run_of_will",
+    "probe:kemCKA.reductionBranch_challA_cont_eq_finishChallengeStepRaw",
+    "probe:kemCKA.reductionBranch_challB_cont_eq_finishChallengeStepRaw",
+    "probe:kemCKA.reductionStatePostRel_run'_relTriple",
+    "probe:kemCKA.reduction_probOutput_eq_killed_add_done",
+    "probe:kemCKA.security",
+    "probe:kemCKA.securityExpFixedBit_eq_ckaSecurityFixedBranch",
+    "probe:kemCKA.securityImplWithChallengeKeyPair_run_eq_securityImpl_of_injectionPassed",
+    "probe:kemCKA.securityImplWithChallengeKeyPair_run_eq_securityImpl_of_step",
+    "probe:kemCKA.securityImpl_OSendA_run_sendReady",
+    "probe:kemCKA.securityImpl_OSendB_run_sendReady",
+    "probe:kemCKA.securityImpl_challA_preAToB_random_run",
+    "probe:kemCKA.securityImpl_challA_preAToB_real_run",
+    "probe:kemCKA.securityImpl_challA_run_of_not_will",
+    "probe:kemCKA.securityImpl_challB_preBToA_random_run",
+    "probe:kemCKA.securityImpl_challB_preBToA_real_run",
+    "probe:kemCKA.securityImpl_challB_run_of_not_will",
+    "probe:kemCKA.securityImpl_corruptA_run",
+    "probe:kemCKA.securityImpl_corruptB_run",
+    "probe:kemCKA.securityImpl_preservesInv_challengePassed",
+    "probe:kemCKA.securityImpl_preservesInv_injectionPassed",
+    "probe:kemCKA.securityImpl_recvA_eq_project_postChallengeImpl_bToA",
+    "probe:kemCKA.securityImpl_recvA_of_decaps_eq",
+    "probe:kemCKA.securityImpl_recvB_eq_project_postChallengeImpl_aToB",
+    "probe:kemCKA.securityImpl_recvB_of_decaps_eq",
+    "probe:kemCKA.securityImpl_run_counters_mono",
+    "probe:kemCKA.securityImpl_true_false_run_eq_of_challengePassed",
+    "probe:kemCKA.security_exists",
+    "probe:kemCKA.simulateQ_run_eq_injectPrefix_bind",
+    "probe:kemCKA.simulateQ_wck_run_eq_injectedChallengePrefix_bind",
+    "probe:kemCKA.wck_run_counters_mono",
+    "probe:kemCKA.willChallengeA_eq_false_of_challengePassed",
+    "probe:kemCKA.willChallengeA_eq_false_of_preInvA",
+    "probe:kemCKA.willChallengeB_eq_false_of_challengePassed",
+    "probe:kemCKA.willChallengeB_eq_false_of_preInvB"
+   ],
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.GameState": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 348,
+    "lines-start": 320
+   },
+   "dependencies": [],
+   "display-name": "GameState",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.allowCorr_of_allowCorr_tA_succ",
+    "probe:ddhCKA.allowCorr_of_allowCorr_tB_succ",
+    "probe:ddhCKA.correctnessImpl_preserves",
+    "probe:ddhCKA.evalDist_ckaSecurityImpl_lazy_eq_eager",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_reduction_lazy_eq",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_rand_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallB_param_eq_oracleChallB_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendA_param_eq_oracleSendA_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendB_param_eq_oracleSendB_at_chal_A",
+    "probe:ddhCKA.evalDist_reduction_honest_param_rand_eq",
+    "probe:ddhCKA.evalDist_reduction_honest_param_rand_special_eq",
+    "probe:ddhCKA.evalDist_reduction_honest_param_real_eq",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_eq_eager",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_rand_eq_eager",
+    "probe:ddhCKA.hindepA_param_honest",
+    "probe:ddhCKA.hindepB_param_honest",
+    "probe:ddhCKA.honestChallA_param_b_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_mode_run_eq_at_chal_A_inr",
+    "probe:ddhCKA.honestChallA_param_rand_b_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_rand_gT_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallA_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestChallA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_b_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_mode_run_eq_at_chal_B_inr",
+    "probe:ddhCKA.honestChallB_param_rand_b_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_rand_gT_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestChallB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_post_sendA",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_post_sendB",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_special",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challA_special",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_rand_gT_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_rand_gT_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_rand_preserves_post_challA_special",
+    "probe:ddhCKA.honestImpl_param_rand_t_monotone",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_post_sendA",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_post_sendB",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_special",
+    "probe:ddhCKA.honestImpl_param_real_b_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_real_b_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_real_t_monotone",
+    "probe:ddhCKA.honestSendA_param_a_indep_post_event",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_B_inr",
+    "probe:ddhCKA.honestSendA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestSendB_param_a_indep_post_event",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_A_inr",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestSendB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.oracleCorrupt_state_unchanged",
+    "probe:ddhCKA.oracleRecvA_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvA_preserves_reachableShape",
+    "probe:ddhCKA.oracleRecvB_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvB_preserves_reachableShape",
+    "probe:ddhCKA.oracleSendA_preserves_reachableInv",
+    "probe:ddhCKA.oracleSendB_preserves_reachableInv",
+    "probe:ddhCKA.oracleUnif_preserves_reachableInv",
+    "probe:ddhCKA.probOutput_general_per_x\u2080",
+    "probe:ddhCKA.probOutput_general_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_general_pointwise",
+    "probe:ddhCKA.probOutput_general_pointwise_rand",
+    "probe:ddhCKA.probOutput_lazy_honest_eq",
+    "probe:ddhCKA.probOutput_rand_challenge_coupling",
+    "probe:ddhCKA.probOutput_rand_send_coupling",
+    "probe:ddhCKA.probOutput_real_challenge_coupling",
+    "probe:ddhCKA.probOutput_real_send_coupling",
+    "probe:ddhCKA.probOutput_special_per_x\u2080",
+    "probe:ddhCKA.probOutput_special_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_special_pointwise",
+    "probe:ddhCKA.probOutput_special_pointwise_rand",
+    "probe:ddhCKA.reductionHonestRel_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_after_recvB",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvB",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_step_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_unif_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_real_step_rel",
+    "probe:ddhCKA.reduction_honest_param_real_unif_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptA_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptB_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleRecvA_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleRecvB_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendA_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendB_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleUnif_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionChallA_pred_false_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionChallB_pred_false_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionSendA_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionSendB_invalid_of_state_rel",
+    "probe:ddhCKA.simulateQ_honest_param_a_indep_post_sendA",
+    "probe:ddhCKA.simulateQ_honest_param_a_indep_post_sendB",
+    "probe:ddhCKA.simulateQ_honest_param_b_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_b_indep_post_challB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_a_indep_post_sendA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_a_indep_post_sendB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challA_special",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_gT_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_gT_indep_post_challB",
+    "probe:kemCKA.ckaSecurityFixedBranchWithInjectedChallengeKey_eq_split",
+    "probe:kemCKA.correctnessImpl_preserves",
+    "probe:kemCKA.oracleRecvA_preserves_reachableInv",
+    "probe:kemCKA.oracleRecvB_preserves_reachableInv",
+    "probe:kemCKA.oracleSendA_preserves_reachableInv",
+    "probe:kemCKA.oracleSendA_rleak_fst_eq_oracleSendA",
+    "probe:kemCKA.oracleSendB_preserves_reachableInv",
+    "probe:kemCKA.oracleSendB_rleak_fst_eq_oracleSendB",
+    "probe:kemCKA.oracleUnif_preserves_reachableInv"
+   ],
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.allowCorr": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 491,
+    "lines-start": 486
+   },
+   "dependencies": [
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.allowCorrFS",
+    "probe:CKAScheme.allowCorrPCS"
+   ],
+   "display-name": "allowCorr",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:kemCKA.allowCorr_receiverA_false_after_challB",
+    "probe:kemCKA.allowCorr_receiverB_false_after_challA",
+    "probe:kemCKA.postChallengeImpl_corruptA_run",
+    "probe:kemCKA.postChallengeImpl_corruptB_run",
+    "probe:kemCKA.securityImpl_corruptA_run",
+    "probe:kemCKA.securityImpl_corruptB_run"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.allowCorrFS",
+    "probe:CKAScheme.allowCorrPCS"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.allowCorrFS": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 475,
+    "lines-start": 470
+   },
+   "dependencies": [
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengeEpoch",
+    "probe:CKAScheme.GameParams.\u0394FS",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB"
+   ],
+   "display-name": "allowCorrFS",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "abbrev",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.reductionHonestRel_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_after_recvB",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvB",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptB_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptA_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptB_of_state_rel"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengeEpoch",
+    "probe:CKAScheme.GameParams.\u0394FS",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.allowCorrPCS": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 483,
+    "lines-start": 478
+   },
+   "dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengeEpoch",
+    "probe:CKAScheme.GameParams.\u0394PCS",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB"
+   ],
+   "display-name": "allowCorrPCS",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.allowCorr_of_allowCorr_tA_succ",
+    "probe:ddhCKA.allowCorr_of_allowCorr_tB_succ",
+    "probe:ddhCKA.reductionHonestRel_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_after_recvB",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvB",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptB_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptA_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptB_of_state_rel",
+    "probe:kemCKA.allowCorrPCS_false_of_two_le_deltaPCS_of_tA_pred",
+    "probe:kemCKA.allowCorrPCS_false_of_two_le_deltaPCS_of_tB_pred",
+    "probe:kemCKA.oracleSendA_rleak_fst_eq_oracleSendA",
+    "probe:kemCKA.oracleSendB_rleak_fst_eq_oracleSendB"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengeEpoch",
+    "probe:CKAScheme.GameParams.\u0394PCS",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.ckaCorrectnessImpl": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 759,
+    "lines-start": 753
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.ckaCorrectnessSpec",
+    "probe:CKAScheme.oracleRecvA",
+    "probe:CKAScheme.oracleRecvB",
+    "probe:CKAScheme.oracleSendA",
+    "probe:CKAScheme.oracleSendB",
+    "probe:CKAScheme.oracleUnif"
+   ],
+   "display-name": "ckaCorrectnessImpl",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.correctnessImpl_preserves",
+    "probe:kemCKA.correctnessImpl_preserves"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.oracleRecvA",
+    "probe:CKAScheme.oracleRecvB",
+    "probe:CKAScheme.oracleSendA",
+    "probe:CKAScheme.oracleSendB",
+    "probe:CKAScheme.oracleUnif"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.ckaCorrectnessSpec"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.ckaGuessAdvantage": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:CKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 848,
+    "lines-start": 843
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.securityExp"
+   ],
+   "display-name": "ckaGuessAdvantage",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:CKAScheme.ckaGuessAdvantage_eq_ckaDistAdvantage_div_two",
+    "probe:ddhCKA.security",
+    "probe:ddhCKA.security_le_ddh_plus_failGap"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.securityExp"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.ckaSecurityImpl": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 770,
+    "lines-start": 762
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.ckaCorrectnessImpl",
+    "probe:CKAScheme.ckaCorrectnessSpec",
+    "probe:CKAScheme.ckaSecuritySpec",
+    "probe:CKAScheme.oracleChallA",
+    "probe:CKAScheme.oracleChallB",
+    "probe:CKAScheme.oracleCorruptA",
+    "probe:CKAScheme.oracleCorruptB",
+    "probe:CKAScheme.oracleSendArleak",
+    "probe:CKAScheme.oracleSendBrleak"
+   ],
+   "display-name": "ckaSecurityImpl",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_reduction_lazy_eq",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_eq_eager",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_rand_eq_eager",
+    "probe:ddhCKA.probOutput_general_per_x\u2080",
+    "probe:ddhCKA.probOutput_general_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_general_pointwise",
+    "probe:ddhCKA.probOutput_general_pointwise_rand",
+    "probe:ddhCKA.probOutput_lazy_honest_eq",
+    "probe:ddhCKA.probOutput_rand_challenge_coupling",
+    "probe:ddhCKA.probOutput_rand_send_coupling",
+    "probe:ddhCKA.probOutput_real_challenge_coupling",
+    "probe:ddhCKA.probOutput_real_send_coupling",
+    "probe:ddhCKA.probOutput_special_per_x\u2080",
+    "probe:ddhCKA.probOutput_special_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_special_pointwise",
+    "probe:ddhCKA.probOutput_special_pointwise_rand"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.ckaCorrectnessImpl",
+    "probe:CKAScheme.ckaCorrectnessSpec",
+    "probe:CKAScheme.oracleChallA",
+    "probe:CKAScheme.oracleChallB",
+    "probe:CKAScheme.oracleCorruptA",
+    "probe:CKAScheme.oracleCorruptB",
+    "probe:CKAScheme.oracleSendArleak",
+    "probe:CKAScheme.oracleSendBrleak"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.ckaSecuritySpec"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.correctnessExp": {
+   "classification": {
+    "category": "correctness",
+    "scheme": "probe:CKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 811,
+    "lines-start": 792
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKACorrectnessAdversary",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.ckaCorrectnessImpl",
+    "probe:CKAScheme.ckaCorrectnessSpec",
+    "probe:CKAScheme.initA",
+    "probe:CKAScheme.initB",
+    "probe:CKAScheme.initGameState",
+    "probe:CKAScheme.initKeyGen"
+   ],
+   "display-name": "correctnessExp",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.always_correct",
+    "probe:ddhCKA.correctness",
+    "probe:ddhCKA.nofail",
+    "probe:kemCKA.correctness"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKACorrectnessAdversary",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.ckaCorrectnessImpl",
+    "probe:CKAScheme.ckaCorrectnessSpec",
+    "probe:CKAScheme.initA",
+    "probe:CKAScheme.initB",
+    "probe:CKAScheme.initGameState",
+    "probe:CKAScheme.initKeyGen"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKACorrectnessAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.isChallengeEpoch": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 460,
+    "lines-start": 457
+   },
+   "dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengeEpoch",
+    "probe:CKAScheme.GameParams.challengedParty",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.tP"
+   ],
+   "display-name": "isChallengeEpoch",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.honestChallA_param_mode_run_eq_at_chal_A_inr",
+    "probe:ddhCKA.honestChallA_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_mode_run_eq_at_chal_B_inr",
+    "probe:ddhCKA.honestChallB_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.relTriple_reductionChallA_pred_false_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionChallB_pred_false_of_state_rel"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengeEpoch",
+    "probe:CKAScheme.GameParams.challengedParty",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.tP"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleChallA": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 686,
+    "lines-start": 658
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.challA",
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.CKAParty.A",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengedParty",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.instDecidableEqCKAParty",
+    "probe:CKAScheme.isChallengeEpoch",
+    "probe:CKAScheme.sendA",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleChallA",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_rand_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.honestChallA_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallA_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestChallA_param_run_eq_when_pred_false"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.challA",
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.CKAParty.A",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengedParty",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.instDecidableEqCKAParty",
+    "probe:CKAScheme.isChallengeEpoch",
+    "probe:CKAScheme.sendA",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleChallB": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 716,
+    "lines-start": 689
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.challB",
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.CKAParty.B",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengedParty",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.instDecidableEqCKAParty",
+    "probe:CKAScheme.isChallengeEpoch",
+    "probe:CKAScheme.sendB",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleChallB",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.evalDist_marginalized_honestChallB_param_eq_oracleChallB_at_chal_B",
+    "probe:ddhCKA.honestChallB_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestChallB_param_run_eq_when_pred_false"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.challB",
+    "probe:CKAScheme.CKAParty",
+    "probe:CKAScheme.CKAParty.B",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.challengedParty",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.instDecidableEqCKAParty",
+    "probe:CKAScheme.isChallengeEpoch",
+    "probe:CKAScheme.sendB",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleCorruptA": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 734,
+    "lines-start": 726
+   },
+   "dependencies": [
+    "probe:CKAScheme.CKAParty.A",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.allowCorr"
+   ],
+   "display-name": "oracleCorruptA",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.oracleCorrupt_state_unchanged",
+    "probe:ddhCKA.relTriple_oracleCorruptA_of_state_rel"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.CKAParty.A",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.allowCorr"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleCorruptB": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 745,
+    "lines-start": 737
+   },
+   "dependencies": [
+    "probe:CKAScheme.CKAParty.B",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.allowCorr"
+   ],
+   "display-name": "oracleCorruptB",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.oracleCorrupt_state_unchanged",
+    "probe:ddhCKA.relTriple_oracleCorruptB_of_state_rel"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme.CKAParty.B",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.allowCorr"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleRecvA": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 621,
+    "lines-start": 592
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.recvA",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.recvA",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleRecvA",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.oracleRecvA_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvA_preserves_reachableShape",
+    "probe:ddhCKA.relTriple_oracleRecvA_invalid_of_state_rel",
+    "probe:kemCKA.oracleRecvA_preserves_reachableInv"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.recvA",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.recvA",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleRecvB": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 653,
+    "lines-start": 624
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.recvB",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.recvB",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleRecvB",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.oracleRecvB_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvB_preserves_reachableShape",
+    "probe:ddhCKA.relTriple_oracleRecvB_invalid_of_state_rel",
+    "probe:kemCKA.oracleRecvB_preserves_reachableInv"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.recvB",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.recvB",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleSendA": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 518,
+    "lines-start": 496
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendA",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.sendA",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleSendA",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.evalDist_marginalized_honestSendA_param_eq_oracleSendA_at_chal_B",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestSendA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.oracleSendA_preserves_reachableInv",
+    "probe:kemCKA.oracleSendA_preserves_reachableInv",
+    "probe:kemCKA.oracleSendA_rleak_fst_eq_oracleSendA"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendA",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.sendA",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleSendArleak": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 566,
+    "lines-start": 548
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendA",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.allowCorrPCS",
+    "probe:CKAScheme.sendArleak",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleSendArleak",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.relTriple_oracleSendA_rleak_invalid_of_state_rel",
+    "probe:kemCKA.oracleSendA_rleak_fst_eq_oracleSendA"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendA",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.allowCorrPCS",
+    "probe:CKAScheme.sendArleak",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleSendB": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 543,
+    "lines-start": 521
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendB",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.sendB",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleSendB",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.evalDist_marginalized_honestSendB_param_eq_oracleSendB_at_chal_A",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestSendB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.oracleSendB_preserves_reachableInv",
+    "probe:kemCKA.oracleSendB_preserves_reachableInv",
+    "probe:kemCKA.oracleSendB_rleak_fst_eq_oracleSendB"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendB",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.sendB",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.oracleSendBrleak": {
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 587,
+    "lines-start": 569
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendB",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.allowCorrPCS",
+    "probe:CKAScheme.sendBrleak",
+    "probe:CKAScheme.validStep"
+   ],
+   "display-name": "oracleSendBrleak",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.relTriple_oracleSendB_rleak_invalid_of_state_rel",
+    "probe:kemCKA.oracleSendB_rleak_fst_eq_oracleSendB"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAction",
+    "probe:CKAScheme.CKAAction.sendB",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.GameState.correct",
+    "probe:CKAScheme.GameState.keyA",
+    "probe:CKAScheme.GameState.keyB",
+    "probe:CKAScheme.GameState.lastAction",
+    "probe:CKAScheme.GameState.rhoA",
+    "probe:CKAScheme.GameState.rhoB",
+    "probe:CKAScheme.GameState.stA",
+    "probe:CKAScheme.GameState.stB",
+    "probe:CKAScheme.GameState.tA",
+    "probe:CKAScheme.GameState.tB",
+    "probe:CKAScheme.allowCorrPCS",
+    "probe:CKAScheme.sendBrleak",
+    "probe:CKAScheme.validStep"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAScheme.securityExp": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:CKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.Defs",
+   "code-path": "SecureMessaging/CKA/Defs.lean",
+   "code-text": {
+    "lines-end": 840,
+    "lines-start": 816
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.ckaSecurityImpl",
+    "probe:CKAScheme.ckaSecuritySpec",
+    "probe:CKAScheme.initA",
+    "probe:CKAScheme.initB",
+    "probe:CKAScheme.initGameState",
+    "probe:CKAScheme.initKeyGen"
+   ],
+   "display-name": "securityExp",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:CKAScheme.securityExp_probOutput_eq_branch",
+    "probe:CKAScheme.securityExp_toReal_sub_half"
+   ],
+   "term-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameState",
+    "probe:CKAScheme.ckaSecurityImpl",
+    "probe:CKAScheme.ckaSecuritySpec",
+    "probe:CKAScheme.initA",
+    "probe:CKAScheme.initB",
+    "probe:CKAScheme.initGameState",
+    "probe:CKAScheme.initKeyGen"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:CKAState": {
+   "code-module": "SecureMessaging.CKA.FromDDH.Construction",
+   "code-path": "SecureMessaging/CKA/FromDDH/Construction.lean",
+   "code-text": {
+    "lines-end": 100,
+    "lines-start": 88
+   },
+   "dependencies": [],
+   "display-name": "CKAState",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "inductive",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.allowCorr_of_allowCorr_tA_succ",
+    "probe:ddhCKA.allowCorr_of_allowCorr_tB_succ",
+    "probe:ddhCKA.always_correct",
+    "probe:ddhCKA.correctness",
+    "probe:ddhCKA.correctnessImpl_preserves",
+    "probe:ddhCKA.evalDist_ckaSecurityImpl_lazy_eq_eager",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_reduction_lazy_eq",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_rand_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallB_param_eq_oracleChallB_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendA_param_eq_oracleSendA_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendB_param_eq_oracleSendB_at_chal_A",
+    "probe:ddhCKA.evalDist_reduction_honest_param_rand_eq",
+    "probe:ddhCKA.evalDist_reduction_honest_param_rand_special_eq",
+    "probe:ddhCKA.evalDist_reduction_honest_param_real_eq",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_eq_eager",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_rand_eq_eager",
+    "probe:ddhCKA.hindepA_param_honest",
+    "probe:ddhCKA.hindepB_param_honest",
+    "probe:ddhCKA.honestChallA_param_b_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_mode_run_eq_at_chal_A_inr",
+    "probe:ddhCKA.honestChallA_param_rand_b_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_rand_gT_indep_post_event",
+    "probe:ddhCKA.honestChallA_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallA_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestChallA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_b_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_mode_run_eq_at_chal_B_inr",
+    "probe:ddhCKA.honestChallB_param_rand_b_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_rand_gT_indep_post_event",
+    "probe:ddhCKA.honestChallB_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestChallB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_post_sendA",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_post_sendB",
+    "probe:ddhCKA.honestImpl_param_rand_a_indep_special",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challA_special",
+    "probe:ddhCKA.honestImpl_param_rand_b_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_rand_gT_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_rand_gT_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_rand_preserves_post_challA_special",
+    "probe:ddhCKA.honestImpl_param_rand_t_monotone",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_post_sendA",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_post_sendB",
+    "probe:ddhCKA.honestImpl_param_real_a_indep_special",
+    "probe:ddhCKA.honestImpl_param_real_b_indep_post_challA",
+    "probe:ddhCKA.honestImpl_param_real_b_indep_post_challB",
+    "probe:ddhCKA.honestImpl_param_real_t_monotone",
+    "probe:ddhCKA.honestSendA_param_a_indep_post_event",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_B_inr",
+    "probe:ddhCKA.honestSendA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestSendB_param_a_indep_post_event",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_A_inr",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestSendB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.nofail",
+    "probe:ddhCKA.oracleCorrupt_state_unchanged",
+    "probe:ddhCKA.oracleRecvA_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvA_preserves_reachableShape",
+    "probe:ddhCKA.oracleRecvB_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvB_preserves_reachableShape",
+    "probe:ddhCKA.oracleSendA_preserves_reachableInv",
+    "probe:ddhCKA.oracleSendB_preserves_reachableInv",
+    "probe:ddhCKA.oracleUnif_preserves_reachableInv",
+    "probe:ddhCKA.probFailure_securityExpFixedBit_eq",
+    "probe:ddhCKA.probOutput_ddhExpRand_securityReduction",
+    "probe:ddhCKA.probOutput_ddhExpReal_securityReduction",
+    "probe:ddhCKA.probOutput_general_per_x\u2080",
+    "probe:ddhCKA.probOutput_general_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_general_pointwise",
+    "probe:ddhCKA.probOutput_general_pointwise_rand",
+    "probe:ddhCKA.probOutput_lazy_honest_eq",
+    "probe:ddhCKA.probOutput_rand_challenge_coupling",
+    "probe:ddhCKA.probOutput_rand_send_coupling",
+    "probe:ddhCKA.probOutput_real_challenge_coupling",
+    "probe:ddhCKA.probOutput_real_send_coupling",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_false",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_true",
+    "probe:ddhCKA.probOutput_securityReductionRandGame_eq_honestTrue",
+    "probe:ddhCKA.probOutput_securityReductionRealGame_eq_honestFalse",
+    "probe:ddhCKA.probOutput_special_per_x\u2080",
+    "probe:ddhCKA.probOutput_special_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_special_pointwise",
+    "probe:ddhCKA.probOutput_special_pointwise_rand",
+    "probe:ddhCKA.reachableInv_init",
+    "probe:ddhCKA.reductionHonestRel_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_after_recvB",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvA",
+    "probe:ddhCKA.reductionHonestRel_rand_after_recvB",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_step_rel",
+    "probe:ddhCKA.reduction_honest_param_rand_unif_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptA_rel",
+    "probe:ddhCKA.reduction_honest_param_real_corruptB_rel",
+    "probe:ddhCKA.reduction_honest_param_real_step_rel",
+    "probe:ddhCKA.reduction_honest_param_real_unif_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptA_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleCorruptB_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleRecvA_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleRecvB_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendA_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendB_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleUnif_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionChallA_pred_false_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionChallB_pred_false_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionSendA_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_reductionSendB_invalid_of_state_rel",
+    "probe:ddhCKA.security",
+    "probe:ddhCKA.securityReduction_rand",
+    "probe:ddhCKA.securityReduction_real",
+    "probe:ddhCKA.security_le_ddh_plus_failGap",
+    "probe:ddhCKA.simulateQ_honest_param_a_indep_post_sendA",
+    "probe:ddhCKA.simulateQ_honest_param_a_indep_post_sendB",
+    "probe:ddhCKA.simulateQ_honest_param_b_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_b_indep_post_challB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_a_indep_post_sendA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_a_indep_post_sendB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challA_special",
+    "probe:ddhCKA.simulateQ_honest_param_rand_b_indep_post_challB",
+    "probe:ddhCKA.simulateQ_honest_param_rand_gT_indep_post_challA",
+    "probe:ddhCKA.simulateQ_honest_param_rand_gT_indep_post_challB"
+   ],
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:ErasureCode": {
+   "code-module": "SecureMessaging.ErasureCode.Defs",
+   "code-path": "SecureMessaging/ErasureCode/Defs.lean",
+   "code-text": {
+    "lines-end": 49,
+    "lines-start": 32
+   },
+   "dependencies": [],
+   "display-name": "ErasureCode",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:ErasureCode.Correct": {
+   "classification": {
+    "category": "correctness",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.ErasureCode.Defs",
+   "code-path": "SecureMessaging/ErasureCode/Defs.lean",
+   "code-text": {
+    "lines-end": 76,
+    "lines-start": 68
+   },
+   "dependencies": [
+    "probe:ErasureCode",
+    "probe:ErasureCode.N",
+    "probe:ErasureCode.decode",
+    "probe:ErasureCode.encodeChunks",
+    "probe:ErasureCode.nchunk"
+   ],
+   "display-name": "Correct",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:ErasureCode",
+    "probe:ErasureCode.N",
+    "probe:ErasureCode.decode",
+    "probe:ErasureCode.encodeChunks",
+    "probe:ErasureCode.nchunk"
+   ],
+   "type-dependencies": [
+    "probe:ErasureCode"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:ErasureCode.encodeChunks": {
+   "code-module": "SecureMessaging.ErasureCode.Defs",
+   "code-path": "SecureMessaging/ErasureCode/Defs.lean",
+   "code-text": {
+    "lines-end": 65,
+    "lines-start": 56
+   },
+   "dependencies": [
+    "probe:ErasureCode",
+    "probe:ErasureCode.N",
+    "probe:ErasureCode.encode",
+    "probe:ErasureCode.nchunk"
+   ],
+   "display-name": "encodeChunks",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:ErasureCode",
+    "probe:ErasureCode.N",
+    "probe:ErasureCode.encode",
+    "probe:ErasureCode.nchunk"
+   ],
+   "type-dependencies": [
+    "probe:ErasureCode",
+    "probe:ErasureCode.N",
+    "probe:ErasureCode.nchunk"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:KEMScheme.IncrementalStructure": {
+   "code-module": "SecureMessaging.KEM.IncrementalKEM.Defs",
+   "code-path": "SecureMessaging/KEM/IncrementalKEM/Defs.lean",
+   "code-text": {
+    "lines-end": 87,
+    "lines-start": 46
+   },
+   "dependencies": [],
+   "display-name": "IncrementalStructure",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "primary-spec": "probe:KEMScheme.IncrementalStructure.factor",
+   "rust-source": null,
+   "specs": [
+    "probe:KEMScheme.IncrementalStructure.factor"
+   ],
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:KEMScheme.OnOffStructure": {
+   "code-module": "SecureMessaging.KEM.OnOffKEM.Defs",
+   "code-path": "SecureMessaging/KEM/OnOffKEM/Defs.lean",
+   "code-text": {
+    "lines-end": 70,
+    "lines-start": 42
+   },
+   "dependencies": [],
+   "display-name": "OnOffStructure",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "primary-spec": "probe:KEMScheme.OnOffStructure.factor",
+   "rust-source": null,
+   "specs": [
+    "probe:KEMScheme.OnOffStructure.factor"
+   ],
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:MLKEM.deltaCorrect_fips203": {
+   "classification": {
+    "category": "correctness",
+    "construction": "probe:MLKEM.mlkemScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.KEM.MLKEM.Correctness",
+   "code-path": "SecureMessaging/KEM/MLKEM/Correctness.lean",
+   "code-text": {
+    "lines-end": 416,
+    "lines-start": 403
+   },
+   "dependencies": [
+    "probe:MLKEM.CoefficientFailureBound",
+    "probe:MLKEM.fips203DecapsulationFailureBound",
+    "probe:MLKEM.mlkemScheme"
+   ],
+   "display-name": "deltaCorrect_fips203",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:MLKEM.CoefficientFailureBound",
+    "probe:MLKEM.fips203DecapsulationFailureBound",
+    "probe:MLKEM.mlkemScheme"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:MLKEM.mlkemScheme": {
+   "classification": {
+    "category": "construction",
+    "via": "type"
+   },
+   "code-module": "SecureMessaging.KEM.MLKEM.Construction",
+   "code-path": "SecureMessaging/KEM/MLKEM/Construction.lean",
+   "code-text": {
+    "lines-end": 75,
+    "lines-start": 55
+   },
+   "dependencies": [
+    "probe:MLKEM.decidableEqEncodedTHat",
+    "probe:MLKEM.decidableEqEncodedU",
+    "probe:MLKEM.decidableEqEncodedV"
+   ],
+   "display-name": "mlkemScheme",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:MLKEM.correctnessError_le_fips203",
+    "probe:MLKEM.deltaCorrect_fips203"
+   ],
+   "term-dependencies": [
+    "probe:MLKEM.decidableEqEncodedTHat",
+    "probe:MLKEM.decidableEqEncodedU",
+    "probe:MLKEM.decidableEqEncodedV"
+   ],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme": {
+   "classification": {
+    "category": "scheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 101,
+    "lines-start": 69
+   },
+   "dependencies": [],
+   "display-name": "SCKAScheme",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.GameState": {
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 200,
+    "lines-start": 163
+   },
+   "dependencies": [],
+   "display-name": "GameState",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "structure",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.SCKAAdversary": {
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 678,
+    "lines-start": 675
+   },
+   "dependencies": [
+    "probe:SCKAScheme.sckaSecuritySpec"
+   ],
+   "display-name": "SCKAAdversary",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "abbrev",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme.sckaSecuritySpec"
+   ],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.SCKACorrectnessAdversary": {
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 672,
+    "lines-start": 669
+   },
+   "dependencies": [
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "display-name": "SCKACorrectnessAdversary",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "abbrev",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.correctnessExp": {
+   "classification": {
+    "category": "correctness",
+    "scheme": "probe:SCKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 696,
+    "lines-start": 683
+   },
+   "dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.GameState.correct",
+    "probe:SCKAScheme.SCKACorrectnessAdversary",
+    "probe:SCKAScheme.initA",
+    "probe:SCKAScheme.initB",
+    "probe:SCKAScheme.initGameState",
+    "probe:SCKAScheme.initKeyGen",
+    "probe:SCKAScheme.sckaCorrectnessImpl",
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "display-name": "correctnessExp",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.GameState.correct",
+    "probe:SCKAScheme.SCKACorrectnessAdversary",
+    "probe:SCKAScheme.initA",
+    "probe:SCKAScheme.initB",
+    "probe:SCKAScheme.initGameState",
+    "probe:SCKAScheme.initKeyGen",
+    "probe:SCKAScheme.sckaCorrectnessImpl",
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "type-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.SCKACorrectnessAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.sckaCorrectnessImpl": {
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 653,
+    "lines-start": 645
+   },
+   "dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.oracleRecvA",
+    "probe:SCKAScheme.oracleRecvB",
+    "probe:SCKAScheme.oracleSendA",
+    "probe:SCKAScheme.oracleSendB",
+    "probe:SCKAScheme.oracleUnif",
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "display-name": "sckaCorrectnessImpl",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.oracleRecvA",
+    "probe:SCKAScheme.oracleRecvB",
+    "probe:SCKAScheme.oracleSendA",
+    "probe:SCKAScheme.oracleSendB",
+    "probe:SCKAScheme.oracleUnif"
+   ],
+   "type-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.sckaCorrectnessSpec": {
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 220,
+    "lines-start": 213
+   },
+   "dependencies": [],
+   "display-name": "sckaCorrectnessSpec",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.sckaGuessAdvantage": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:SCKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 722,
+    "lines-start": 716
+   },
+   "dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.SCKAAdversary",
+    "probe:SCKAScheme.securityExp"
+   ],
+   "display-name": "sckaGuessAdvantage",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.SCKAAdversary",
+    "probe:SCKAScheme.securityExp"
+   ],
+   "type-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.SCKAAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.sckaSecurityImpl": {
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 666,
+    "lines-start": 656
+   },
+   "dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.oracleChall",
+    "probe:SCKAScheme.oracleCorruptA",
+    "probe:SCKAScheme.oracleCorruptB",
+    "probe:SCKAScheme.oracleSendArleak",
+    "probe:SCKAScheme.oracleSendBrleak",
+    "probe:SCKAScheme.sckaCorrectnessImpl",
+    "probe:SCKAScheme.sckaCorrectnessSpec",
+    "probe:SCKAScheme.sckaSecuritySpec"
+   ],
+   "display-name": "sckaSecurityImpl",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.oracleChall",
+    "probe:SCKAScheme.oracleCorruptA",
+    "probe:SCKAScheme.oracleCorruptB",
+    "probe:SCKAScheme.oracleSendArleak",
+    "probe:SCKAScheme.oracleSendBrleak",
+    "probe:SCKAScheme.sckaCorrectnessImpl",
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "type-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.sckaSecuritySpec"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.sckaSecuritySpec": {
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 232,
+    "lines-start": 223
+   },
+   "dependencies": [
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "display-name": "sckaSecuritySpec",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme.sckaCorrectnessSpec"
+   ],
+   "type-dependencies": [],
+   "verification-status": "transitively-verified"
+  },
+  "probe:SCKAScheme.securityExp": {
+   "classification": {
+    "category": "security",
+    "scheme": "probe:SCKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.SCKA.Defs",
+   "code-path": "SecureMessaging/SCKA/Defs.lean",
+   "code-text": {
+    "lines-end": 713,
+    "lines-start": 699
+   },
+   "dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.SCKAAdversary",
+    "probe:SCKAScheme.initA",
+    "probe:SCKAScheme.initB",
+    "probe:SCKAScheme.initGameState",
+    "probe:SCKAScheme.initKeyGen",
+    "probe:SCKAScheme.sckaSecurityImpl",
+    "probe:SCKAScheme.sckaSecuritySpec"
+   ],
+   "display-name": "securityExp",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.GameState",
+    "probe:SCKAScheme.SCKAAdversary",
+    "probe:SCKAScheme.initA",
+    "probe:SCKAScheme.initB",
+    "probe:SCKAScheme.initGameState",
+    "probe:SCKAScheme.initKeyGen",
+    "probe:SCKAScheme.sckaSecurityImpl",
+    "probe:SCKAScheme.sckaSecuritySpec"
+   ],
+   "type-dependencies": [
+    "probe:SCKAScheme",
+    "probe:SCKAScheme.SCKAAdversary"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:aesGcmAEAD": {
+   "classification": {
+    "category": "construction",
+    "scheme": "probe:AEADScheme",
+    "via": "type"
+   },
+   "code-module": "SecureMessaging.AEAD.AESGCM.Construction",
+   "code-path": "SecureMessaging/AEAD/AESGCM/Construction.lean",
+   "code-text": {
+    "lines-end": 160,
+    "lines-start": 131
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:AES",
+    "probe:PRPScheme.keygen",
+    "probe:PRPScheme.perm",
+    "probe:gcmDecrypt",
+    "probe:gcmEncrypt"
+   ],
+   "display-name": "aesGcmAEAD",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [
+    "probe:AES",
+    "probe:PRPScheme.keygen",
+    "probe:PRPScheme.perm",
+    "probe:gcmDecrypt",
+    "probe:gcmEncrypt"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:AES"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:ddhCKA": {
+   "attributes": [
+    "nolint"
+   ],
+   "classification": {
+    "category": "construction",
+    "scheme": "probe:CKAScheme",
+    "via": "type"
+   },
+   "code-module": "SecureMessaging.CKA.FromDDH.Construction",
+   "code-path": "SecureMessaging/CKA/FromDDH/Construction.lean",
+   "code-text": {
+    "lines-end": 160,
+    "lines-start": 135
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAState",
+    "probe:CKAState.recvReady",
+    "probe:CKAState.sendReady",
+    "probe:recv",
+    "probe:send",
+    "probe:sendRleak"
+   ],
+   "display-name": "ddhCKA",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:ddhCKA.always_correct",
+    "probe:ddhCKA.correctness",
+    "probe:ddhCKA.correctnessImpl_preserves",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_lazy_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challA_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_challB_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendA_chal_B",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_at_sendB_chal_A",
+    "probe:ddhCKA.evalDist_eager_honest_rand_eq_step_passthrough",
+    "probe:ddhCKA.evalDist_eager_reduction_lazy_eq",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallA_param_rand_eq_oracleChallA_at_chal_A",
+    "probe:ddhCKA.evalDist_marginalized_honestChallB_param_eq_oracleChallB_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendA_param_eq_oracleSendA_at_chal_B",
+    "probe:ddhCKA.evalDist_marginalized_honestSendB_param_eq_oracleSendB_at_chal_A",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_eq_eager",
+    "probe:ddhCKA.evalDist_special_honest_fixed_a_rand_eq_eager",
+    "probe:ddhCKA.honestChallA_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallA_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestChallA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_rand_run_eq_when_pred_false",
+    "probe:ddhCKA.honestChallB_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestChallB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestSendA_param_run_eq_at_chal_A",
+    "probe:ddhCKA.honestSendA_param_run_eq_when_pred_false",
+    "probe:ddhCKA.honestSendB_param_run_eq_at_chal_B",
+    "probe:ddhCKA.honestSendB_param_run_eq_when_pred_false",
+    "probe:ddhCKA.nofail",
+    "probe:ddhCKA.oracleRecvA_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvA_preserves_reachableShape",
+    "probe:ddhCKA.oracleRecvB_preserves_reachableInv",
+    "probe:ddhCKA.oracleRecvB_preserves_reachableShape",
+    "probe:ddhCKA.oracleSendA_preserves_reachableInv",
+    "probe:ddhCKA.oracleSendB_preserves_reachableInv",
+    "probe:ddhCKA.probFailure_securityExpFixedBit_eq",
+    "probe:ddhCKA.probOutput_general_per_x\u2080",
+    "probe:ddhCKA.probOutput_general_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_general_pointwise",
+    "probe:ddhCKA.probOutput_general_pointwise_rand",
+    "probe:ddhCKA.probOutput_lazy_honest_eq",
+    "probe:ddhCKA.probOutput_rand_challenge_coupling",
+    "probe:ddhCKA.probOutput_rand_send_coupling",
+    "probe:ddhCKA.probOutput_real_challenge_coupling",
+    "probe:ddhCKA.probOutput_real_send_coupling",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_false",
+    "probe:ddhCKA.probOutput_securityExpFixedBit_true",
+    "probe:ddhCKA.probOutput_special_per_x\u2080",
+    "probe:ddhCKA.probOutput_special_per_x\u2080_rand",
+    "probe:ddhCKA.probOutput_special_pointwise",
+    "probe:ddhCKA.probOutput_special_pointwise_rand",
+    "probe:ddhCKA.relTriple_oracleRecvA_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleRecvB_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendA_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.relTriple_oracleSendB_rleak_invalid_of_state_rel",
+    "probe:ddhCKA.security",
+    "probe:ddhCKA.securityReduction_rand",
+    "probe:ddhCKA.securityReduction_real",
+    "probe:ddhCKA.security_le_ddh_plus_failGap"
+   ],
+   "term-dependencies": [
+    "probe:CKAState",
+    "probe:CKAState.recvReady",
+    "probe:CKAState.sendReady",
+    "probe:recv",
+    "probe:send",
+    "probe:sendRleak"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:CKAState"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:ddhCKA.correctness": {
+   "classification": {
+    "category": "correctness",
+    "construction": "probe:ddhCKA",
+    "scheme": "probe:CKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.FromDDH.Correctness",
+   "code-path": "SecureMessaging/CKA/FromDDH/Correctness.lean",
+   "code-text": {
+    "lines-end": 261,
+    "lines-start": 246
+   },
+   "dependencies": [
+    "probe:CKAScheme.CKACorrectnessAdversary",
+    "probe:CKAScheme.correctnessExp",
+    "probe:CKAState",
+    "probe:ddhCKA"
+   ],
+   "display-name": "correctness",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:CKAScheme.CKACorrectnessAdversary",
+    "probe:CKAScheme.correctnessExp",
+    "probe:CKAState",
+    "probe:ddhCKA"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:ddhCKA.security": {
+   "classification": {
+    "category": "security",
+    "construction": "probe:ddhCKA",
+    "scheme": "probe:CKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.FromDDH.Security",
+   "code-path": "SecureMessaging/CKA/FromDDH/Security.lean",
+   "code-text": {
+    "lines-end": 379,
+    "lines-start": 355
+   },
+   "dependencies": [
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.\u0394FS",
+    "probe:CKAScheme.GameParams.\u0394PCS",
+    "probe:CKAScheme.ckaGuessAdvantage",
+    "probe:CKAState",
+    "probe:ddhCKA",
+    "probe:ddhCKA.securityReduction"
+   ],
+   "display-name": "security",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:CKAScheme.CKAAdversary",
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.GameParams.\u0394FS",
+    "probe:CKAScheme.GameParams.\u0394PCS",
+    "probe:CKAScheme.ckaGuessAdvantage",
+    "probe:CKAState",
+    "probe:ddhCKA",
+    "probe:ddhCKA.securityReduction"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:etmAEAD": {
+   "classification": {
+    "category": "construction",
+    "scheme": "probe:AEADScheme",
+    "via": "type"
+   },
+   "code-module": "SecureMessaging.AEAD.FromEtM.Construction",
+   "code-path": "SecureMessaging/AEAD/FromEtM/Construction.lean",
+   "code-text": {
+    "lines-end": 64,
+    "lines-start": 41
+   },
+   "dependencies": [
+    "probe:AEADScheme",
+    "probe:DetSEAlg",
+    "probe:DetSEAlg.decrypt",
+    "probe:DetSEAlg.encrypt",
+    "probe:DetSEAlg.keygen"
+   ],
+   "display-name": "etmAEAD",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:etmAEAD_correct",
+    "probe:etmAEAD_security",
+    "probe:game0_eq_real",
+    "probe:game3_eq_rand"
+   ],
+   "term-dependencies": [
+    "probe:DetSEAlg",
+    "probe:DetSEAlg.decrypt",
+    "probe:DetSEAlg.encrypt",
+    "probe:DetSEAlg.keygen"
+   ],
+   "type-dependencies": [
+    "probe:AEADScheme",
+    "probe:DetSEAlg"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:etmAEAD_correct": {
+   "classification": {
+    "category": "correctness",
+    "construction": "probe:etmAEAD",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.FromEtM.Correctness",
+   "code-path": "SecureMessaging/AEAD/FromEtM/Correctness.lean",
+   "code-text": {
+    "lines-end": 38,
+    "lines-start": 24
+   },
+   "dependencies": [
+    "probe:AEADScheme.Correct",
+    "probe:DetSEAlg",
+    "probe:DetSEAlg.Correct",
+    "probe:etmAEAD"
+   ],
+   "display-name": "etmAEAD_correct",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:AEADScheme.Correct",
+    "probe:DetSEAlg",
+    "probe:DetSEAlg.Correct",
+    "probe:etmAEAD"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:etmAEAD_security": {
+   "classification": {
+    "category": "security",
+    "construction": "probe:etmAEAD",
+    "scheme": "probe:AEADScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.AEAD.FromEtM.Security",
+   "code-path": "SecureMessaging/AEAD/FromEtM/Security.lean",
+   "code-text": {
+    "lines-end": 219,
+    "lines-start": 155
+   },
+   "dependencies": [
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.decryptQueryBound",
+    "probe:AEADScheme.distAdvantage",
+    "probe:DetSEAlg",
+    "probe:DetSEAlg.distAdvantage",
+    "probe:encReduction",
+    "probe:etmAEAD",
+    "probe:prfReduction"
+   ],
+   "display-name": "etmAEAD_security",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:AEADScheme.OneTimeCCAAdversary",
+    "probe:AEADScheme.decryptQueryBound",
+    "probe:AEADScheme.distAdvantage",
+    "probe:DetSEAlg",
+    "probe:DetSEAlg.distAdvantage",
+    "probe:encReduction",
+    "probe:etmAEAD",
+    "probe:prfReduction"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:kemCKA.correctness": {
+   "classification": {
+    "category": "correctness",
+    "construction": "probe:kemCKA.scheme",
+    "scheme": "probe:CKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.FromKEM.Correctness",
+   "code-path": "SecureMessaging/CKA/FromKEM/Correctness.lean",
+   "code-text": {
+    "lines-end": 417,
+    "lines-start": 367
+   },
+   "dependencies": [
+    "probe:CKAScheme.CKACorrectnessAdversary",
+    "probe:CKAScheme.correctnessExp",
+    "probe:kemCKA.InitKey",
+    "probe:kemCKA.Message",
+    "probe:kemCKA.State",
+    "probe:kemCKA.scheme"
+   ],
+   "display-name": "correctness",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:CKAScheme.CKACorrectnessAdversary",
+    "probe:CKAScheme.correctnessExp",
+    "probe:kemCKA.InitKey",
+    "probe:kemCKA.Message",
+    "probe:kemCKA.State",
+    "probe:kemCKA.scheme"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:kemCKA.scheme": {
+   "classification": {
+    "category": "construction",
+    "scheme": "probe:CKAScheme",
+    "via": "type"
+   },
+   "code-module": "SecureMessaging.CKA.FromKEM.Construction",
+   "code-path": "SecureMessaging/CKA/FromKEM/Construction.lean",
+   "code-text": {
+    "lines-end": 182,
+    "lines-start": 152
+   },
+   "dependencies": [
+    "probe:CKAScheme",
+    "probe:kemCKA.InitKey",
+    "probe:kemCKA.Message",
+    "probe:kemCKA.State",
+    "probe:kemCKA.initA",
+    "probe:kemCKA.initB",
+    "probe:kemCKA.recv",
+    "probe:kemCKA.send",
+    "probe:kemCKA.sendRleak"
+   ],
+   "display-name": "scheme",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "def",
+   "language": "lean",
+   "rust-source": null,
+   "specs": [
+    "probe:kemCKA.correctness",
+    "probe:kemCKA.correctnessImpl_preserves",
+    "probe:kemCKA.oracleRecvA_preserves_reachableInv",
+    "probe:kemCKA.oracleRecvB_preserves_reachableInv",
+    "probe:kemCKA.oracleSendA_preserves_reachableInv",
+    "probe:kemCKA.oracleSendA_rleak_fst_eq_oracleSendA",
+    "probe:kemCKA.oracleSendB_preserves_reachableInv",
+    "probe:kemCKA.oracleSendB_rleak_fst_eq_oracleSendB",
+    "probe:kemCKA.security",
+    "probe:kemCKA.securityExpFixedBit_eq_ckaSecurityFixedBranch",
+    "probe:kemCKA.security_exists"
+   ],
+   "term-dependencies": [
+    "probe:kemCKA.InitKey",
+    "probe:kemCKA.Message",
+    "probe:kemCKA.State",
+    "probe:kemCKA.initA",
+    "probe:kemCKA.initB",
+    "probe:kemCKA.recv",
+    "probe:kemCKA.send",
+    "probe:kemCKA.sendRleak"
+   ],
+   "type-dependencies": [
+    "probe:CKAScheme",
+    "probe:kemCKA.InitKey",
+    "probe:kemCKA.Message",
+    "probe:kemCKA.State"
+   ],
+   "verification-status": "transitively-verified"
+  },
+  "probe:kemCKA.security": {
+   "classification": {
+    "category": "ambiguous",
+    "construction": "probe:kemCKA.scheme",
+    "scheme": "probe:CKAScheme",
+    "via": "naming"
+   },
+   "code-module": "SecureMessaging.CKA.FromKEM.Security",
+   "code-path": "SecureMessaging/CKA/FromKEM/Security.lean",
+   "code-text": {
+    "lines-end": 73,
+    "lines-start": 31
+   },
+   "dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.ckaDistAdvantage",
+    "probe:kemCKA.AdmissibleParams",
+    "probe:kemCKA.Adversary",
+    "probe:kemCKA.InitKey",
+    "probe:kemCKA.Message",
+    "probe:kemCKA.State",
+    "probe:kemCKA.ckaToINDCPAReduction",
+    "probe:kemCKA.scheme"
+   ],
+   "display-name": "security",
+   "is-extraction-artifact": false,
+   "is-hidden": false,
+   "is-ignored": false,
+   "is-in-package": true,
+   "is-relevant": true,
+   "kind": "theorem",
+   "language": "lean",
+   "rust-source": null,
+   "term-dependencies": [],
+   "type-dependencies": [
+    "probe:CKAScheme.GameParams",
+    "probe:CKAScheme.ckaDistAdvantage",
+    "probe:kemCKA.AdmissibleParams",
+    "probe:kemCKA.Adversary",
+    "probe:kemCKA.InitKey",
+    "probe:kemCKA.Message",
+    "probe:kemCKA.State",
+    "probe:kemCKA.ckaToINDCPAReduction",
+    "probe:kemCKA.scheme"
+   ],
+   "verification-status": "transitively-verified"
+  }
+ },
+ "schema": "probe-lean/extract",
+ "schema-version": "3.0",
+ "source": {
+  "class": "security-protocol",
+  "commit": "6a4fce0e9c9b21d8afbb3fdb940a2acaca3a70bd",
+  "language": "lean",
+  "package": "SecureMessaging",
+  "package-version": "6a4fce0",
+  "repo": "https://github.com/Beneficial-AI-Foundation/secure-messaging.git"
+ },
+ "timestamp": "2026-07-21T11:04:14Z",
+ "tool": {
+  "command": "extract",
+  "name": "probe-lean",
+  "version": "0.9.2"
+ }
+}

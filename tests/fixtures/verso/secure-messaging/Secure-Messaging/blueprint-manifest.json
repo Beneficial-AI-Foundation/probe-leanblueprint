@@ -1,0 +1,561 @@
+{"vbpInternalSchemaVersion": 3, 
+ "graphs": [
+  {
+   "nodes": [
+    {
+     "kind": "definition",
+     "label": "secure_messaging_signal_double_ratchet_spec",
+     "parent": "secure_messaging_signal_protocol_double_ratchet",
+     "previewKey": "secure_messaging_signal_double_ratchet_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_abstract_double_ratchet_spec"
+      },
+      {
+       "label": "cka"
+      },
+      {
+       "label": "fs_aead_scheme"
+      },
+      {
+       "label": "prf_prng_scheme"
+      }
+     ],
+     "title": "Definition 1.2.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_abstract_double_ratchet_privacy",
+     "parent": "secure_messaging_abstract_protocol_double_ratchet",
+     "previewKey": "secure_messaging_abstract_double_ratchet_privacy--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_abstract_double_ratchet_spec"
+      }
+     ],
+     "title": "Theorem 1.1.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_signal_double_ratchet_authenticity",
+     "parent": "secure_messaging_signal_protocol_double_ratchet",
+     "previewKey": "secure_messaging_signal_double_ratchet_authenticity--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_signal_double_ratchet_spec"
+      },
+      {
+       "label": "secure_messaging_abstract_double_ratchet_authenticity"
+      }
+     ],
+     "title": "Theorem 1.2.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_triple_ratchet_authenticity",
+     "parent": "secure_messaging_triple_ratchet",
+     "previewKey": "secure_messaging_triple_ratchet_authenticity--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_triple_ratchet_spec"
+      }
+     ],
+     "title": "Theorem 2.4"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_double_ratchet_correctness",
+     "parent": "secure_messaging_double_ratchet",
+     "previewKey": "secure_messaging_double_ratchet_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_double_ratchet_scheme"
+      }
+     ],
+     "title": "Definition 1.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_scka_security",
+     "parent": "secure_messaging_scka",
+     "previewKey": "secure_messaging_scka_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_scka_spec"
+      },
+      {
+       "label": "secure_messaging_scka_correctness"
+      },
+      {
+       "label": "secure_messaging_scka_authenticity"
+      },
+      {
+       "label": "secure_messaging_scka_privacy"
+      }
+     ],
+     "title": "Theorem 3.6"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_double_ratchet_scheme",
+     "parent": "secure_messaging_double_ratchet",
+     "previewKey": "secure_messaging_double_ratchet_scheme--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [],
+     "title": "Definition 1.1"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_abstract_double_ratchet_spec",
+     "parent": "secure_messaging_abstract_protocol_double_ratchet",
+     "previewKey": "secure_messaging_abstract_double_ratchet_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_double_ratchet_scheme"
+      },
+      {
+       "label": "cka"
+      },
+      {
+       "label": "fs_aead_scheme"
+      },
+      {
+       "label": "prf_prng_scheme"
+      }
+     ],
+     "title": "Definition 1.1.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_signal_double_ratchet_correctness",
+     "parent": "secure_messaging_signal_protocol_double_ratchet",
+     "previewKey": "secure_messaging_signal_double_ratchet_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_signal_double_ratchet_spec"
+      },
+      {
+       "label": "secure_messaging_abstract_double_ratchet_correctness"
+      }
+     ],
+     "title": "Theorem 1.2.2"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_double_ratchet_privacy",
+     "parent": "secure_messaging_double_ratchet",
+     "previewKey": "secure_messaging_double_ratchet_privacy--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_double_ratchet_scheme"
+      }
+     ],
+     "title": "Definition 1.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_scka_privacy",
+     "parent": "secure_messaging_scka",
+     "previewKey": "secure_messaging_scka_privacy--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_scka_spec"
+      }
+     ],
+     "title": "Theorem 3.5"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_double_ratchet_authenticity",
+     "parent": "secure_messaging_double_ratchet",
+     "previewKey": "secure_messaging_double_ratchet_authenticity--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_double_ratchet_scheme"
+      }
+     ],
+     "title": "Definition 1.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_signal_double_ratchet_security",
+     "parent": "secure_messaging_signal_protocol_double_ratchet",
+     "previewKey": "secure_messaging_signal_double_ratchet_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_signal_double_ratchet_spec"
+      },
+      {
+       "label": "secure_messaging_signal_double_ratchet_correctness"
+      },
+      {
+       "label": "secure_messaging_signal_double_ratchet_authenticity"
+      },
+      {
+       "label": "secure_messaging_signal_double_ratchet_privacy"
+      }
+     ],
+     "title": "Theorem 1.2.5"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_signal_double_ratchet_privacy",
+     "parent": "secure_messaging_signal_protocol_double_ratchet",
+     "previewKey": "secure_messaging_signal_double_ratchet_privacy--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_signal_double_ratchet_spec"
+      },
+      {
+       "label": "secure_messaging_abstract_double_ratchet_privacy"
+      }
+     ],
+     "title": "Theorem 1.2.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_triple_ratchet_correctness",
+     "parent": "secure_messaging_triple_ratchet",
+     "previewKey": "secure_messaging_triple_ratchet_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_triple_ratchet_spec"
+      }
+     ],
+     "title": "Theorem 2.3"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_abstract_double_ratchet_correctness",
+     "parent": "secure_messaging_abstract_protocol_double_ratchet",
+     "previewKey": "secure_messaging_abstract_double_ratchet_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_abstract_double_ratchet_spec"
+      }
+     ],
+     "title": "Theorem 1.1.2"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_scka_authenticity",
+     "parent": "secure_messaging_scka",
+     "previewKey": "secure_messaging_scka_authenticity--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_scka_spec"
+      }
+     ],
+     "title": "Theorem 3.4"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_scka_correctness",
+     "parent": "secure_messaging_scka",
+     "previewKey": "secure_messaging_scka_correctness--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_scka_spec"
+      }
+     ],
+     "title": "Theorem 3.3"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_triple_ratchet_scheme",
+     "parent": "secure_messaging_triple_ratchet",
+     "previewKey": "secure_messaging_triple_ratchet_scheme--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [],
+     "title": "Definition 2.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_triple_ratchet_privacy",
+     "parent": "secure_messaging_triple_ratchet",
+     "previewKey": "secure_messaging_triple_ratchet_privacy--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_triple_ratchet_spec"
+      }
+     ],
+     "title": "Theorem 2.5"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_abstract_double_ratchet_security",
+     "parent": "secure_messaging_abstract_protocol_double_ratchet",
+     "previewKey": "secure_messaging_abstract_double_ratchet_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_abstract_double_ratchet_spec"
+      },
+      {
+       "label": "secure_messaging_abstract_double_ratchet_correctness"
+      },
+      {
+       "label": "secure_messaging_abstract_double_ratchet_authenticity"
+      },
+      {
+       "label": "secure_messaging_abstract_double_ratchet_privacy"
+      }
+     ],
+     "title": "Theorem 1.1.5"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_abstract_double_ratchet_authenticity",
+     "parent": "secure_messaging_abstract_protocol_double_ratchet",
+     "previewKey": "secure_messaging_abstract_double_ratchet_authenticity--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_abstract_double_ratchet_spec"
+      }
+     ],
+     "title": "Theorem 1.1.3"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_triple_ratchet_spec",
+     "parent": "secure_messaging_triple_ratchet",
+     "previewKey": "secure_messaging_triple_ratchet_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_triple_ratchet_scheme"
+      },
+      {
+       "label": "erasure_code_scheme"
+      },
+      {
+       "label": "rkem_scheme"
+      },
+      {
+       "label": "fs_aead_scheme"
+      },
+      {
+       "label": "prf_prng_scheme"
+      }
+     ],
+     "title": "Definition 2.2"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_double_ratchet_security",
+     "parent": "secure_messaging_double_ratchet",
+     "previewKey": "secure_messaging_double_ratchet_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_double_ratchet_scheme"
+      },
+      {
+       "label": "secure_messaging_double_ratchet_correctness"
+      },
+      {
+       "label": "secure_messaging_double_ratchet_authenticity"
+      },
+      {
+       "label": "secure_messaging_double_ratchet_privacy"
+      }
+     ],
+     "title": "Definition 1.5"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_scka_spec",
+     "parent": "secure_messaging_scka",
+     "previewKey": "secure_messaging_scka_spec--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_scka_scheme"
+      },
+      {
+       "label": "scka_scheme"
+      },
+      {
+       "label": "fs_aead_scheme"
+      },
+      {
+       "label": "prf_prng_scheme"
+      }
+     ],
+     "title": "Definition 3.2"
+    },
+    {
+     "kind": "definition",
+     "label": "secure_messaging_scka_scheme",
+     "parent": "secure_messaging_scka",
+     "previewKey": "secure_messaging_scka_scheme--statement",
+     "proofStatus": "ready",
+     "proofUses": [],
+     "statementStatus": "ready",
+     "statementUses": [],
+     "title": "Definition 3.1"
+    },
+    {
+     "kind": "theorem",
+     "label": "secure_messaging_triple_ratchet_security",
+     "parent": "secure_messaging_triple_ratchet",
+     "previewKey": "secure_messaging_triple_ratchet_security--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [
+      {
+       "label": "secure_messaging_triple_ratchet_spec"
+      },
+      {
+       "label": "secure_messaging_triple_ratchet_correctness"
+      },
+      {
+       "label": "secure_messaging_triple_ratchet_authenticity"
+      },
+      {
+       "label": "secure_messaging_triple_ratchet_privacy"
+      }
+     ],
+     "title": "Theorem 2.6"
+    },
+    {
+     "kind": null,
+     "label": "cka",
+     "parent": null,
+     "previewKey": "cka--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "cka"
+    },
+    {
+     "kind": null,
+     "label": "fs_aead_scheme",
+     "parent": null,
+     "previewKey": "fs_aead_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "fs_aead_scheme"
+    },
+    {
+     "kind": null,
+     "label": "prf_prng_scheme",
+     "parent": null,
+     "previewKey": "prf_prng_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "prf_prng_scheme"
+    },
+    {
+     "kind": null,
+     "label": "erasure_code_scheme",
+     "parent": null,
+     "previewKey": "erasure_code_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "erasure_code_scheme"
+    },
+    {
+     "kind": null,
+     "label": "rkem_scheme",
+     "parent": null,
+     "previewKey": "rkem_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "rkem_scheme"
+    },
+    {
+     "kind": null,
+     "label": "scka_scheme",
+     "parent": null,
+     "previewKey": "scka_scheme--statement",
+     "proofStatus": "none",
+     "proofUses": [],
+     "statementStatus": "blocked",
+     "statementUses": [],
+     "title": "scka_scheme"
+    }
+   ]
+  }
+ ],
+ "previews": []
+}

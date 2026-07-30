@@ -1,0 +1,37 @@
+\documentclass{article}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\usepackage[thms=definition+theorem]{blueprint}
+\begin{document}
+
+\begin{definition}\label{def:foo}
+\lean{Foo.foo}
+\leanok
+A foo.
+\end{definition}
+
+\begin{definition}\label{def:baz}
+\lean{Foo.baz}
+A baz, not yet formalized.
+\end{definition}
+
+\begin{theorem}\label{thm:bar}
+\lean{Foo.bar}
+\uses{def:foo}
+\discussion{42}
+Bar holds.
+\end{theorem}
+
+\begin{proof}
+\leanok
+\uses{def:foo}
+Trivial.
+\end{proof}
+
+\begin{theorem}\label{thm:qux}
+\uses{thm:bar, def:baz}
+Qux is planned only.
+\end{theorem}
+
+\end{document}
