@@ -452,12 +452,24 @@ pub struct BlueprintExtensions {
     )]
     pub decl_upstream_proved: bool,
     /// For a BOUND node, the subset of `lean_decls` probe-lean did not emit
-    /// (partial miss); the all-absent case uses `decl_missing` instead.
+    /// (partial miss), EXCLUDING decls proved out-of-workspace (those go in
+    /// `upstream_decls`); the all-absent case uses `decl_missing` instead.
     #[serde(
         rename = "blueprint-missing-decls",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub missing_decls: Vec<String>,
+    /// The subset of the node's bound decls the Verso renderer proved
+    /// out-of-workspace (present + proved in a dependency). On a bound atom this
+    /// marks a *mixed* binding (part local, part upstream): the node is
+    /// probe-lean-confirmed and these decls are deliberately kept out of
+    /// `missing_decls`, so this field is the wire evidence that part of the
+    /// backing is upstream rather than local. code-derived (Verso) only.
+    #[serde(
+        rename = "blueprint-upstream-decls",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub upstream_decls: Vec<String>,
     /// Collision-shadow marker (`docs/SCHEMA.md` §Node classification): a
     /// genuinely-bound node whose real atom a later node claimed. Count as bound.
     #[serde(

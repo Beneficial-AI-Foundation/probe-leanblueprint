@@ -130,6 +130,10 @@ fn make_extensions(
         decl_missing,
         decl_upstream_proved,
         missing_decls,
+        // Wire evidence that part of a bound node's binding is proved upstream
+        // rather than locally (a mixed node); intrinsic to the node, so surfaced
+        // on every atom it produces (empty and skipped for fully-local nodes).
+        upstream_decls: node.external_upstream_proved.clone(),
         shadow,
     }
 }
@@ -155,6 +159,7 @@ const BLUEPRINT_KEYS: &[&str] = &[
     "blueprint-decl-missing",
     "blueprint-decl-upstream-proved",
     "blueprint-missing-decls",
+    "blueprint-upstream-decls",
     "blueprint-shadow",
 ];
 
@@ -812,9 +817,48 @@ mod tests {
             "the absent decl is upstream-proved, not a gap"
         );
         assert_eq!(report.probe_lean_confirmed_proved, vec!["thm:mixed"]);
-        // The present local atom must not list the upstream decl as missing.
+        // Wire contract (SCHEMA.md §Node classification / Machine reconciliation):
+        // the upstream decl must NOT appear in blueprint-missing-decls, and MUST
+        // be surfaced in blueprint-upstream-decls so a consumer can tell a mixed
+        // (local + upstream) binding from a fully-local one.
         let a = &atoms["probe:MyProj.thm"];
-        assert!(!a.extensions.contains_key("blueprint-missing-decls"));
+        assert!(
+            !a.extensions.contains_key("blueprint-missing-decls"),
+            "upstream decl is not a partial-missing gap"
+        );
+        assert_eq!(
+            a.extensions
+                .get("blueprint-upstream-decls")
+                .and_then(|v| v.as_array())
+                .map(|a| a.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>()),
+            Some(vec!["Nat.mul_assoc"]),
+            "mixed node must carry its upstream decls on the wire"
+        );
+    }
+
+    /// A fully-LOCAL confirmed node carries no `blueprint-upstream-decls` (the
+    /// field is the discriminator between fully-local and mixed backing). This
+    /// pins the SCHEMA contract: no upstream marker unless part of the binding
+    /// is genuinely upstream.
+    #[test]
+    fn fully_local_confirmed_node_has_no_upstream_marker() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.local".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:local",
+            &["Foo.local"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        let report = enrich(&mut atoms, &model);
+        assert_eq!(report.probe_lean_confirmed_proved, vec!["thm:local"]);
+        assert!(!atoms["probe:Foo.local"]
+            .extensions
+            .contains_key("blueprint-upstream-decls"));
     }
 
     #[test]

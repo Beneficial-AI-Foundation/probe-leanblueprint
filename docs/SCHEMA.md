@@ -118,8 +118,14 @@ a Lean decl present in the atom base:
     claim. Flagged `blueprint-decl-upstream-proved`. code-derived only (Massot
     carries no per-decl provenance).
   - **genuine gap** — everything else decl-missing.
-- **partial-missing** — a *bound* node where some (not all) decls are absent; the
-  absent names go in `blueprint-missing-decls` on the present atom(s).
+- **partial-missing** — a *bound* node where some (not all) decls are absent from
+  the atom base, **excluding** decls the renderer proved out-of-workspace (an
+  upstream decl is expected to be absent here — it lives in a dependency — so it
+  is not a gap). The genuinely-absent names go in `blueprint-missing-decls` on the
+  present atom(s); any excluded upstream decls are recorded in
+  `blueprint-upstream-decls` instead. A node whose only absent decls are all
+  upstream-proved is therefore **not** partial-missing — its whole binding is
+  accounted for (present locally or proved upstream).
 - **collision-shadow** — a node whose present decl was claimed by a later node
   (keep-last); preserved as a synthetic `blueprint-shadow` atom so the extract
   stays node-complete. Counts as bound.
@@ -137,12 +143,18 @@ Three derived signals:
   `"claims-proved-but-failed"`. Only those two machine states count as a
   contradiction.
 - **probe-lean-confirmed** (`theorems-fully-proved-probe-lean-confirmed`) — a
-  `fully-proved` **theorem** bound to a present atom and carrying **no**
-  status-mismatch. This is a "the machine has not *refuted* this" bar, **not**
-  "affirmatively verified": a bound theorem with no `verification-status`, a
-  `trusted` one, or one only locally `verified` (sorry-free itself but with an
+  `fully-proved` **theorem** bound to a present atom, carrying **no**
+  status-mismatch, and whose *whole* binding is accounted for — i.e. it is **not**
+  partial-missing: every bound decl is either present in the atom base or proved
+  out-of-workspace by the renderer. A **mixed** node (a present local decl plus an
+  absent upstream-proved decl) therefore *does* qualify; its upstream portion is
+  recorded on the wire in `blueprint-upstream-decls` so a consumer can tell mixed
+  backing from fully-local. This is a "the machine has not *refuted* this" bar,
+  **not** "affirmatively verified": a bound theorem with no `verification-status`,
+  a `trusted` one, or one only locally `verified` (sorry-free itself but with an
   unverified dependency) still counts. It never counts a claim the machine
-  contradicts, nor an unbound / decl-missing claim (no atom to check). A stricter
+  contradicts, a partial-missing claim (a genuinely-absent decl the machine can't
+  back), nor an unbound / fully-decl-missing claim (no atom to check). A stricter
   "requires an accepted status such as `transitively-verified`" metric is
   deliberately *not* what this field measures.
 - **upstream-proved** (`theorems-fully-proved-upstream-proved`) — a
@@ -324,7 +336,8 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-status-mismatch` | string | no | Set when the blueprint over-claims vs the machine status, e.g. `"claims-proved-but-unverified"` / `"claims-proved-but-failed"` |
 | `blueprint-decl-missing` | bool | no | `true` when **all** bound Lean decls are absent (synthetic planned node) |
 | `blueprint-decl-upstream-proved` | bool | no | `true` on a decl-missing atom whose every binding is an *out-of-workspace* decl the Verso renderer reports present and proved (proved in a dependency, commonly Mathlib/stdlib but not verified as such — see §Node classification); absent from this project's extract, not a genuine gap. Always paired with `blueprint-decl-missing`. Additive (see Schema Evolution) |
-| `blueprint-missing-decls` | array of strings | no | For a bound node, the subset of `\lean{...}` decls absent from the atom base (partial miss); recorded on the present atom(s) |
+| `blueprint-missing-decls` | array of strings | no | For a bound node, the subset of `\lean{...}` decls absent from the atom base (partial miss), **excluding** upstream-proved decls (those go in `blueprint-upstream-decls`); recorded on the present atom(s) |
+| `blueprint-upstream-decls` | array of strings | no | The subset of the node's bound decls the Verso renderer proved **out-of-workspace** (present + proved in a dependency). On a *bound* atom this marks a **mixed** binding (part local, part upstream): the node stays probe-lean-confirmed and these decls are kept out of `blueprint-missing-decls`, so this is the wire evidence distinguishing mixed from fully-local backing. Also emitted alongside `blueprint-decl-upstream-proved` on a fully-upstream decl-missing atom. code-derived (Verso) only. Additive (see Schema Evolution) |
 | `blueprint-shadow` | bool | no | `true` on the synthetic atom preserved for a node that lost a same-decl collision (its real atom was claimed by a later node). Keeps the extract node-complete; count a shadow node as bound despite its `language: "blueprint"` |
 
 Synthetic atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint"`, `code-text` = `{0,0}`, empty `dependencies`, and `code-module` set to the node's group (may be empty). They never carry `verification-status`.

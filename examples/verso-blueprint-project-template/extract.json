@@ -130,7 +130,10 @@
         "probe:blueprint:addition_spec"
       ],
       "blueprint-status-source": "code-derived",
-      "blueprint-title": "Theorem 1.3"
+      "blueprint-title": "Theorem 1.3",
+      "blueprint-upstream-decls": [
+        "Nat.add_assoc"
+      ]
     },
     "probe:blueprint:addition_runtime_note": {
       "display-name": "addition_runtime_note",
@@ -192,7 +195,10 @@
       "blueprint-proof-status": "fully-proved",
       "blueprint-statement-status": "formalized",
       "blueprint-status-source": "code-derived",
-      "blueprint-title": "Theorem 2.3"
+      "blueprint-title": "Theorem 2.3",
+      "blueprint-upstream-decls": [
+        "Nat.mul_assoc"
+      ]
     },
     "probe:blueprint:multiplication_spec": {
       "display-name": "multiplication_spec",

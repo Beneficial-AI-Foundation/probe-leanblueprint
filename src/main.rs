@@ -673,18 +673,51 @@ fn commit_staged(tmp: tempfile::NamedTempFile, path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Best-effort absolute path for comparison. Output paths may not exist yet, so
-/// fall back to canonicalizing the parent and re-appending the file name.
+/// Absolute, `.`/`..`-resolved form of `p`, computed lexically (no filesystem
+/// access) so it is independent of whether `p` exists. `foo`, `./foo`, and
+/// `bar/../foo` all normalize to the same `<cwd>/foo`.
+fn to_absolute_lexical(p: &Path) -> PathBuf {
+    use std::path::Component;
+    let abs = if p.is_absolute() {
+        p.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map(|cwd| cwd.join(p))
+            .unwrap_or_else(|_| p.to_path_buf())
+    };
+    let mut out = PathBuf::new();
+    for comp in abs.components() {
+        match comp {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                out.pop();
+            }
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
+}
+
+/// Best-effort canonical path for comparison. Output paths may not exist yet, so
+/// first normalize lexically to an absolute path (so `.`/`..`/relative spellings
+/// of the same file compare equal — otherwise `-o out.json --summary-output
+/// ./out.json` would slip past the collision check and the summary would clobber
+/// the extract), then canonicalize when possible to also fold symlinks.
 fn normalize_for_compare(p: &Path) -> PathBuf {
-    if let Ok(c) = p.canonicalize() {
+    let abs = to_absolute_lexical(p);
+    // Existing file: canonicalize resolves symlinks for the strongest comparison.
+    if let Ok(c) = abs.canonicalize() {
         return c;
     }
-    match (p.parent(), p.file_name()) {
+    // Not-yet-created file: canonicalize the (existing) parent to fold any
+    // symlinked directory, then re-append the file name. Falls back to the
+    // lexical absolute path if even the parent is absent.
+    match (abs.parent(), abs.file_name()) {
         (Some(parent), Some(name)) => parent
             .canonicalize()
             .map(|c| c.join(name))
-            .unwrap_or_else(|_| p.to_path_buf()),
-        _ => p.to_path_buf(),
+            .unwrap_or_else(|_| abs.clone()),
+        _ => abs,
     }
 }
 
@@ -1018,6 +1051,47 @@ mod tests {
 
         // An output that would clobber an input is rejected.
         assert!(validate_output_paths(&input, &summary, &[Some(&input)]).is_err());
+    }
+
+    #[test]
+    fn normalize_for_compare_folds_aliases() {
+        // Different spellings of the same not-yet-created file must compare equal,
+        // so the collision check can't be bypassed by `.`/`..`/relative aliasing.
+        let plain = normalize_for_compare(Path::new("out.json"));
+        assert_eq!(plain, normalize_for_compare(Path::new("./out.json")));
+        assert_eq!(plain, normalize_for_compare(Path::new("sub/../out.json")));
+        // Absolute forms fold too.
+        assert_eq!(
+            normalize_for_compare(Path::new("/tmp/a/../b.json")),
+            normalize_for_compare(Path::new("/tmp/b.json"))
+        );
+    }
+
+    #[test]
+    fn validate_output_paths_rejects_aliased_extract_and_summary() {
+        // Regression: `-o out.json --summary-output ./out.json` previously passed
+        // validation (raw vs `.`-canonicalized strings differed) and the summary
+        // clobbered the extract. The two must now be recognized as the same file.
+        let extract = PathBuf::from("out.json");
+        let summary = PathBuf::from("./out.json");
+        assert!(
+            validate_output_paths(&extract, &summary, &[]).is_err(),
+            "aliased extract/summary paths must be rejected"
+        );
+    }
+
+    #[test]
+    fn validate_output_paths_rejects_aliased_input() {
+        // An output that aliases an input via `.`/`..` must also be rejected.
+        let dir = tempfile::tempdir().unwrap();
+        let input = dir.path().join("atoms.json");
+        std::fs::write(&input, "{}").unwrap();
+        let aliased_output = dir.path().join("sub/../atoms.json");
+        let summary = dir.path().join("summary.json");
+        assert!(
+            validate_output_paths(&aliased_output, &summary, &[Some(&input)]).is_err(),
+            "an output aliasing an input must be rejected"
+        );
     }
 
     #[test]
