@@ -10,6 +10,7 @@ __pycache__/
 # Local-only working docs (kept out of the repo, not shipped).
 /docs/kvac-blueprint-findings.md
 /docs/pr2-review-responses.md
+/docs/pr2-round3-findings.md
 *.swp
 *.swo
 *~
