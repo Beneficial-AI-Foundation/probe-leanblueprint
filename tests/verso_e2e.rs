@@ -2,9 +2,10 @@
 //! from baif/secure-messaging (Erasure-Codes chapter), joined onto a minimal
 //! probe-lean atom base.
 
+use std::collections::BTreeMap;
 use std::path::Path;
 
-use probe::types::load_atom_file;
+use probe::types::{load_atom_file, Atom, CodeText};
 use probe_leanblueprint::adapters::verso;
 use probe_leanblueprint::{emit, enrich};
 
@@ -12,6 +13,75 @@ fn fixture(rel: &str) -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures")
         .join(rel)
+}
+
+/// Read a `blueprint-*` string-array extension, asserting each element is a
+/// string — a malformed wire value must fail the invariant, not be silently
+/// dropped (this is a wire-contract check).
+fn str_list(atom: &Atom, key: &str) -> Vec<String> {
+    match atom.extensions.get(key) {
+        None => Vec::new(),
+        Some(v) => v
+            .as_array()
+            .unwrap_or_else(|| panic!("{key} must be a JSON array"))
+            .iter()
+            .map(|e| {
+                e.as_str()
+                    .unwrap_or_else(|| panic!("{key} element must be a string"))
+                    .to_string()
+            })
+            .collect(),
+    }
+}
+
+/// Assert the upstream/missing wire invariants over every atom in an enriched
+/// extract: (a) `blueprint-upstream-decls` and `blueprint-missing-decls` are
+/// disjoint; (b) a listed upstream decl is never present locally; (c) the
+/// `blueprint-decl-upstream-proved` bool implies a non-empty upstream list.
+fn assert_wire_invariants(atoms: &BTreeMap<String, Atom>) {
+    for (key, atom) in atoms {
+        let upstream = str_list(atom, "blueprint-upstream-decls");
+        let missing = str_list(atom, "blueprint-missing-decls");
+        for d in &upstream {
+            assert!(
+                !missing.contains(d),
+                "{key}: {d} is in both upstream-decls and missing-decls"
+            );
+            assert!(
+                !atoms.contains_key(&format!("probe:{d}")),
+                "{key}: upstream decl {d} is present locally, so must not be listed as upstream"
+            );
+        }
+        let bool_set = atom
+            .extensions
+            .get("blueprint-decl-upstream-proved")
+            .and_then(|v| v.as_bool())
+            == Some(true);
+        assert!(
+            !bool_set || !upstream.is_empty(),
+            "{key}: decl-upstream-proved is set but upstream-decls is empty"
+        );
+    }
+}
+
+/// A minimal `lean`-language atom carrying a `verification-status`.
+fn lean_atom(status: &str) -> Atom {
+    let mut a = Atom {
+        display_name: "x".into(),
+        dependencies: Default::default(),
+        code_module: String::new(),
+        code_path: "Foo.lean".into(),
+        code_text: CodeText {
+            lines_start: 1,
+            lines_end: 2,
+        },
+        kind: "theorem".into(),
+        language: "lean".into(),
+        extensions: BTreeMap::new(),
+    };
+    a.extensions
+        .insert("verification-status".into(), status.to_string().into());
+    a
 }
 
 #[test]
@@ -163,44 +233,51 @@ fn verso_secure_messaging_full_project() {
         Some("transitively-verified")
     );
 
-    // Wire invariants for the upstream/missing partition (guards every atom on
-    // every run, so the Finding-2 semantics can't silently regress on real
-    // fixtures — even ones that later gain upstream decls):
-    //   (a) `blueprint-upstream-decls` and `blueprint-missing-decls` are disjoint;
-    //   (b) a listed upstream decl is never present locally (`probe:<decl>`);
-    //   (c) the `blueprint-decl-upstream-proved` bool implies a non-empty list.
-    let str_list = |a: &probe::types::Atom, key: &str| -> Vec<String> {
-        a.extensions
-            .get(key)
-            .and_then(|v| v.as_array())
-            .map(|xs| {
-                xs.iter()
-                    .filter_map(|v| v.as_str().map(String::from))
-                    .collect()
-            })
-            .unwrap_or_default()
-    };
-    for (key, atom) in &atoms {
-        let upstream = str_list(atom, "blueprint-upstream-decls");
-        let missing = str_list(atom, "blueprint-missing-decls");
-        for d in &upstream {
-            assert!(
-                !missing.contains(d),
-                "{key}: {d} is in both upstream-decls and missing-decls"
-            );
-            assert!(
-                !atoms.contains_key(&format!("probe:{d}")),
-                "{key}: upstream decl {d} is present locally, so must not be listed as upstream"
-            );
-        }
-        let bool_set = atom
-            .extensions
-            .get("blueprint-decl-upstream-proved")
-            .and_then(|v| v.as_bool())
-            == Some(true);
-        assert!(
-            !bool_set || !upstream.is_empty(),
-            "{key}: decl-upstream-proved is set but upstream-decls is empty"
-        );
-    }
+    // Wire invariants for the upstream/missing partition. secure-messaging has no
+    // out-of-workspace decls, so this only exercises the trivial (empty) case
+    // here; `verso_mixed_upstream_wire_evidence` fires it on real upstream data.
+    assert_wire_invariants(&atoms);
+}
+
+/// A node binding one in-workspace decl (present in the atom base) plus one
+/// out-of-workspace-proved decl (absent) — the *mixed* case. Exercises the full
+/// verso-adapter -> enrich pipeline on a NON-empty `blueprint-upstream-decls`
+/// (the secure-messaging fixture has none), so the wire invariants and the
+/// absence-based semantics are actually checked end-to-end.
+#[test]
+fn verso_mixed_upstream_wire_evidence() {
+    let model = verso::load_manifest(&fixture("verso/upstream-mixed-manifest.json")).unwrap();
+
+    let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+    // The in-workspace decl is present locally; the upstream one is absent.
+    atoms.insert("probe:MyProj.local".to_string(), lean_atom("verified"));
+
+    let report = enrich::enrich(&mut atoms, &model);
+    assert_eq!(
+        report.nodes_with_decl, 1,
+        "bound via the present local decl"
+    );
+    assert_eq!(
+        report.partial_missing, 0,
+        "the absent decl is upstream-proved, not a gap"
+    );
+    assert_eq!(
+        report.probe_lean_confirmed_proved,
+        vec!["thm:mixed"],
+        "a mixed node whose whole binding is present-or-upstream is confirmed"
+    );
+
+    let bound = &atoms["probe:MyProj.local"];
+    assert_eq!(
+        str_list(bound, "blueprint-upstream-decls"),
+        vec!["Nat.upstream"],
+        "the absent upstream decl is surfaced on the wire"
+    );
+    assert!(
+        !bound.extensions.contains_key("blueprint-missing-decls"),
+        "the upstream decl is not a partial-missing gap"
+    );
+
+    // The invariants now fire against a non-empty upstream list.
+    assert_wire_invariants(&atoms);
 }

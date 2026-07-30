@@ -281,6 +281,17 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
     // and collision-shadow atoms.
     let mut to_insert: Vec<(String, Atom)> = Vec::new();
     for (node, present) in model.nodes.iter().zip(&present_by_node) {
+        // Invariant the decl-missing branch relies on: an upstream-proved decl is
+        // always one of the node's bindings (the Verso adapter derives it by
+        // filtering `lean_decls`). Assert it so a future adapter change can't
+        // silently emit `blueprint-upstream-decls` for a decl the node doesn't bind.
+        debug_assert!(
+            node.external_upstream_proved
+                .iter()
+                .all(|d| node.lean_decls.contains(d)),
+            "external_upstream_proved must be a subset of lean_decls (node {})",
+            node.label
+        );
         if node.lean_decls.is_empty() {
             // Planned-only: no Lean binding at all.
             report.planned_only += 1;

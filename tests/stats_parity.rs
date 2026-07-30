@@ -218,4 +218,14 @@ fn stats_py_agrees_with_summary_under_collision() {
         summary.all.proof.fully_proved,
         "proof fully-proved parity"
     );
+
+    // The machine-readable `upstream-decls-list` must reconstruct the mixed
+    // node's absent-upstream binding from the wire (the only upstream decl in
+    // this model). This is what makes blueprint_stats.py a faithful cross-check
+    // of the new `blueprint-upstream-decls` field.
+    assert_eq!(
+        stats["upstream-decls-list"],
+        serde_json::json!([["thm:mixed", ["Up.mul"]]]),
+        "upstream-decls-list parity: the mixed node's upstream binding"
+    );
 }
