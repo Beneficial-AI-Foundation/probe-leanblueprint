@@ -32,10 +32,12 @@ to Lean declarations**.
 
 | Requirement | Detail |
 |-------------|--------|
-| **A `probe-lean`-analyzable project** | The atom base comes from `probe-lean extract` (run automatically, or supplied via `--lean`). The project must meet [probe-lean's requirements](https://github.com/Beneficial-AI-Foundation/probe-lean#supported-projects) — a buildable Lean library, compatible toolchain, etc. probe-lean ≥ v0.10.0 emits Schema 3.0 (consumed directly); older releases (≤ v0.9.6) and cached extracts emit 2.x and are auto-migrated, so no re-extraction is needed. |
+| **A `probe-lean`-analyzable project** | The atom base comes from `probe-lean extract` (run automatically, or supplied via `--lean`). `probe-lean` itself is auto-installed, version-matched to the project's `lean-toolchain`, if not already present (see [`docs/USAGE.md`](docs/USAGE.md#probe-lean-installation)). The project must meet [probe-lean's requirements](https://github.com/Beneficial-AI-Foundation/probe-lean#supported-projects) — a buildable Lean library, compatible toolchain, etc. probe-lean ≥ v0.10.0 emits Schema 3.0 (consumed directly); older releases (≤ v0.9.6) and cached extracts emit 2.x and are auto-migrated, so no re-extraction is needed. |
 | **A blueprint in a supported ecosystem** | Either a **Verso** blueprint (`versoBlueprint` declared in the root or `docs/` lakefile) or a **Massot** `leanblueprint` (`blueprint/src/web.tex`). Auto-detected; fails with a clear error when neither is present. |
 | **Verso v4.30 / v4.31** | Reads the `graphs[].nodes[]` schema, recognized via `vbpInternalSchemaVersion` **2** (v4.30) and **3** (v4.31). Another generation still parses if it carries a graph, but warns that the version marker is unrecognized/absent. Pre-graph renderers (≤ v4.28) emit only a flattened preview manifest with no graph to score. |
 | **A formal blueprint graph bound to decls** | Useful output requires blueprint *entries* — Verso `definition`/`theorem` nodes, or Massot `\begin{theorem}` + `\lean{...}`/`\leanok`/`\uses{...}` — that bind real Lean declarations. Progress (statement/proof status, dependency edges) lives on these nodes. |
+
+**Checking a Verso project yourself:** run `lake exe vbp build` in the blueprint root (wherever `versoBlueprint` is declared — the project root, or its `docs/` subproject). If it succeeds and produces `_out/site/blueprint-manifest.json`, the project qualifies; probe-leanblueprint runs this same command automatically in zero-config mode.
 
 Known-working projects, captured end-to-end (manifest + `probe-lean` atoms →
 enriched extract + summary), live under [`examples/`](examples/): Sphere Packing,
@@ -71,7 +73,10 @@ enriched extract plus a two-axis progress summary under
 `<project>/.verilib/probes/`.
 
 > **Trust note.** Zero-config executes the target project's own build code
-> (`probe-lean extract`, and `lake exe vbp build` via `sh -c`). Only run it
+> (`probe-lean extract`, and `lake exe vbp build` via `sh -c`), and may also
+> install `probe-lean` itself — downloading a prebuilt release from GitHub or
+> building it from source — if no version matching the project's
+> `lean-toolchain` is already cached under `~/.local/bin`. Only run it
 > against projects you trust; to ingest an untrusted repo, render/extract it in
 > your own sandbox and pass the results in. See [`docs/USAGE.md`](docs/USAGE.md).
 

@@ -20,6 +20,7 @@ path = "src/main.rs"
 anyhow = "1"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
+dirs = "6"
 sha2 = "0.10"
 # Git dependency on the probe hub, pinned for reproducibility (matches the rest
 # of the published ecosystem, e.g. probe-aeneas). For local development against
@@ -31,6 +32,7 @@ serde_json = "1"
 # file when it is not shipped alongside the binary.
 tempfile = "3"
 thiserror = "1"
+which = "8.0.2"
 
 [profile.release]
 lto = true
