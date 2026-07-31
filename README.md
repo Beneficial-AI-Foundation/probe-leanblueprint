@@ -37,6 +37,8 @@ to Lean declarations**.
 | **Verso v4.30 / v4.31** | Reads the `graphs[].nodes[]` schema, recognized via `vbpInternalSchemaVersion` **2** (v4.30) and **3** (v4.31). Another generation still parses if it carries a graph, but warns that the version marker is unrecognized/absent. Pre-graph renderers (≤ v4.28) emit only a flattened preview manifest with no graph to score. |
 | **A formal blueprint graph bound to decls** | Useful output requires blueprint *entries* — Verso `definition`/`theorem` nodes, or Massot `\begin{theorem}` + `\lean{...}`/`\leanok`/`\uses{...}` — that bind real Lean declarations. Progress (statement/proof status, dependency edges) lives on these nodes. |
 
+**Checking a Verso project yourself:** run `lake exe vbp build` in the blueprint root (wherever `versoBlueprint` is declared — the project root, or its `docs/` subproject). If it succeeds and produces `_out/site/blueprint-manifest.json`, the project qualifies; probe-leanblueprint runs this same command automatically in zero-config mode.
+
 Known-working projects, captured end-to-end (manifest + `probe-lean` atoms →
 enriched extract + summary), live under [`examples/`](examples/): Sphere Packing,
 Carleson, FLT, Noperthedron, and the verso-blueprint `project_template`.

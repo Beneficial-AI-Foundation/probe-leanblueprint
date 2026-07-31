@@ -29,9 +29,10 @@ pip install -r requirements.txt   # plasTeX, plastexdepgraph, leanblueprint
    `PATH` / `~/.local/bin/probe-lean`);
 2. failing that, a prebuilt release downloaded from
    [probe-lean's GitHub releases](https://github.com/Beneficial-AI-Foundation/probe-lean/releases)
-   matching the project's Lean version and platform (linux/macos ×
-   x86_64/arm64 — other platforms fall through to source build, or must have
-   `probe-lean` pre-installed);
+   matching the project's Lean version and platform — artifact names use
+   `linux`/`darwin` × `x86_64`/`arm64` (e.g. `probe-lean-v4.30.0-darwin-arm64.tar.gz`
+   for macOS on Apple Silicon); other platforms fall through to source build,
+   or must have `probe-lean` pre-installed;
 3. failing that, built from source (needs `git`, `lake`, and a working
    `elan`/Lean 4 toolchain locally; the prebuilt path needs `curl` and `tar`).
 

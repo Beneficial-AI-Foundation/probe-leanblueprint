@@ -320,6 +320,38 @@ fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
         }
     }
 
+    // The name-based guard above can't catch a *symlink* entry (e.g. `lib ->
+    // /etc`, followed by `lib/passwd`) — the entry names look safe, but `tar`
+    // would be extracting through a symlinked directory component. GNU tar
+    // and modern libarchive both already refuse this during extraction, but
+    // that's an implementation detail of the system `tar`, not something
+    // this code enforces itself; reject any non-regular-file/non-directory
+    // entry (symlink, hardlink, device, fifo) outright before extracting, so
+    // the guard doesn't depend on which `tar` happens to be on PATH.
+    let verbose_listing = Command::new("tar")
+        .arg("-tvzf")
+        .arg(&archive_path)
+        .output()
+        .context("spawn tar to list probe-lean archive contents (verbose)")?;
+    if !verbose_listing.status.success() {
+        return Err(LeanInstallError::SubprocessFailed {
+            command: "tar -tvzf".to_string(),
+            code: verbose_listing.status.code().unwrap_or(-1),
+        });
+    }
+    let verbose_entries = String::from_utf8_lossy(&verbose_listing.stdout);
+    for line in verbose_entries.lines() {
+        match line.chars().next() {
+            Some('-') | Some('d') => {}
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "refusing to extract probe-lean archive: unsupported entry type in {line:?}"
+                )
+                .into());
+            }
+        }
+    }
+
     let extract_dir = tmpdir.path().join("extracted");
     std::fs::create_dir_all(&extract_dir).context("create extraction dir")?;
     let status = Command::new("tar")
