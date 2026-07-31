@@ -16,6 +16,14 @@
 //! - downloads/builds use `tempfile::TempDir` rather than fixed `/tmp` paths;
 //! - the GitHub releases API response is parsed as JSON rather than
 //!   line-grepped;
+//! - binary (and lib dir) installs are staged then atomically published
+//!   (temp file/dir + rename) rather than copied in place, so a concurrent
+//!   `find_or_install_probe_lean` never observes a partially-written cache
+//!   entry;
+//! - a prebuilt-download failure other than "no matching release" (network
+//!   error, bad archive, GitHub API hiccup) is propagated as-is under
+//!   `PROBE_LEANBLUEPRINT_RELEASES_ONLY` instead of being reported as
+//!   `ReleasesOnlyNoMatch`, which would otherwise misstate the cause;
 //! - `PROBE_LEANBLUEPRINT_RELEASES_ONLY` disables the from-source fallback
 //!   (which otherwise builds `probe-lean`'s floating `main` branch) so a
 //!   production consumer can require tagged releases only;
@@ -112,12 +120,21 @@ pub(crate) fn find_or_install_probe_lean(project: &Path) -> Result<PathBuf> {
     let version = lean_version.unwrap_or_else(|| "latest".to_string());
     eprintln!("probe-lean not found for Lean {version}, installing...");
 
-    std::fs::create_dir_all(home_dir()?.join(".local/bin")).context("create ~/.local/bin")?;
-
     if version != "latest" {
         match try_prebuilt_download(&version) {
             Ok(bin) => return Ok(bin),
-            Err(e) => eprintln!("  prebuilt probe-lean unavailable for Lean {version}: {e}"),
+            Err(e) => {
+                let no_matching_release = matches!(e, LeanInstallError::NoPrebuiltAvailable { .. });
+                eprintln!("  prebuilt probe-lean unavailable for Lean {version}: {e}");
+                // Under releases-only mode, only a genuine "no release
+                // matches" is reported as ReleasesOnlyNoMatch below — any
+                // other failure (network error, bad archive, GitHub API
+                // hiccup) is propagated as-is so callers aren't told "no
+                // release exists" when the real cause was e.g. a rate limit.
+                if releases_only && !no_matching_release {
+                    return Err(e);
+                }
+            }
         }
     }
 
@@ -196,7 +213,7 @@ fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
 
     let output = Command::new("curl")
         .args([
-            "-sL",
+            "-fsSL",
             "https://api.github.com/repos/Beneficial-AI-Foundation/probe-lean/releases",
         ])
         .output()
@@ -236,7 +253,7 @@ fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
     let archive_path = tmpdir.path().join(&artifact);
 
     let status = Command::new("curl")
-        .args(["-sL", "-o"])
+        .args(["-fsSL", "-o"])
         .arg(&archive_path)
         .arg(&download_url)
         .status()
@@ -294,31 +311,21 @@ fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
         });
     }
 
-    let dest_dir = home_dir()?.join(".local/bin");
-    std::fs::create_dir_all(&dest_dir).context("create ~/.local/bin")?;
-    let versioned_bin = dest_dir.join(format!("probe-lean-{lean_version}"));
-    std::fs::copy(&downloaded_bin, &versioned_bin).with_context(|| {
-        format!(
-            "copy {} to {}",
-            downloaded_bin.display(),
-            versioned_bin.display()
-        )
-    })?;
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&versioned_bin, std::fs::Permissions::from_mode(0o755))
-            .with_context(|| format!("set +x on {}", versioned_bin.display()))?;
-    }
-
+    // Publish the lib dir before the binary: a concurrent reader treats the
+    // binary's existence as "ready to run," so anything it depends on must
+    // already be in place first.
     let downloaded_lib = extract_dir.join("lib");
     if downloaded_lib.exists() {
         let versioned_lib = home_dir()?.join(format!(".local/lib/probe-lean-{lean_version}"));
-        std::fs::create_dir_all(&versioned_lib)
-            .with_context(|| format!("create lib dir {}", versioned_lib.display()))?;
-        copy_dir_contents(&downloaded_lib, &versioned_lib)?;
+        atomic_install_dir(&downloaded_lib, &versioned_lib)
+            .with_context(|| format!("install lib dir for probe-lean-{lean_version}"))?;
     }
+
+    let versioned_bin = home_dir()?
+        .join(".local/bin")
+        .join(format!("probe-lean-{lean_version}"));
+    atomic_install(&downloaded_bin, &versioned_bin)
+        .with_context(|| format!("install probe-lean-{lean_version} binary"))?;
 
     eprintln!("  Installed pre-built probe-lean-{lean_version}");
     Ok(versioned_bin)
@@ -381,22 +388,13 @@ fn build_from_source(lean_version: &str) -> Result<PathBuf> {
     }
 
     let dest_dir = home_dir()?.join(".local/bin");
-    std::fs::create_dir_all(&dest_dir).context("create ~/.local/bin")?;
     let (dest_bin, label) = if lean_version != "latest" {
         let versioned = dest_dir.join(format!("probe-lean-{lean_version}"));
         (versioned, format!("probe-lean-{lean_version}"))
     } else {
         (dest_dir.join("probe-lean"), "probe-lean".to_string())
     };
-    std::fs::copy(&built_bin, &dest_bin)
-        .with_context(|| format!("copy {} to {}", built_bin.display(), dest_bin.display()))?;
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&dest_bin, std::fs::Permissions::from_mode(0o755))
-            .with_context(|| format!("set +x on {}", dest_bin.display()))?;
-    }
+    atomic_install(&built_bin, &dest_bin).with_context(|| format!("install {label}"))?;
 
     eprintln!("  Installed {label} to {}", dest_bin.display());
     Ok(dest_bin)
@@ -419,6 +417,68 @@ fn copy_dir_contents(src: &Path, dst: &Path) -> Result<()> {
             })?;
         }
     }
+    Ok(())
+}
+
+/// Install `src` as an executable at `dest`, publishing it atomically: the
+/// file is written to a temp path in `dest`'s directory and only renamed
+/// into place once complete, so a concurrent `find_or_install_probe_lean`
+/// (checking `dest.exists()`) never observes a partially-written binary.
+fn atomic_install(src: &Path, dest: &Path) -> Result<()> {
+    let dest_dir = dest
+        .parent()
+        .with_context(|| format!("{} has no parent directory", dest.display()))?;
+    std::fs::create_dir_all(dest_dir).with_context(|| format!("create {}", dest_dir.display()))?;
+
+    let mut tmp = tempfile::Builder::new()
+        .prefix(".probe-lean-install-")
+        .tempfile_in(dest_dir)
+        .with_context(|| format!("create temp file in {}", dest_dir.display()))?;
+    let mut src_file =
+        std::fs::File::open(src).with_context(|| format!("open {}", src.display()))?;
+    std::io::copy(&mut src_file, tmp.as_file_mut())
+        .with_context(|| format!("copy {} to {}", src.display(), dest.display()))?;
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        tmp.as_file()
+            .set_permissions(std::fs::Permissions::from_mode(0o755))
+            .with_context(|| format!("set +x on {}", dest.display()))?;
+    }
+
+    tmp.persist(dest)
+        .map_err(|e| anyhow::Error::new(e.error).context(format!("install {}", dest.display())))?;
+    Ok(())
+}
+
+/// Install the directory `src` at `dest`, publishing it atomically: contents
+/// are copied into a temp directory alongside `dest` and only renamed into
+/// place once complete, so a concurrent reader never observes a partially
+/// populated lib dir.
+fn atomic_install_dir(src: &Path, dest: &Path) -> Result<()> {
+    let dest_parent = dest
+        .parent()
+        .with_context(|| format!("{} has no parent directory", dest.display()))?;
+    std::fs::create_dir_all(dest_parent)
+        .with_context(|| format!("create {}", dest_parent.display()))?;
+
+    let tmp_dir = tempfile::Builder::new()
+        .prefix(".probe-lean-lib-install-")
+        .tempdir_in(dest_parent)
+        .with_context(|| format!("create temp dir in {}", dest_parent.display()))?;
+    copy_dir_contents(src, tmp_dir.path())?;
+
+    // A stale dir from an interrupted previous install may already occupy
+    // `dest`; `rename` only replaces an empty directory, so clear it first.
+    if dest.exists() {
+        std::fs::remove_dir_all(dest)
+            .with_context(|| format!("remove stale {}", dest.display()))?;
+    }
+    std::fs::rename(tmp_dir.path(), dest).with_context(|| format!("publish {}", dest.display()))?;
+    // `tmp_dir` no longer exists at its original path — renamed away —
+    // so let it go without trying (and failing) to remove it on drop.
+    std::mem::forget(tmp_dir);
     Ok(())
 }
 
