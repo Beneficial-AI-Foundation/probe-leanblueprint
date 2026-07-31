@@ -169,6 +169,9 @@ probe-lean-confirmed (+1 upstream-proved)`: its one fully-proved theorem binds
 
 ## Development
 
+How the extract pipeline, the atom↔blueprint join, and the source files fit
+together is documented in [`architecture.md`](architecture.md).
+
 ```bash
 cargo test                       # unit + integration tests (no Python needed; uses fixtures)
 cargo test -- --ignored          # also runs the live plasTeX emitter test
