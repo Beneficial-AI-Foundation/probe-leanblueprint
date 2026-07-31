@@ -31,8 +31,10 @@ project → (probe-lean extract | --lean) → atom base
 
 1. **Resolve adapter** — explicit `--adapter`, else auto-detect: a
    `versoBlueprint` dependency in the lakefile (or `--verso-manifest`) → Verso;
-   `blueprint/src/web.tex` (or `--blueprint-src`) → Massot. Neither present →
-   `AdapterUndetected`.
+   `blueprint/src/web.tex` (or `--blueprint-src`) → Massot. The Verso signal is
+   checked first, so if **both** are present Verso wins and a warning is logged
+   (a Verso project may carry a leftover Massot `blueprint/` tree); pass
+   `--adapter` to override. Neither present → `AdapterUndetected`.
 2. **Load atom base** — `--lean <probe-lean.json>` if given, else run `probe-lean
    extract <project>`. `probe-lean` is auto-installed, version-matched to the
    project's `lean-toolchain`, when absent (see
@@ -62,17 +64,21 @@ project → (probe-lean extract | --lean) → atom base
 
 Lake builds are incremental and the code libraries are shared between the code
 target and the Verso docs/blueprint target, so the total cost is **one full
-compile**: rendering the Verso docs (which writes `blueprint-manifest.json`)
-compiles the libs, and the subsequent `probe-lean extract` is an incremental
-no-op on the already-compiled libs. The Massot/LaTeX path needs no Lean docs
-build at all — plasTeX only parses LaTeX.
+compile**. The atom base is loaded first (step 2): in zero-config mode
+`probe-lean extract` compiles the libs. The subsequent Verso render (step 3,
+`lake exe vbp build`, which writes `blueprint-manifest.json`) is then an
+incremental no-op on the already-compiled libs. (The ASCII diagram above is data
+flow, not execution order — see steps 2→3.) The Massot/LaTeX path needs no Lean
+docs build at all — plasTeX only parses LaTeX.
 
 ## The join
 
 Both ecosystems bind a blueprint node to Lean declarations by **user-facing
 fully-qualified name**: Massot via `\lean{Foo.bar}`, Verso via
-`codeData.external.decls[].canonical`. probe-lean keys atoms as `probe:` + that
-same user-facing name (`probeRef`), so the join is `probe:<canonical>`.
+`codeData.external.decls[].canonical` **and** inline
+`inline.code.definedDefs`/`definedTheorems[].name` (so inline-authored nodes join
+too). probe-lean keys atoms as `probe:` + that same user-facing name
+(`probeRef`), so the join is `probe:<canonical>`.
 
 The node-classification buckets themselves (bound / planned-only / decl-missing /
 partial-missing / collision-shadow, and the upstream-proved split) are defined in
@@ -82,23 +88,28 @@ partial-missing / collision-shadow, and the upstream-proved split) are defined i
 - **Ownership (pass A, keep-last).** Compute, per present atom, the *last*
   blueprint node that binds it. Each re-binding of an already-claimed atom is a
   collision (counted in the summary; a warning is logged).
-- **Primary key (pass B).** Resolve every node to the record that will hold it:
+- **Primary key (pass B).** Resolve every node to exactly one **primary key** —
   the first present atom it owns, else its synthetic `probe:blueprint:<label>`
-  key. This makes the extract **node-complete** — every model node leaves exactly
-  one label-bearing record, so `uses` edges always resolve to a real atom key and
-  `scripts/blueprint_stats.py` recomputes the sidecar counts exactly.
+  key — so `uses` edges always resolve to a real atom key. This makes the extract
+  **node-complete**: every model node leaves *at least one* label-bearing record
+  (a multi-decl node puts its label on every present atom it owns, so it may leave
+  several). `scripts/blueprint_stats.py` recomputes the node / axis / headline
+  aggregates from these records and the parity test cross-checks them (it does not
+  reproduce every sidecar field, e.g. `collisions`).
 - **Node binds multiple decls** — attach the node to every present atom it owns.
 - **Same-decl collision** — the later node wins the real atom (keep-last); the
   **losing** node is preserved as a synthetic `blueprint-shadow: true` atom
   (carrying its full status and any mismatch / missing-decls) so it is not
   dropped. A shadow still counts as bound (`with-lean-decl`).
 - **Decl-missing authority** — probe-lean atom membership is the **sole**
-  authority on whether a bound declaration is present. Verso's own per-decl
-  `present` / node `missingExternalDecl` hints are intentionally **not** consumed:
-  they coincide with atom membership on real data, and atom membership is the
-  tool's premise that probe-lean is the code spine. (The one exception is
-  `provenance.outWorkspace`, used to tell a dependency-proved decl from a genuine
-  gap — see the upstream-proved split in `SCHEMA.md`.)
+  authority on whether a bound declaration is present. Verso's node
+  `missingExternalDecl` hint is intentionally **not** consumed: it coincides with
+  atom membership on real data, and atom membership is the tool's premise that
+  probe-lean is the code spine. Verso's per-decl `present` and `provedStatus`
+  *are* read, but only within the upstream-proved predicate
+  (`outWorkspace` && `present` && `provedStatus == "proved"`), which tells a
+  dependency-proved decl from a genuine gap — never as the membership authority.
+  See the upstream-proved split in `SCHEMA.md`.
 - **Planned-only node** (no Lean binding) — synthesize a `probe:blueprint:<label>`
   atom with `language: "blueprint"`, `kind: "blueprint-<def|theorem>"`, and a
   non-empty `code-path` marker (`"blueprint"`) so structural stub detection does
