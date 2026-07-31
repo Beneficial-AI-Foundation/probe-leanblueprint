@@ -83,4 +83,6 @@ enriched extract plus a two-axis progress summary under
 Full install (incl. the Massot Python path), manual flags, output formats, the
 `blueprint_stats.py` reporter, and development commands are in
 [`docs/USAGE.md`](docs/USAGE.md). Output schemas are in
-[`docs/SCHEMA.md`](docs/SCHEMA.md).
+[`docs/SCHEMA.md`](docs/SCHEMA.md). The extract pipeline and the
+atom-to-blueprint join are described in
+[`docs/architecture.md`](docs/architecture.md).
