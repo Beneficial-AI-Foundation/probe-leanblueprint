@@ -174,6 +174,24 @@ fn detect_lean_version(project: &Path) -> Result<Option<String>> {
             toolchain_path.display()
         )));
     }
+    // `version` is embedded verbatim into cache paths like
+    // `~/.local/bin/probe-lean-{version}`; a project could otherwise plant a
+    // `lean-toolchain` containing `/` or `..` to make installs write outside
+    // the intended cache directory. Require it to be exactly one normal path
+    // component.
+    let is_single_safe_component = matches!(
+        Path::new(&version)
+            .components()
+            .collect::<Vec<_>>()
+            .as_slice(),
+        [std::path::Component::Normal(_)]
+    );
+    if !is_single_safe_component {
+        return Err(LeanInstallError::LeanToolchainInvalid(format!(
+            "{} has an unsafe version string {version:?} (expected a single path segment)",
+            toolchain_path.display()
+        )));
+    }
     Ok(Some(version))
 }
 
@@ -198,6 +216,17 @@ fn detect_platform() -> String {
 
 /// Try downloading a pre-built `probe-lean` binary from GitHub Releases.
 fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
+    let platform = detect_platform();
+    if platform.contains("unknown") {
+        // No prebuilt release could possibly match; skip the curl/tar
+        // requirement below entirely rather than demanding tools that
+        // wouldn't be used anyway.
+        return Err(LeanInstallError::NoPrebuiltAvailable {
+            lean_version: lean_version.to_string(),
+            platform,
+        });
+    }
+
     for tool in ["curl", "tar"] {
         if find_on_path(tool).is_none() {
             return Err(anyhow::anyhow!(
@@ -207,14 +236,18 @@ fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
         }
     }
 
-    let platform = detect_platform();
     let artifact = format!("probe-lean-{lean_version}-{platform}.tar.gz");
     eprintln!("  Checking for pre-built binary: {artifact}...");
 
+    // GitHub's API rejects unauthenticated requests with no User-Agent
+    // header; per_page=100 avoids missing older releases once probe-lean
+    // has more than a page's worth (GitHub's default page size is 30).
     let output = Command::new("curl")
         .args([
             "-fsSL",
-            "https://api.github.com/repos/Beneficial-AI-Foundation/probe-lean/releases",
+            "-H",
+            "User-Agent: probe-leanblueprint",
+            "https://api.github.com/repos/Beneficial-AI-Foundation/probe-lean/releases?per_page=100",
         ])
         .output()
         .context("spawn curl to query GitHub releases")?;
@@ -253,7 +286,7 @@ fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
     let archive_path = tmpdir.path().join(&artifact);
 
     let status = Command::new("curl")
-        .args(["-fsSL", "-o"])
+        .args(["-fsSL", "-H", "User-Agent: probe-leanblueprint", "-o"])
         .arg(&archive_path)
         .arg(&download_url)
         .status()
@@ -304,11 +337,21 @@ fn try_prebuilt_download(lean_version: &str) -> Result<PathBuf> {
     }
 
     let downloaded_bin = extract_dir.join("bin/probe-lean");
-    if !downloaded_bin.exists() {
-        return Err(LeanInstallError::MissingOutput {
-            command: format!("extract {artifact}"),
-            path: downloaded_bin,
-        });
+    match std::fs::symlink_metadata(&downloaded_bin) {
+        Ok(meta) if meta.file_type().is_symlink() => {
+            return Err(anyhow::anyhow!(
+                "refusing to install {}: archive's bin/probe-lean is a symlink",
+                downloaded_bin.display()
+            )
+            .into());
+        }
+        Ok(_) => {}
+        Err(_) => {
+            return Err(LeanInstallError::MissingOutput {
+                command: format!("extract {artifact}"),
+                path: downloaded_bin,
+            });
+        }
     }
 
     // Publish the lib dir before the binary: a concurrent reader treats the
@@ -363,8 +406,23 @@ fn build_from_source(lean_version: &str) -> Result<PathBuf> {
             .context("write lean-toolchain pin")?;
         // Force lake to re-resolve dependencies against the pinned version
         // rather than reusing a manifest/lockfile built for a different one.
-        std::fs::remove_file(build_dir.join("lake-manifest.json")).ok();
-        std::fs::remove_dir_all(build_dir.join(".lake")).ok();
+        // A stale manifest/`.lake` left behind by a failed removal (anything
+        // but "didn't exist") could otherwise make `lake build` silently
+        // reuse artifacts for the wrong Lean version.
+        if let Err(e) = std::fs::remove_file(build_dir.join("lake-manifest.json")) {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                return Err(anyhow::Error::new(e)
+                    .context("remove stale lake-manifest.json")
+                    .into());
+            }
+        }
+        if let Err(e) = std::fs::remove_dir_all(build_dir.join(".lake")) {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                return Err(anyhow::Error::new(e)
+                    .context("remove stale .lake dir")
+                    .into());
+            }
+        }
     }
 
     let output = Command::new("lake")
@@ -401,13 +459,29 @@ fn build_from_source(lean_version: &str) -> Result<PathBuf> {
 }
 
 /// Recursively copy directory contents from `src` to `dst`.
+///
+/// Rejects symlinks outright rather than following them: `Path::is_dir()`
+/// and `fs::copy()` both follow symlinks, so a malicious archive could
+/// otherwise smuggle a symlink pointing outside the extraction dir past the
+/// string-based `..`/absolute-path guard already applied to archive entry
+/// names (which only inspects names, not link targets).
 fn copy_dir_contents(src: &Path, dst: &Path) -> Result<()> {
     let entries = std::fs::read_dir(src).with_context(|| format!("read dir {}", src.display()))?;
     for entry in entries {
         let entry = entry.with_context(|| format!("read entry in {}", src.display()))?;
+        let file_type = entry
+            .file_type()
+            .with_context(|| format!("stat {}", entry.path().display()))?;
         let src_path = entry.path();
+        if file_type.is_symlink() {
+            return Err(anyhow::anyhow!(
+                "refusing to install {}: archive contains a symlink",
+                src_path.display()
+            )
+            .into());
+        }
         let dst_path = dst.join(entry.file_name());
-        if src_path.is_dir() {
+        if file_type.is_dir() {
             std::fs::create_dir_all(&dst_path)
                 .with_context(|| format!("create dir {}", dst_path.display()))?;
             copy_dir_contents(&src_path, &dst_path)?;
@@ -456,7 +530,19 @@ fn atomic_install(src: &Path, dest: &Path) -> Result<()> {
 /// are copied into a temp directory alongside `dest` and only renamed into
 /// place once complete, so a concurrent reader never observes a partially
 /// populated lib dir.
+///
+/// Never removes an existing `dest`: because `dest` is only ever reached via
+/// this atomic rename, an existing `dest` is always a complete, previously
+/// published install (by this process or a concurrent one) rather than
+/// partial leftovers — and a concurrent installer for the same version may
+/// already be relying on it via the (also atomically published) binary that
+/// depends on it. Deleting it out from under that installer, even briefly,
+/// would be a race of its own.
 fn atomic_install_dir(src: &Path, dest: &Path) -> Result<()> {
+    if dest.exists() {
+        return Ok(());
+    }
+
     let dest_parent = dest
         .parent()
         .with_context(|| format!("{} has no parent directory", dest.display()))?;
@@ -469,16 +555,22 @@ fn atomic_install_dir(src: &Path, dest: &Path) -> Result<()> {
         .with_context(|| format!("create temp dir in {}", dest_parent.display()))?;
     copy_dir_contents(src, tmp_dir.path())?;
 
-    // A stale dir from an interrupted previous install may already occupy
-    // `dest`; `rename` only replaces an empty directory, so clear it first.
-    if dest.exists() {
-        std::fs::remove_dir_all(dest)
-            .with_context(|| format!("remove stale {}", dest.display()))?;
+    match std::fs::rename(tmp_dir.path(), dest) {
+        Ok(()) => {
+            // `tmp_dir` no longer exists at its original path — renamed
+            // away — so let it go without trying (and failing) to remove it
+            // on drop.
+            std::mem::forget(tmp_dir);
+        }
+        // Lost a race with a concurrent installer that published `dest`
+        // first — that's fine, it's published either way.
+        Err(_) if dest.exists() => {}
+        Err(e) => {
+            return Err(anyhow::Error::new(e)
+                .context(format!("publish {}", dest.display()))
+                .into())
+        }
     }
-    std::fs::rename(tmp_dir.path(), dest).with_context(|| format!("publish {}", dest.display()))?;
-    // `tmp_dir` no longer exists at its original path — renamed away —
-    // so let it go without trying (and failing) to remove it on drop.
-    std::mem::forget(tmp_dir);
     Ok(())
 }
 
@@ -528,6 +620,40 @@ mod tests {
     fn detect_lean_version_rejects_empty_file() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("lean-toolchain"), "  \n").unwrap();
+        assert!(matches!(
+            detect_lean_version(dir.path()),
+            Err(LeanInstallError::LeanToolchainInvalid(_))
+        ));
+    }
+
+    #[test]
+    fn detect_lean_version_rejects_path_traversal() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("lean-toolchain"),
+            "leanprover/lean4:../../etc/evil\n",
+        )
+        .unwrap();
+        assert!(matches!(
+            detect_lean_version(dir.path()),
+            Err(LeanInstallError::LeanToolchainInvalid(_))
+        ));
+    }
+
+    #[test]
+    fn detect_lean_version_rejects_embedded_path_separator() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("lean-toolchain"), "v4.9.0/evil\n").unwrap();
+        assert!(matches!(
+            detect_lean_version(dir.path()),
+            Err(LeanInstallError::LeanToolchainInvalid(_))
+        ));
+    }
+
+    #[test]
+    fn detect_lean_version_rejects_bare_dotdot() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("lean-toolchain"), "..\n").unwrap();
         assert!(matches!(
             detect_lean_version(dir.path()),
             Err(LeanInstallError::LeanToolchainInvalid(_))
