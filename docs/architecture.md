@@ -30,8 +30,7 @@ project → atom base (probe-lean extract, or --lean)
 2. Load the atom base. With `--lean` it reads a `probe-lean/extract` file;
    otherwise it runs `probe-lean extract`, first installing a version-matched
    `probe-lean` if none is cached (see
-   [`USAGE.md`](USAGE.md#probe-lean-installation)). A 2.x atom file is re-stamped
-   to 3.0 in a temp copy before loading.
+   [`USAGE.md`](USAGE.md#probe-lean-installation)).
 3. Build the blueprint model. The Verso adapter parses `blueprint-manifest.json`,
    rendering it with `lake exe vbp build` first if it is missing. The Massot
    adapter runs the plasTeX emitter in `scripts/blueprint_emit.py`, which is
@@ -91,7 +90,7 @@ keep the `blueprint-*` fields. The design rationale is in
 
 | File | Purpose |
 |------|---------|
-| `src/main.rs` | CLI, adapter detection, orchestration, 2.x→3.0 re-stamping |
+| `src/main.rs` | CLI, adapter detection, orchestration |
 | `src/setup.rs` | probe-lean auto-install: cache, release download, source build |
 | `src/model.rs` | `BlueprintModel`, the canonical status enums, the field set |
 | `src/adapters/verso.rs` | Verso manifest to `BlueprintModel` |
