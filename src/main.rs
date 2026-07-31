@@ -1,3 +1,5 @@
+mod setup;
+
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -435,22 +437,38 @@ fn select_source(
 
 /// Run `probe-lean extract` against the project (single incremental build) and
 /// return the path to the produced JSON.
+///
+/// Resolves (installing if necessary) a `probe-lean` binary version-matched
+/// to the project's Lean toolchain — see [`setup::find_or_install_probe_lean`]
+/// for the resolution/install order and the `PROBE_LEANBLUEPRINT_*`
+/// environment overrides.
 fn run_probe_lean(project: &Path) -> Result<PathBuf> {
+    let bin = setup::find_or_install_probe_lean(project)?;
     let out = project.join(".verilib/probes/probe-lean-extract.json");
     if let Some(parent) = out.parent() {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("failed to create {}", parent.display()))?;
     }
-    eprintln!("Running probe-lean extract on {} ...", project.display());
-    let status = Command::new("probe-lean")
+    eprintln!(
+        "Running probe-lean extract ({}) on {} ...",
+        bin.display(),
+        project.display()
+    );
+    let status = Command::new(&bin)
         .arg("extract")
         .arg(project)
         .arg("-o")
         .arg(&out)
         .status()
-        .context("failed to run probe-lean (is it installed and on PATH?)")?;
+        .with_context(|| format!("failed to run {}", bin.display()))?;
     if !status.success() {
         anyhow::bail!("probe-lean extract failed with status {status}");
+    }
+    if !out.exists() {
+        anyhow::bail!(
+            "probe-lean extract exited successfully but {} was not created",
+            out.display()
+        );
     }
     Ok(out)
 }

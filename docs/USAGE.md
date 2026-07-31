@@ -19,6 +19,37 @@ sudo apt-get install graphviz libgraphviz-dev
 pip install -r requirements.txt   # plasTeX, plastexdepgraph, leanblueprint
 ```
 
+## probe-lean installation
+
+`probe-leanblueprint` needs a `probe-lean` binary to produce the atom base
+(unless `--lean <atoms.json>` is given). It is resolved automatically:
+
+1. a binary already cached at `~/.local/bin/probe-lean-<lean-toolchain-version>`
+   (or, if the project has no `lean-toolchain`, an unversioned `probe-lean` on
+   `PATH` / `~/.local/bin/probe-lean`);
+2. failing that, a prebuilt release downloaded from
+   [probe-lean's GitHub releases](https://github.com/Beneficial-AI-Foundation/probe-lean/releases)
+   matching the project's Lean version and platform (linux/macos ×
+   x86_64/arm64 — other platforms fall through to source build, or must have
+   `probe-lean` pre-installed);
+3. failing that, built from source (needs `git`, `lake`, and a working
+   `elan`/Lean 4 toolchain locally; the prebuilt path needs `curl` and `tar`).
+
+Installed binaries are cached under `~/.local/bin`/`~/.local/lib`, shared
+across tools that depend on `probe-lean` (e.g. `probe-aeneas`), keyed by Lean
+version.
+
+Two environment variables control this behavior:
+
+- **`PROBE_LEANBLUEPRINT_RELEASES_ONLY=1`** — disable the from-source
+  fallback. If no prebuilt release matches the project's Lean version, fail
+  with a clear error instead of building `probe-lean`'s unreleased `main`
+  branch. Recommended for production/CI consumers (e.g. verilib) that only
+  want to run tagged, released code.
+- **`PROBE_LEANBLUEPRINT_NO_AUTO_INSTALL=1`** — disable auto-install
+  entirely, restoring the old "must already be installed and on PATH"
+  behavior. For fully offline or explicitly audited environments.
+
 ## Zero-config: just a Lean project
 
 The intended entry point (and the one automated consumers use) needs **only a
@@ -34,19 +65,24 @@ From that alone the tool:
    dependency in `lakefile.toml`/`lakefile.lean` → Verso; a
    `blueprint/src/web.tex` tree → Massot (fails loudly if neither is present);
 2. **produces the atom base** by running `probe-lean extract` (unless `--lean`
-   is given);
+   is given); `probe-lean` itself is auto-installed, version-matched to the
+   project's `lean-toolchain`, if not already present (see
+   [probe-lean installation](#probe-lean-installation) above);
 3. **produces the blueprint data itself** — for Verso it runs `lake exe vbp
    build` when no `blueprint-manifest.json` exists yet (that render entry point
    ships with the `versoBlueprint` dependency); for Massot it runs the bundled
    plasTeX emitter (embedded in the binary). No manual render step is required.
 
 > **Trust note.** Steps 2–3 execute the target project's own build code
-> (`probe-lean extract`, and `lake exe vbp build` via `sh -c`). Only run
-> zero-config against projects you trust. To ingest an untrusted or third-party
-> repository, render/extract it under your own sandbox first and pass the
-> results in: `--lean <atoms.json>` for the atom base, and `--no-render` with
-> `--verso-manifest <manifest>` (or `--blueprint-src` for Massot) for the
-> blueprint side, so this tool runs no project code.
+> (`probe-lean extract`, and `lake exe vbp build` via `sh -c`), and step 2 may
+> also install `probe-lean` itself (see [probe-lean installation](#probe-lean-installation)
+> above) — downloading a prebuilt release from GitHub, or cloning and
+> `lake build`-ing `probe-lean` from source, writing to `~/.local/bin`. Only
+> run zero-config against projects you trust. To ingest an untrusted or
+> third-party repository, render/extract it under your own sandbox first and
+> pass the results in: `--lean <atoms.json>` for the atom base, and
+> `--no-render` with `--verso-manifest <manifest>` (or `--blueprint-src` for
+> Massot) for the blueprint side, so this tool runs no project code.
 
 ## Manual flags
 
