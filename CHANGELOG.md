@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Normalized the `probe` hub pin from bare rev `608a620` to `tag = "v0.4.0"` (the first tagged 3.x release; `608a620` is an ancestor, so same schema-`3.x` gate). Consistency with the rest of the ecosystem — no behavior change.
+
 ### Added
 - Auto-install `probe-lean`: zero-config `extract` now resolves (and installs if necessary) a `probe-lean` binary version-matched to the target project's `lean-toolchain`, instead of requiring it pre-installed on `PATH` — ported from `probe-aeneas`'s `find_or_install_probe_lean`, hardened (no unversioned-symlink management, `tempfile`-based temp dirs, JSON-parsed release discovery, malformed `lean-toolchain` is a hard error, binary/lib-dir installs are staged then atomically published so a concurrent install can't observe a partially-written cache entry, and a `PROBE_LEANBLUEPRINT_RELEASES_ONLY` failure reports the real cause instead of always claiming "no matching release"). `PROBE_LEANBLUEPRINT_RELEASES_ONLY=1` restricts resolution to tagged releases (no from-source `main` fallback); `PROBE_LEANBLUEPRINT_NO_AUTO_INSTALL=1` restores the old must-be-preinstalled behavior. See `docs/USAGE.md#probe-lean-installation`.
 - Schema **3.0** (breaking): `schema-version` now `"3.0"`, aligning with the ecosystem-wide interchange bump (the is-disabled→untracked atom rename) so `probe merge`/`project` accept the extract. Consumes the `probe` hub at the 3.x line. Additive on top: optional `blueprint-source-statement-status` / `blueprint-source-proof-status` (raw Verso status preserved when the canonical enum is lossy — `mathlib`, `incomplete`); summary `theorems-fully-proved-probe-lean-confirmed` / `fraction-probe-lean-confirmed`; and unknown `source` fields (e.g. `source.class`) now round-trip instead of being dropped (via the hub `Source` passthrough, probe#45).
