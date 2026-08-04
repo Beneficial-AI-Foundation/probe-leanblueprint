@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-04
+
 ### Changed
 - Normalized the `probe` hub pin from bare rev `608a620` to `tag = "v0.4.0"` (the first tagged 3.x release; `608a620` is an ancestor, so same schema-`3.x` gate). Consistency with the rest of the ecosystem — no behavior change.
 
