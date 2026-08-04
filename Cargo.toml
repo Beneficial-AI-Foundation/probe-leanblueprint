@@ -1,6 +1,6 @@
 [package]
 name = "probe-leanblueprint"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 description = "Enrich probe-lean atoms with Lean blueprint progress metadata (leanblueprint + Verso Blueprint)"
 license = "MIT"
@@ -25,7 +25,7 @@ sha2 = "0.10"
 # Git dependency on the probe hub, pinned for reproducibility (matches the rest
 # of the published ecosystem, e.g. probe-aeneas). For local development against
 # uncommitted hub changes, add a `[patch]` pointing `probe` at `../probe`.
-probe = { git = "https://github.com/Beneficial-AI-Foundation/probe", rev = "608a620" }
+probe = { git = "https://github.com/Beneficial-AI-Foundation/probe", tag = "v0.4.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Runtime dep: the Massot adapter materializes the bundled emitter to a temp
