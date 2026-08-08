@@ -31,6 +31,19 @@ probe-leanblueprint extract . \
     --lean <probe-lean-v4.30.0 extract of SecureMessaging>
 ```
 
+Alternatively, let `probe-leanblueprint` drive the render itself with
+`--verso-render-cmd` instead of running `scripts/render-docs-site.sh` as a
+separate step. This project renders per-chapter, so the custom script overrides
+the `lake exe vbp build` default:
+
+```bash
+lake exe cache get && lake build          # mathlib/VCVio + the library
+
+probe-leanblueprint extract . \
+    --verso-render-cmd scripts/render-docs-site.sh \   # renders, then discovers + merges under _out/site
+    --lean <probe-lean-v4.30.0 extract of SecureMessaging>
+```
+
 The artifacts here are regenerated from this repo's committed fixtures — the nine
 chapter manifests under
 [`tests/fixtures/verso/secure-messaging/`](../../tests/fixtures/verso/secure-messaging/)
