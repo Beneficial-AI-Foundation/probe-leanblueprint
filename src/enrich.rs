@@ -650,11 +650,8 @@ pub fn derive_synthetic_verification(
     model: &BlueprintModel,
     report: &EnrichReport,
 ) -> usize {
-    let node_by_label: HashMap<&str, &BlueprintNode> = model
-        .nodes
-        .iter()
-        .map(|n| (n.label.as_str(), n))
-        .collect();
+    let node_by_label: HashMap<&str, &BlueprintNode> =
+        model.nodes.iter().map(|n| (n.label.as_str(), n)).collect();
 
     // Two phases: shadow inheritance reads other atoms, so collect the updates
     // over an immutable view first, then apply.
