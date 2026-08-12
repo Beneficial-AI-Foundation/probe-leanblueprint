@@ -101,14 +101,19 @@ gates `fully-proved` on `proved` too, to avoid over-claiming on definitions.)
 ### Node classification
 
 Every blueprint node lands in exactly one bucket, driven by whether/how it binds
-a Lean decl present in the atom base:
+a Lean decl present in the atom base. Whatever the bucket, the node **also**
+leaves exactly one [node atom](#node-atoms) (`language: "blueprint"`, keyed
+`probe:blueprint:<label>`, discriminated by `blueprint-node-class`), so the
+extract carries one per-node record per Verso node:
 
 - **bound** (`with-lean-decl`) — binds ≥1 present Lean decl. The present atom(s)
-  gain the `blueprint-*` fields.
-- **planned-only** — binds no Lean decl at all (roadmap only). Emitted as a
-  synthetic `language: "blueprint"` atom.
+  gain the `blueprint-*` fields, and the node's node atom (`blueprint-node-class:
+  "bound"`) aggregates the whole binding.
+- **planned-only** — binds no Lean decl at all (roadmap only). Represented only
+  by its node atom.
 - **decl-missing** — binds ≥1 Lean decl but *every* one is absent from the atom
-  base. Emitted synthetic, flagged `blueprint-decl-missing`. Split further:
+  base. Represented only by its node atom, flagged `blueprint-decl-missing`.
+  Split further:
   - **upstream-proved** — *every* binding is an external decl the Verso renderer
     reports as **out-of-workspace** (its `provenance.outWorkspace`) **and**
     present **and** proved: proved elsewhere, absent here — not a genuine gap.
@@ -129,9 +134,52 @@ a Lean decl present in the atom base:
   `blueprint-upstream-decls` instead. A node whose only absent decls are all
   upstream-proved is therefore **not** partial-missing — its whole binding is
   accounted for (present locally or proved upstream).
-- **collision-shadow** — a node whose present decl was claimed by a later node
-  (keep-last); preserved as a synthetic `blueprint-shadow` atom so the extract
-  stays node-complete. Counts as bound.
+- **collision-shadow** — a *bound* node whose every present decl was claimed by
+  a later node (keep-last): its node atom is then its only label-bearing record,
+  additionally flagged `blueprint-shadow`. Counts as bound.
+
+### Node atoms
+
+Exactly one `language: "blueprint"` atom per blueprint node, keyed
+`probe:blueprint:<label>` — so `#node-atoms` equals the blueprint's node count
+(the summary's `totals.node-atoms` invariant). Each carries the node's
+`blueprint-*` fields, a `blueprint-node-class` discriminator (`"bound"` /
+`"planned-only"` / `"decl-missing"`), and a derived `verification-status` (see
+[Derived verification-status](#derived-verification-status-node-atoms)). A
+*bound* node atom also carries its present decls as `dependencies` — the
+node→code mapping, and what keeps its derived status stable under a later
+`probe enrich`.
+
+**Uses resolution is class-dependent.** On a **node atom**,
+`blueprint-statement-uses`/`blueprint-proof-uses` resolve node-to-node (each
+used label → that label's node-atom key), so the node atoms plus their uses
+edges form a **closed per-node graph** matching the Verso blueprint. On an
+**enriched real atom**, the same fields keep the historical resolution (each
+used label → its primary code representative: the first present atom it owns,
+else its node-atom key) — enriched real atoms are byte-compatible with
+pre-node-atom output.
+
+**Which layer to read** (for consumers such as the VeriLib frontend):
+
+- *Code-level* stats, coloring, and the code dependency graph → `language:
+  "lean"` atoms only.
+- *Blueprint-level* progress, per-node statuses, and the paper graph →
+  node atoms (`probe:blueprint:*`) only.
+- *Connectivity between the layers* → `blueprint-label` on a real atom names
+  its node (append to `probe:blueprint:` for the node-atom key); a bound node
+  atom's `dependencies` list its real atoms. **These two maps are not inverses
+  under collisions**: `dependencies` means *claimed binding* (a collision
+  loser still lists the decl it lost), while `blueprint-label` means
+  *ownership winner* (keep-last) — traversing decl → label → node atom reaches
+  only the winning node.
+- **Never sum statuses or trust bases across both layers**: a bound node atom's
+  derived status mirrors decls already counted on the lean side. This applies
+  to generic hub consumers too — e.g. `probe summary` counts verified
+  non-Rust atoms as verified lemmas, so bound node atoms inflate such counts
+  unless `language: "blueprint"` is filtered out, and `probe project` reverse
+  traversal can pull node atoms in via their `dependencies`. Until the hub
+  learns to exclude blueprint-language atoms natively, generic-consumer runs
+  over this extract should filter them first.
 
 ### Machine reconciliation (P26)
 
@@ -144,7 +192,10 @@ Three derived signals:
   claims the proof done (`proved`/`fully-proved`) but the machine says
   `unverified`/`failed` → `"claims-proved-but-unverified"` /
   `"claims-proved-but-failed"`. Only those two machine states count as a
-  contradiction.
+  contradiction, and only **present** atoms are checked (the first offending
+  one names the marker) — a decl-missing or partial-missing claim carries no
+  mismatch, and the marker is deliberately narrower than a node atom's derived
+  `verification-status`, which aggregates the whole binding.
 - **probe-lean-confirmed** (`theorems-fully-proved-probe-lean-confirmed`) — a
   `fully-proved` **theorem** bound to a present atom, carrying **no**
   status-mismatch, and whose *whole* binding is accounted for — i.e. it is **not**
@@ -166,17 +217,17 @@ Three derived signals:
   probe-lean-confirmed locally nor a gap. Surfaced on the human headline as
   `+K upstream-proved`. Always 0 for Massot.
 
-### Derived verification-status (synthetic atoms)
+### Derived verification-status (node atoms)
 
 Real atoms carry probe-lean's machine `verification-status`, which this tool
-never modifies (P26). Synthetic (`language: "blueprint"`) atoms have no code
-behind them, so probe-lean has nothing to say — instead the `extract` CLI
-**derives** a `verification-status` (plus `trusted-reason` where trust is
-attested) so the field is total across the synthetic atoms it emits. (It is
-not total across the whole file in general: a `--skip-verify` atom base leaves
-real atoms status-less, and P26 forbids inventing statuses for them. The
-library `enrich()` join alone does not stamp synthetics either; the derivation
-is a separate pass the CLI runs after the hub's transitive propagation.)
+never modifies (P26). Node atoms (`language: "blueprint"`) are per-node
+records — instead the `extract` CLI **derives** a `verification-status` (plus
+`trusted-reason` where trust is attested) so the field is total across the
+node atoms it emits. (It is not total across the whole file in general: a
+`--skip-verify` atom base leaves real atoms status-less, and P26 forbids
+inventing statuses for them. The library `enrich()` join alone does not stamp
+node atoms either; the derivation is a separate pass the CLI runs after the
+hub's transitive propagation.)
 
 Each node class derives from the strongest evidence available. The governing
 rule is that **machine-vocabulary values (`verified`/`transitively-verified`)
@@ -184,9 +235,9 @@ are only ever inherited from decls probe-lean actually checked; claims — human
 or renderer — cap at `trusted`; and losing binding evidence can never improve
 a status.**
 
-| Synthetic atom | Derived status | Who vouches |
-|----------------|----------------|-------------|
-| collision shadow | aggregate over the node's **whole binding** (see below) | probe-lean checked the present decls *here* |
+| Node atom | Derived status | Who vouches |
+|-----------|----------------|-------------|
+| bound (collision shadows included) | aggregate over the node's **whole binding** (see below) | probe-lean checked the present decls *here* |
 | decl-missing, `blueprint-decl-upstream-proved` | `"trusted"`, `trusted-reason: "upstream-proved"` | the Verso renderer proved every binding out-of-workspace |
 | decl-missing or planned-only, `declared` source, claimed proof `proved`/`fully-proved` | `"trusted"`, `trusted-reason: "declared"` | a human `\leanok` (possibly proven in another repo; nothing here checked it) |
 | everything else — including a planned-only `code-derived` node whatever its claimed proof status | `"unverified"` | nobody |
@@ -197,40 +248,44 @@ i.e. likely manifest drift or lost preview linkage; it derives `"unverified"`
 and warns, so degraded binding evidence surfaces instead of minting a
 machine-looking status.
 
-**Shadow aggregation.** A shadow's status covers its whole binding, one
-*component* per bound decl: each present decl contributes its final
-(post-propagation) machine status, each genuinely-missing decl contributes
-`unverified`, and each upstream-proved absent decl contributes `trusted`.
-Aggregation is failure-first and trust-sticky: any `failed` component →
-`failed`; else any `unverified`/absent/unknown component → `unverified`; else
-any `trusted` component → `trusted` (an attestation anywhere in the binding
-caps the whole at attested); else any `verified` → `verified`; else
-`transitively-verified`. When the result is `trusted`, `trusted-reason` is
-emitted only if the contributing trusted components agree on a single reason
-(present decls' own reasons, plus `"upstream-proved"` for upstream
-components); disagreement omits it. A shadow's status (and any copied reason)
-*mirrors* decls already counted on their real atoms — consumers aggregating
-statuses or trust bases across atoms should exclude `blueprint-shadow` atoms
-to avoid double-counting.
+**Binding aggregation (bound node atoms).** A bound node atom's status covers
+its whole binding, one *component* per bound decl: each present decl
+contributes its final (post-propagation) machine status, each
+genuinely-missing decl contributes `unverified`, and each upstream-proved
+absent decl contributes `trusted`. Aggregation is failure-first and
+trust-sticky: any `failed` component → `failed`; else any
+`unverified`/absent/unknown component → `unverified`; else any `trusted`
+component → `trusted` (an attestation anywhere in the binding caps the whole
+at attested); else any `verified` → `verified`; else `transitively-verified`.
+When the result is `trusted`, `trusted-reason` is emitted only if the
+contributing trusted components agree on a single reason (present decls' own
+reasons, plus `"upstream-proved"` for upstream components); disagreement omits
+it. A bound node atom's status (and any copied reason) *mirrors* decls already
+counted on their real atoms — hence the layer-split rule under
+[Node atoms](#node-atoms): never aggregate statuses across both layers.
 
 **Ordering and stability.** The derivation runs **after** the hub's
-transitive-verification propagation: a shadow inherits the winner's *final*
-status, and nothing the derivation writes is visible to that pass. To stay
-stable under a *later* `probe enrich` over the emitted file, a shadow carries
-its present bindings as `dependencies` (the one exception to the
-empty-`dependencies` rule for synthetics) — the hub then recomputes a shadow's
-`verified` over the real closure instead of vacuously upgrading an empty one.
-Edges point synthetic → real only; within this tool's own output no real atom
-depends on a synthetic (`blueprint-*-uses` edges are extension-only, never
+transitive-verification propagation: a bound node atom aggregates *final*
+machine statuses, and nothing the derivation writes is visible to that pass.
+Carrying present bindings as `dependencies` (the one exception to the
+empty-`dependencies` rule for node atoms) closes one specific hole under a
+*later* `probe enrich` over the emitted file: a derived `verified` is judged
+against the real closure instead of being vacuously upgraded over an empty
+one. It is **not** a general recomputation guarantee — the hub never
+downgrades a stale `transitively-verified` and never upgrades
+`unverified`/`failed`/`trusted`, so on a merged or edited graph a node atom's
+status reflects extract time, not the merged state.
+Edges point node atom → real only; within this tool's own output no real atom
+depends on a node atom (`blueprint-*-uses` edges are extension-only, never
 merged into `dependencies`), so derived statuses cannot leak into real-atom
 propagation and the blast radius of an over-claimed source status is exactly
-the one roadmap atom carrying it. (That no-feedback property holds for edges
-this tool emits; it is not re-validated for arbitrary merged input.)
+the one node atom carrying it. (That no-feedback property holds for edges this
+tool emits; it is not re-validated for arbitrary merged input.)
 
 `trusted-reason` extends probe-lean's reason vocabulary (`axiom`,
 `externally_verified`, `external`) with two additive values: `upstream-proved`
 and `declared`. As in probe-lean, it is present only when the status is
-`"trusted"` (or inherited from a `trusted` binding by a shadow).
+`"trusted"` (or inherited from a `trusted` binding by a bound node atom).
 
 ---
 
@@ -300,10 +355,11 @@ for the selection rules.
 
 `data` is an object keyed by code-name (`probe:` + Lean declaration name). Each
 value is a `probe` atom. Atoms that a blueprint node binds are the original
-`probe-lean` atoms with `blueprint-*` extension fields added; blueprint nodes
-with no present Lean binding become synthetic atoms (see below). The core atom
-schema is inherited from `probe-lean/extract`; this tool only **adds** the
-`blueprint-*` extensions and synthesizes planned/decl-missing/shadow atoms.
+`probe-lean` atoms with `blueprint-*` extension fields added; additionally,
+**every** blueprint node — bound or not — leaves exactly one
+[node atom](#node-atoms) keyed `probe:blueprint:<label>`. The core atom schema
+is inherited from `probe-lean/extract`; this tool only **adds** the
+`blueprint-*` extensions and synthesizes the node atoms.
 
 The machine `verification-status` from `probe-lean` stays authoritative on the
 proof axis; the blueprint's claim is additive (KB
@@ -334,7 +390,7 @@ fields, gains `blueprint-*`):
 }
 ```
 
-**Planned-only synthetic atom** (a blueprint node with no Lean binding — the
+**Planned-only node atom** (a blueprint node with no Lean binding — the
 roadmap layer). `language: "blueprint"` and a non-empty `code-path` marker so P3
 stub detection does not misclassify it:
 
@@ -356,20 +412,49 @@ stub detection does not misclassify it:
     "blueprint-proof-status": "ready",
     "blueprint-status-source": "code-derived",
     "blueprint-title": "Theorem 2.2",
+    "blueprint-node-class": "planned-only",
     "blueprint-statement-uses": [
       "probe:blueprint:aead_aes_gcm_spec",
-      "probe:AEADScheme.Correct"
+      "probe:blueprint:aead"
     ],
     "verification-status": "unverified"
   }
 }
 ```
 
-The `verification-status` on a synthetic atom is **derived** (see
-[Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms)),
-not a probe-lean machine judgment.
+The `verification-status` on a node atom is **derived** (see
+[Semantics → Derived verification-status](#derived-verification-status-node-atoms)),
+not a probe-lean machine judgment — and note the node-to-node uses resolution
+(`probe:blueprint:aead`, not the real atom `probe:AEADScheme` that the *lean*
+atom's uses field would reference).
 
-**Decl-missing synthetic atom** (a node whose *every* bound Lean decl is absent
+**Bound node atom** (the per-node record of a bound node — aggregates its
+whole binding):
+
+```json
+{
+  "probe:blueprint:aead": {
+    "display-name": "aead",
+    "dependencies": ["probe:AEADScheme"],
+    "code-module": "aead",
+    "code-path": "blueprint",
+    "code-text": { "lines-start": 0, "lines-end": 0 },
+    "kind": "blueprint-definition",
+    "language": "blueprint",
+    "blueprint-label": "aead",
+    "blueprint-kind": "definition",
+    "blueprint-node-class": "bound",
+    "blueprint-chapter": "Authenticated-Encryption-with-Associated-Data",
+    "blueprint-statement-status": "formalized",
+    "blueprint-proof-status": "fully-proved",
+    "blueprint-status-source": "code-derived",
+    "blueprint-title": "Definition 1.1",
+    "verification-status": "transitively-verified"
+  }
+}
+```
+
+**Decl-missing node atom** (a node whose *every* bound Lean decl is absent
 from the atom base — flagged rather than fabricating a code atom):
 
 ```json
@@ -411,30 +496,31 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-chapter` | string | no | Chapter the node belongs to (one Verso manifest = one chapter) |
 | `blueprint-title` | string | no | Display title, e.g. `"Theorem 2.3"` |
 | `blueprint-discussion` | string | no | GitHub discussion issue number |
-| `blueprint-statement-uses` | array of strings | no | Code-names used by the statement (blueprint labels resolved to real/synthetic atom keys). Extension-only; never merged into `dependencies` |
-| `blueprint-proof-uses` | array of strings | no | Code-names used by the proof |
+| `blueprint-statement-uses` | array of strings | no | Code-names used by the statement. Resolution is class-dependent (see [Node atoms → Uses resolution](#node-atoms)): node-to-node on a node atom, code representatives on an enriched real atom. Extension-only; never merged into `dependencies` |
+| `blueprint-proof-uses` | array of strings | no | Code-names used by the proof (same class-dependent resolution) |
 | `blueprint-status-mismatch` | string | no | Set when the blueprint over-claims vs the machine status, e.g. `"claims-proved-but-unverified"` / `"claims-proved-but-failed"` |
 | `blueprint-decl-missing` | bool | no | `true` when **all** bound Lean decls are absent (synthetic planned node) |
 | `blueprint-decl-upstream-proved` | bool | no | `true` on a decl-missing atom whose every binding is an *out-of-workspace* decl the Verso renderer reports present and proved (proved in a dependency, commonly Mathlib/stdlib but not verified as such — see §Node classification); absent from this project's extract, not a genuine gap. Always paired with `blueprint-decl-missing`. Additive (see Schema Evolution) |
 | `blueprint-missing-decls` | array of strings | no | For a bound node, the subset of `\lean{...}` decls absent from the atom base (partial miss), **excluding** upstream-proved decls (those go in `blueprint-upstream-decls`); recorded on the present atom(s) |
 | `blueprint-upstream-decls` | array of strings | no | The node's bound decls that are **absent from the atom base** but the Verso renderer proved **out-of-workspace** (present + proved in a dependency) — i.e. the part of the binding backed upstream rather than by local probe-lean. Never includes a locally-present decl, and is always disjoint from `blueprint-missing-decls`. On a *bound* atom it marks a **mixed** binding (part local, part upstream): the node stays probe-lean-confirmed and these decls are kept out of `blueprint-missing-decls`, so this is the wire evidence distinguishing mixed from fully-local backing. On a **decl-missing** atom it lists the upstream part of the binding — present together with `blueprint-decl-upstream-proved` when *every* binding is upstream, or on its own (no bool) when only *some* are (a partial gap). code-derived (Verso) only. Additive (see Schema Evolution) |
-| `blueprint-shadow` | bool | no | `true` on the synthetic atom preserved for a node that lost a same-decl collision (its real atom was claimed by a later node). Keeps the extract node-complete; count a shadow node as bound despite its `language: "blueprint"` |
+| `blueprint-shadow` | bool | no | `true` on the node atom of a bound node that lost a same-decl collision (its every real atom was claimed by a later node, so the node atom is its only label-bearing record). Count a shadow node as bound |
+| `blueprint-node-class` | string | no | Node-atom class discriminator: `"bound"`, `"planned-only"`, or `"decl-missing"`. Present on every node atom, never on an enriched real atom (whose bytes are frozen). Additive (see Schema Evolution) |
 
-Synthetic atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint"`, `code-text` = `{0,0}`, empty `dependencies` (except a collision shadow, which carries its present bindings as dependencies — see below), and `code-module` set to the node's group (may be empty). In CLI output they carry a **derived** `verification-status` (plus `trusted-reason` where applicable) computed per [Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms) — unlike a real atom's machine status, it reflects blueprint-side evidence and shadow inheritance, never a fresh local probe-lean check.
+Node atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint"`, `code-text` = `{0,0}`, empty `dependencies` (except a **bound** node atom, which carries its present bindings as dependencies — see [Node atoms](#node-atoms)), and `code-module` set to the node's group (may be empty). In CLI output they carry a **derived** `verification-status` (plus `trusted-reason` where applicable) computed per [Semantics → Derived verification-status](#derived-verification-status-node-atoms) — unlike a real atom's machine status, it reflects binding aggregation and blueprint-side evidence, never a fresh local probe-lean check.
 
-#### Derived core fields on synthetic atoms
+#### Derived core fields on node atoms
 
 These are **core atom keys**, not `blueprint-*` extensions: they are deliberately
 absent from the re-enrichment scrub list (clearing them from real atoms would
-destroy probe-lean's machine data; synthetic atoms are instead rebuilt wholesale
+destroy probe-lean's machine data; node atoms are instead rebuilt wholesale
 on every run), and their meaning is class-dependent — on `language: "lean"`
 atoms `verification-status` is probe-lean's machine judgment, untouched by this
 tool (P26); on `language: "blueprint"` atoms it is derived by the `extract` CLI.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `verification-status` | string | yes (CLI output; the library `enrich()` join alone does not stamp it) | **Derived**, per [Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms): blueprint-side evidence and shadow inheritance, never a fresh local probe-lean check. Values: `"unverified"`, `"trusted"`, or — shadows only, inherited — `"failed"`, `"verified"`, `"transitively-verified"` |
-| `trusted-reason` | string | no | Present only when the status is `"trusted"`: `"upstream-proved"` (renderer proved every binding out-of-workspace), `"declared"` (human `\leanok` claim), or a reason copied verbatim from a trusted binding by a shadow (e.g. `"axiom"`). Omitted when a shadow's trusted components disagree on a reason |
+| `verification-status` | string | yes (CLI output; the library `enrich()` join alone does not stamp it) | **Derived**, per [Semantics → Derived verification-status](#derived-verification-status-node-atoms): binding aggregation and blueprint-side evidence, never a fresh local probe-lean check. Values: `"unverified"`, `"trusted"`, or — bound node atoms only, aggregated — `"failed"`, `"verified"`, `"transitively-verified"` |
+| `trusted-reason` | string | no | Present only when the status is `"trusted"`: `"upstream-proved"` (renderer proved every binding out-of-workspace), `"declared"` (human `\leanok` claim), or a reason copied verbatim from a trusted binding by a bound node atom (e.g. `"axiom"`). Omitted when the trusted components disagree on a reason |
 
 ### Two-axis status vocabulary
 
@@ -452,9 +538,17 @@ statuses normalize into them.
 **Category:** None (not an atoms-category file, so it is never merged)
 
 An aggregate over the blueprint nodes (not keyed per node) — the meaningful
-two-axis progress stats.
+two-axis progress stats. `nodes` counts **unique labels after cross-manifest
+merging** (a label legitimately recurs across per-chapter Verso manifests as a
+mention; see the model merge policy in `src/model.rs`), which is what "the
+blueprint's node count" means throughout this document.
 
 ### Envelope + Data Shape
+
+> The example below was generated by an earlier release (pre-`node-atoms`);
+> fields added since are documented in the tables and marked Additive, and the
+> committed example artifacts under `examples/` will pick them up on their next
+> regeneration.
 
 ```json
 {
@@ -519,6 +613,7 @@ two-axis progress stats.
 | `partial-missing` | integer | Bound nodes with *some* absent decls (see `blueprint-missing-decls`) |
 | `collisions` | integer | Present atoms bound by more than one node (keep-last; losers become shadows) |
 | `mismatches` | integer | Nodes whose proof claim contradicts the machine status |
+| `node-atoms` | integer | Node atoms emitted (`language: "blueprint"`, one per node) — the checkable invariant against the blueprint's node count: equals `nodes` unless a duplicate label or synthetic-key collision dropped one (both warn). Additive (see Schema Evolution); the committed example artifacts predate it |
 
 ### `all` / `definitions` / `theorems` — AxisCounts
 
@@ -613,7 +708,7 @@ Added later (still `3.0`):
   `verification-status` (plus `trusted-reason: "upstream-proved" | "declared"`
   where trust is attested), making the field total across the CLI's synthetic
   atoms — see
-  [Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms).
+  [Semantics → Derived verification-status](#derived-verification-status-node-atoms).
   Collision shadows additionally carry their present bindings as
   `dependencies` (stability under downstream `probe enrich`). Real atoms'
   machine statuses are unchanged (P26). Previously synthetic atoms carried no
@@ -621,6 +716,22 @@ Added later (still `3.0`):
   detect synthetics should key on `language: "blueprint"` instead, and
   consumers aggregating statuses across atoms should exclude
   `blueprint-shadow` atoms (their status mirrors decls counted elsewhere).
+- extract: **node atoms** — every blueprint node (bound included) now leaves
+  exactly one `language: "blueprint"` atom keyed `probe:blueprint:<label>`,
+  discriminated by the new `blueprint-node-class` field, so `#node-atoms`
+  matches the blueprint's node count (see [Node atoms](#node-atoms)); summary
+  `totals` gains `node-atoms`. Bound node atoms aggregate their whole binding
+  into the derived `verification-status` and carry their present decls as
+  `dependencies`; the earlier shadow-only synthetic is now simply the bound
+  node atom of a collision loser. Enriched real atoms are byte-identical to
+  pre-node-atom output. **One value change** rides this addition: on node
+  atoms (including pre-existing planned-only/decl-missing ones),
+  `blueprint-*-uses` now resolve node-to-node (previously to the used label's
+  primary code representative); the resolution on enriched real atoms is
+  unchanged. Consumers reading uses edges off `language: "blueprint"` atoms
+  must expect `probe:blueprint:*` targets. The status double-count guidance
+  extends from shadows to all bound node atoms: never aggregate statuses
+  across the lean and node layers.
 
 ---
 

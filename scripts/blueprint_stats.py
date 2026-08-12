@@ -43,11 +43,26 @@ class Node:
 
 
 def collect_nodes(data):
-    """Group atoms by blueprint-label into one record per blueprint node."""
+    """Group atoms by blueprint-label into one record per blueprint node.
+
+    Node atoms (carrying ``blueprint-node-class``) are the canonical per-node
+    layer and are consumed exclusively when present; label-bearing real atoms
+    are read only for labels that have no node atom (pre-0.6.0 extracts, where
+    bound nodes lived solely as fields on their Lean atoms).
+    """
+    node_atom_labels = {
+        atom.get("blueprint-label")
+        for atom in data.values()
+        if atom.get("blueprint-node-class") is not None
+    }
     nodes = {}
     for atom in data.values():
         label = atom.get("blueprint-label")
         if label is None:
+            continue
+        is_node_atom = atom.get("blueprint-node-class") is not None
+        # Canonical layer wins: skip real-atom copies when a node atom exists.
+        if label in node_atom_labels and not is_node_atom:
             continue
         n = nodes.get(label)
         if n is None:
@@ -57,11 +72,15 @@ def collect_nodes(data):
         n.chapter = atom.get("blueprint-chapter", n.chapter)
         n.statement = atom.get("blueprint-statement-status", n.statement)
         n.proof = atom.get("blueprint-proof-status", n.proof)
-        # A node is "bound" if any of its atoms is a real (non-synthetic) atom,
-        # or a shadow atom (a genuinely-bound node whose Lean atom was claimed by
-        # a colliding node, preserved synthetically to keep the extract
-        # node-complete).
-        if atom.get("language") != "blueprint" or atom.get("blueprint-shadow"):
+        # A node is "bound" if its node atom says so, or — for pre-node-class
+        # extracts — if any of its atoms is a real (non-synthetic) atom or a
+        # shadow atom (a genuinely-bound node whose Lean atom was claimed by a
+        # colliding node).
+        if (
+            atom.get("blueprint-node-class") == "bound"
+            or atom.get("language") != "blueprint"
+            or atom.get("blueprint-shadow")
+        ):
             n.bound = True
         if atom.get("blueprint-decl-missing"):
             n.decl_missing = True
