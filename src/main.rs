@@ -804,6 +804,13 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
         missing.len()
     );
 
+    // Stamp derived statuses on synthetic blueprint atoms so the field is total
+    // across the extract. Deliberately after the propagation above: a synthetic's
+    // derived "verified" must not be vacuously upgraded (empty dependencies), and
+    // a collision shadow inherits the final post-propagation machine status.
+    let derived = enrich::derive_synthetic_verification(&mut atoms, &model, &report);
+    eprintln!("Derived verification-status for {derived} synthetic blueprint atom(s)");
+
     let summary = enrich::summarize(&model, &report);
 
     let extract_path = args

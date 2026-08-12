@@ -153,11 +153,13 @@ impl Decl {
     /// checks (a dependency, commonly but not necessarily Mathlib/stdlib); see
     /// `docs/SCHEMA.md` §Node classification.
     fn is_upstream_proved(&self) -> bool {
+        // Truthiness, not key presence: a future schema emitting
+        // `"outWorkspace": false` or `null` must not count as out-of-workspace.
         let out_of_workspace = self
             .provenance
             .as_ref()
             .and_then(|p| p.get("outWorkspace"))
-            .is_some();
+            .is_some_and(|v| !v.is_null() && v.as_bool() != Some(false));
         let present = self.present.as_ref().and_then(|v| v.as_bool()) == Some(true);
         let proved = self.proved_status.as_ref().and_then(|v| v.as_str()) == Some("proved");
         out_of_workspace && present && proved

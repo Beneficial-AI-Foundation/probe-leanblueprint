@@ -166,6 +166,72 @@ Three derived signals:
   probe-lean-confirmed locally nor a gap. Surfaced on the human headline as
   `+K upstream-proved`. Always 0 for Massot.
 
+### Derived verification-status (synthetic atoms)
+
+Real atoms carry probe-lean's machine `verification-status`, which this tool
+never modifies (P26). Synthetic (`language: "blueprint"`) atoms have no code
+behind them, so probe-lean has nothing to say — instead the `extract` CLI
+**derives** a `verification-status` (plus `trusted-reason` where trust is
+attested) so the field is total across the synthetic atoms it emits. (It is
+not total across the whole file in general: a `--skip-verify` atom base leaves
+real atoms status-less, and P26 forbids inventing statuses for them. The
+library `enrich()` join alone does not stamp synthetics either; the derivation
+is a separate pass the CLI runs after the hub's transitive propagation.)
+
+Each node class derives from the strongest evidence available. The governing
+rule is that **machine-vocabulary values (`verified`/`transitively-verified`)
+are only ever inherited from decls probe-lean actually checked; claims — human
+or renderer — cap at `trusted`; and losing binding evidence can never improve
+a status.**
+
+| Synthetic atom | Derived status | Who vouches |
+|----------------|----------------|-------------|
+| collision shadow | aggregate over the node's **whole binding** (see below) | probe-lean checked the present decls *here* |
+| decl-missing, `blueprint-decl-upstream-proved` | `"trusted"`, `trusted-reason: "upstream-proved"` | the Verso renderer proved every binding out-of-workspace |
+| decl-missing or planned-only, `declared` source, claimed proof `proved`/`fully-proved` | `"trusted"`, `trusted-reason: "declared"` | a human `\leanok` (possibly proven in another repo; nothing here checked it) |
+| everything else — including a planned-only `code-derived` node whatever its claimed proof status | `"unverified"` | nobody |
+
+A code-derived proved/fully-proved claim on a *planned-only* node is a
+contradiction (the Verso renderer requires associated code to judge a proof),
+i.e. likely manifest drift or lost preview linkage; it derives `"unverified"`
+and warns, so degraded binding evidence surfaces instead of minting a
+machine-looking status.
+
+**Shadow aggregation.** A shadow's status covers its whole binding, one
+*component* per bound decl: each present decl contributes its final
+(post-propagation) machine status, each genuinely-missing decl contributes
+`unverified`, and each upstream-proved absent decl contributes `trusted`.
+Aggregation is failure-first and trust-sticky: any `failed` component →
+`failed`; else any `unverified`/absent/unknown component → `unverified`; else
+any `trusted` component → `trusted` (an attestation anywhere in the binding
+caps the whole at attested); else any `verified` → `verified`; else
+`transitively-verified`. When the result is `trusted`, `trusted-reason` is
+emitted only if the contributing trusted components agree on a single reason
+(present decls' own reasons, plus `"upstream-proved"` for upstream
+components); disagreement omits it. A shadow's status (and any copied reason)
+*mirrors* decls already counted on their real atoms — consumers aggregating
+statuses or trust bases across atoms should exclude `blueprint-shadow` atoms
+to avoid double-counting.
+
+**Ordering and stability.** The derivation runs **after** the hub's
+transitive-verification propagation: a shadow inherits the winner's *final*
+status, and nothing the derivation writes is visible to that pass. To stay
+stable under a *later* `probe enrich` over the emitted file, a shadow carries
+its present bindings as `dependencies` (the one exception to the
+empty-`dependencies` rule for synthetics) — the hub then recomputes a shadow's
+`verified` over the real closure instead of vacuously upgrading an empty one.
+Edges point synthetic → real only; within this tool's own output no real atom
+depends on a synthetic (`blueprint-*-uses` edges are extension-only, never
+merged into `dependencies`), so derived statuses cannot leak into real-atom
+propagation and the blast radius of an over-claimed source status is exactly
+the one roadmap atom carrying it. (That no-feedback property holds for edges
+this tool emits; it is not re-validated for arbitrary merged input.)
+
+`trusted-reason` extends probe-lean's reason vocabulary (`axiom`,
+`externally_verified`, `external`) with two additive values: `upstream-proved`
+and `declared`. As in probe-lean, it is present only when the status is
+`"trusted"` (or inherited from a `trusted` binding by a shadow).
+
 ---
 
 ## Common: Envelope (Schema 3.x)
@@ -293,10 +359,15 @@ stub detection does not misclassify it:
     "blueprint-statement-uses": [
       "probe:blueprint:aead_aes_gcm_spec",
       "probe:AEADScheme.Correct"
-    ]
+    ],
+    "verification-status": "unverified"
   }
 }
 ```
+
+The `verification-status` on a synthetic atom is **derived** (see
+[Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms)),
+not a probe-lean machine judgment.
 
 **Decl-missing synthetic atom** (a node whose *every* bound Lean decl is absent
 from the atom base — flagged rather than fabricating a code atom):
@@ -312,10 +383,16 @@ from the atom base — flagged rather than fabricating a code atom):
     "blueprint-decl-missing": true,
     "blueprint-statement-status": "formalized",
     "blueprint-proof-status": "fully-proved",
-    "blueprint-status-source": "code-derived"
+    "blueprint-status-source": "code-derived",
+    "verification-status": "unverified"
   }
 }
 ```
+
+(Genuine-gap decl-missing derives `"unverified"` even under a `fully-proved`
+claim — a claim with no checkable code behind it must not mint a
+machine-looking status. The upstream-proved variant derives
+`"trusted"` / `trusted-reason: "upstream-proved"` instead.)
 
 ### Blueprint extension fields
 
@@ -343,7 +420,21 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-upstream-decls` | array of strings | no | The node's bound decls that are **absent from the atom base** but the Verso renderer proved **out-of-workspace** (present + proved in a dependency) — i.e. the part of the binding backed upstream rather than by local probe-lean. Never includes a locally-present decl, and is always disjoint from `blueprint-missing-decls`. On a *bound* atom it marks a **mixed** binding (part local, part upstream): the node stays probe-lean-confirmed and these decls are kept out of `blueprint-missing-decls`, so this is the wire evidence distinguishing mixed from fully-local backing. On a **decl-missing** atom it lists the upstream part of the binding — present together with `blueprint-decl-upstream-proved` when *every* binding is upstream, or on its own (no bool) when only *some* are (a partial gap). code-derived (Verso) only. Additive (see Schema Evolution) |
 | `blueprint-shadow` | bool | no | `true` on the synthetic atom preserved for a node that lost a same-decl collision (its real atom was claimed by a later node). Keeps the extract node-complete; count a shadow node as bound despite its `language: "blueprint"` |
 
-Synthetic atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint"`, `code-text` = `{0,0}`, empty `dependencies`, and `code-module` set to the node's group (may be empty). They never carry `verification-status`.
+Synthetic atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint"`, `code-text` = `{0,0}`, empty `dependencies` (except a collision shadow, which carries its present bindings as dependencies — see below), and `code-module` set to the node's group (may be empty). In CLI output they carry a **derived** `verification-status` (plus `trusted-reason` where applicable) computed per [Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms) — unlike a real atom's machine status, it reflects blueprint-side evidence and shadow inheritance, never a fresh local probe-lean check.
+
+#### Derived core fields on synthetic atoms
+
+These are **core atom keys**, not `blueprint-*` extensions: they are deliberately
+absent from the re-enrichment scrub list (clearing them from real atoms would
+destroy probe-lean's machine data; synthetic atoms are instead rebuilt wholesale
+on every run), and their meaning is class-dependent — on `language: "lean"`
+atoms `verification-status` is probe-lean's machine judgment, untouched by this
+tool (P26); on `language: "blueprint"` atoms it is derived by the `extract` CLI.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `verification-status` | string | yes (CLI output; the library `enrich()` join alone does not stamp it) | **Derived**, per [Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms): blueprint-side evidence and shadow inheritance, never a fresh local probe-lean check. Values: `"unverified"`, `"trusted"`, or — shadows only, inherited — `"failed"`, `"verified"`, `"transitively-verified"` |
+| `trusted-reason` | string | no | Present only when the status is `"trusted"`: `"upstream-proved"` (renderer proved every binding out-of-workspace), `"declared"` (human `\leanok` claim), or a reason copied verbatim from a trusted binding by a shadow (e.g. `"axiom"`). Omitted when a shadow's trusted components disagree on a reason |
 
 ### Two-axis status vocabulary
 
@@ -518,6 +609,18 @@ Added later (still `3.0`):
 - extract: `blueprint-upstream-decls` — the node's bound decls that are absent
   from the atom base but proved out-of-workspace, distinguishing a mixed
   (part-local, part-upstream) binding from a fully-local one.
+- extract: synthetic (`language: "blueprint"`) atoms now carry a **derived**
+  `verification-status` (plus `trusted-reason: "upstream-proved" | "declared"`
+  where trust is attested), making the field total across the CLI's synthetic
+  atoms — see
+  [Semantics → Derived verification-status](#derived-verification-status-synthetic-atoms).
+  Collision shadows additionally carry their present bindings as
+  `dependencies` (stability under downstream `probe enrich`). Real atoms'
+  machine statuses are unchanged (P26). Previously synthetic atoms carried no
+  `verification-status` at all; consumers keying on the field's absence to
+  detect synthetics should key on `language: "blueprint"` instead, and
+  consumers aggregating statuses across atoms should exclude
+  `blueprint-shadow` atoms (their status mirrors decls counted elsewhere).
 
 ---
 
