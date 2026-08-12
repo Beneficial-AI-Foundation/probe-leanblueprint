@@ -479,4 +479,12 @@ pub struct BlueprintExtensions {
         skip_serializing_if = "std::ops::Not::not"
     )]
     pub shadow: bool,
+    /// Node-atom class discriminator (`"bound"` / `"planned-only"` /
+    /// `"decl-missing"`), present on node atoms only — `None` (omitted) on the
+    /// extensions attached to real Lean atoms, whose bytes must not change.
+    #[serde(
+        rename = "blueprint-node-class",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub node_class: Option<String>,
 }

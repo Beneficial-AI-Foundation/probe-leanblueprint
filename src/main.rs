@@ -793,6 +793,18 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
     let (model, provenance) = build_model(&args, &detected)?;
 
     let report = enrich::enrich(&mut atoms, &model);
+    // Node-atom parity is a hard invariant, not a diagnostic: every blueprint
+    // node must leave exactly one node atom. A shortfall means a duplicate
+    // label or a synthetic-key collision dropped one (both already warned with
+    // specifics) — fail instead of writing a knowingly incomplete node graph.
+    if report.node_atoms != report.nodes_total {
+        anyhow::bail!(
+            "node-atom parity violated: {} node atom(s) for {} blueprint node(s); \
+             see warnings above for the dropped label(s)",
+            report.node_atoms,
+            report.nodes_total
+        );
+    }
 
     // Reuse the hub's transitive-verification enrichment (idempotent). Machine
     // verification-status remains authoritative on the proof axis.
@@ -804,12 +816,16 @@ fn run_extract(args: ExtractArgs) -> Result<()> {
         missing.len()
     );
 
-    // Stamp derived statuses on synthetic blueprint atoms so the field is total
-    // across the extract. Deliberately after the propagation above: a synthetic's
-    // derived "verified" must not be vacuously upgraded (empty dependencies), and
-    // a collision shadow inherits the final post-propagation machine status.
+    // Stamp derived statuses on node atoms so the field is total across them.
+    // Deliberately after the propagation above: an unbound node atom's derived
+    // "verified" must not be vacuously upgraded (empty dependencies), and a
+    // bound node atom aggregates final post-propagation machine statuses.
     let derived = enrich::derive_synthetic_verification(&mut atoms, &model, &report);
-    eprintln!("Derived verification-status for {derived} synthetic blueprint atom(s)");
+    eprintln!(
+        "Derived verification-status for {derived} blueprint node atom(s) \
+         ({} node(s) in the model)",
+        report.nodes_total
+    );
 
     let summary = enrich::summarize(&model, &report);
 

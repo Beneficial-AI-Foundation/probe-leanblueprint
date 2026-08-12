@@ -9,7 +9,7 @@
 //! - A `blueprint-status-mismatch` flag is set when the blueprint claims a proof
 //!   is done but probe-lean found it unverified/failed.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use probe::types::{Atom, CodeText};
 use serde_json::Value;
@@ -68,11 +68,15 @@ pub struct EnrichReport {
     /// Labels of fully-proved *theorems* decl-missing here but proved upstream
     /// (see `docs/SCHEMA.md` §Machine reconciliation → upstream-proved).
     pub upstream_proved_theorems: Vec<String>,
-    /// For each collision-shadow node (by label), the present atom keys its
-    /// binding resolves to — the atoms it lost to later nodes. Consumed by
-    /// [`derive_synthetic_verification`] so a shadow can inherit the machine
-    /// status of the decl(s) it is genuinely bound to.
-    pub shadow_bindings: HashMap<String, Vec<String>>,
+    /// For each bound node (by label), the present atom keys its binding
+    /// resolves to. Consumed by [`derive_synthetic_verification`] so a bound
+    /// node atom (collision shadows included) can aggregate the machine
+    /// statuses of the decls it is genuinely bound to.
+    pub bound_bindings: HashMap<String, Vec<String>>,
+    /// Number of node atoms actually present after insertion — the
+    /// per-blueprint-node record count. Equals `nodes_total` unless a
+    /// duplicate label or a synthetic-key collision dropped one (both warn).
+    pub node_atoms: usize,
 }
 
 fn machine_status(atom: &Atom) -> Option<String> {
@@ -106,6 +110,7 @@ fn make_extensions(
     missing_decls: Vec<String>,
     upstream_decls: Vec<String>,
     shadow: bool,
+    node_class: Option<&str>,
 ) -> BlueprintExtensions {
     let resolve = |labels: &[String]| -> Vec<String> {
         labels
@@ -142,6 +147,7 @@ fn make_extensions(
         // node; never lists a locally-present decl.
         upstream_decls,
         shadow,
+        node_class: node_class.map(str::to_string),
     }
 }
 
@@ -168,6 +174,7 @@ const BLUEPRINT_KEYS: &[&str] = &[
     "blueprint-missing-decls",
     "blueprint-upstream-decls",
     "blueprint-shadow",
+    "blueprint-node-class",
 ];
 
 fn insert_extensions(atom: &mut Atom, ext: &BlueprintExtensions) {
@@ -259,7 +266,8 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
                     report.collisions += 1;
                     eprintln!(
                         "warning: atom {cn} is bound by multiple blueprint nodes \
-                         ({prev}, {}); keeping the last, preserving the earlier as a shadow",
+                         ({prev}, {}); the last binder keeps the atom (the earlier node's \
+                         node atom becomes a shadow only if it owns no other atom)",
                         node.label
                     );
                 }
@@ -269,21 +277,51 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
     }
     let owns = |label: &str, cn: &String| owner.get(cn).map(|l| l == label).unwrap_or(false);
 
-    // Pass B: resolve each label to its PRIMARY key (where its record lives):
-    // the first present atom it owns, else the synthetic key that will hold it.
-    // This guarantees `uses` edges always resolve to a real atom key.
-    let mut uses_index: HashMap<String, String> = HashMap::new();
+    // Pass B: two uses-edge resolutions, one per atom class (the resolution
+    // rule is normative in docs/SCHEMA.md §Node atoms → Uses resolution):
+    //
+    // - `uses_index_lean` — today's resolution, used ONLY when enriching real
+    //   Lean atoms (whose bytes are frozen): a used label resolves to its
+    //   primary code representative — the first present atom it owns, else its
+    //   synthetic key.
+    // - `uses_index_node` — used on node atoms: a used label always resolves to
+    //   that label's node-atom key, so the node atoms + their uses edges form a
+    //   closed per-node graph matching the Verso blueprint.
+    let mut uses_index_lean: HashMap<String, String> = HashMap::new();
+    let mut uses_index_node: HashMap<String, String> = HashMap::new();
     for (node, present) in model.nodes.iter().zip(&present_by_node) {
         let key = present
             .iter()
             .find(|cn| owns(&node.label, cn))
             .cloned()
             .unwrap_or_else(|| synthetic_key(&node.label));
-        uses_index.insert(node.label.clone(), key);
+        uses_index_lean.insert(node.label.clone(), key);
+        uses_index_node.insert(node.label.clone(), synthetic_key(&node.label));
+    }
+    // A used label with no model node still resolves to `probe:blueprint:<label>`
+    // (historical fallback), leaving a dangling edge in the node graph — surface
+    // each such label once so "closed graph" degradation is visible, not silent.
+    {
+        let mut dangling: BTreeSet<&str> = BTreeSet::new();
+        for node in &model.nodes {
+            for used in node.statement_uses.iter().chain(&node.proof_uses) {
+                if !uses_index_node.contains_key(used) {
+                    dangling.insert(used);
+                }
+            }
+        }
+        for label in dangling {
+            eprintln!(
+                "warning: uses edge references label {label:?} which has no blueprint node; \
+                 emitting a dangling probe:blueprint:{label} target"
+            );
+        }
     }
 
-    // Pass C: attach extensions to owned atoms; synthesize planned, decl-missing
-    // and collision-shadow atoms.
+    // Pass C: attach extensions to owned atoms, and synthesize exactly one node
+    // atom per blueprint node (bound — collision shadows included — planned-only,
+    // and decl-missing), so the extract carries one `language: "blueprint"`
+    // record per Verso node.
     let mut to_insert: Vec<(String, Atom)> = Vec::new();
     for (node, present) in model.nodes.iter().zip(&present_by_node) {
         // Invariant the decl-missing branch relies on: an upstream-proved decl is
@@ -302,13 +340,14 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
             report.planned_only += 1;
             let ext = make_extensions(
                 node,
-                &uses_index,
+                &uses_index_node,
                 None,
                 false,
                 false,
                 Vec::new(),
                 Vec::new(),
                 false,
+                Some("planned-only"),
             );
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
             report.synthesized += 1;
@@ -342,13 +381,14 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
             // bindings are upstream — a partial gap still names its upstream part).
             let ext = make_extensions(
                 node,
-                &uses_index,
+                &uses_index_node,
                 None,
                 true,
                 upstream_proved,
                 Vec::new(),
                 node.external_upstream_proved.clone(),
                 false,
+                Some("decl-missing"),
             );
             to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
             report.synthesized += 1;
@@ -416,43 +456,27 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         }
 
         let owned: Vec<&String> = present.iter().filter(|cn| owns(&node.label, cn)).collect();
-        if owned.is_empty() {
+        let is_shadow = owned.is_empty();
+        if is_shadow {
             // Collision loser: every present atom was claimed by a later node.
-            // Preserve this node as a shadow synthetic atom so the extract stays
-            // node-complete (and keeps its mismatch / missing-decls signal).
+            // Its node atom below is the only record carrying its label; the
+            // `blueprint-shadow` flag marks that special case.
             report.collision_shadowed += 1;
-            report
-                .shadow_bindings
-                .insert(node.label.clone(), present.clone());
-            let ext = make_extensions(
-                node,
-                &uses_index,
-                mismatch,
-                false,
-                false,
-                missing,
-                upstream_absent,
-                true,
-            );
-            let mut atom = synthetic_atom(node, &ext);
-            // A shadow genuinely binds these present decls; carrying them as
-            // dependencies keeps its derived verification-status stable under a
-            // later `probe enrich` (the hub recomputes over the real closure
-            // instead of vacuously upgrading an empty one). Edges point
-            // synthetic -> real only, so real-atom statuses are unaffected.
-            atom.dependencies = present.iter().cloned().collect();
-            to_insert.push((synthetic_key(&node.label), atom));
-            report.synthesized += 1;
         } else {
+            // Per-decl enrichment layer: the owned real atoms gain the node's
+            // blueprint-* fields, uses edges resolved to code representatives.
+            // These bytes are frozen — node-class and node-edge resolution
+            // exist only on the node atom.
             let ext = make_extensions(
                 node,
-                &uses_index,
-                mismatch,
+                &uses_index_lean,
+                mismatch.clone(),
                 false,
                 false,
-                missing,
-                upstream_absent,
+                missing.clone(),
+                upstream_absent.clone(),
                 false,
+                None,
             );
             for cn in owned {
                 if let Some(atom) = atoms.get_mut(cn) {
@@ -460,6 +484,32 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
                 }
             }
         }
+        // Node-atom layer: every bound node leaves exactly one
+        // `probe:blueprint:<label>` record (Verso-node parity), aggregating its
+        // whole binding.
+        report
+            .bound_bindings
+            .insert(node.label.clone(), present.clone());
+        let ext = make_extensions(
+            node,
+            &uses_index_node,
+            mismatch,
+            false,
+            false,
+            missing,
+            upstream_absent,
+            is_shadow,
+            Some("bound"),
+        );
+        let mut atom = synthetic_atom(node, &ext);
+        // A bound node atom genuinely binds these present decls; carrying them
+        // as dependencies keeps its derived verification-status stable under a
+        // later `probe enrich` (the hub recomputes over the real closure
+        // instead of vacuously upgrading an empty one). Edges point
+        // synthetic -> real only, so real-atom statuses are unaffected.
+        atom.dependencies = present.iter().cloned().collect();
+        to_insert.push((synthetic_key(&node.label), atom));
+        report.synthesized += 1;
     }
 
     // Insert synthetic atoms (idempotent re-run), and flag duplicate keys.
@@ -486,31 +536,17 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
         }
         atoms.insert(key, atom);
     }
+    report.node_atoms = atoms.values().filter(|a| a.language == "blueprint").count();
 
     report
 }
 
-/// Derived `verification-status` (and `trusted-reason`) for one synthetic atom.
-/// Returns `(status, reason)`.
-///
-/// A shadow's status aggregates its whole binding, one *component* per bound
-/// decl: each present decl contributes its final machine status, each
-/// genuinely-missing decl contributes `unverified`, and each upstream-proved
-/// absent decl contributes `trusted`. Aggregation is failure-first and
-/// trust-sticky: any `failed` component → `failed`; else any
-/// `unverified`/absent/unknown component → `unverified`; else any `trusted`
-/// component → `trusted` (an attestation anywhere in the binding caps the
-/// whole at attested — ranking `trusted` between the machine rungs would
-/// instead hide the trust boundary); else any `verified` → `verified`; else
-/// `transitively-verified`. The reason is emitted only when the contributing
-/// trusted components agree on a single one (present decls' own
-/// `trusted-reason`s, plus `"upstream-proved"` for upstream components);
-/// disagreement omits it.
-/// How a synthetic atom classifies for status derivation, read off the join
-/// outcome by the caller.
+/// How a node atom classifies for status derivation, read off the join outcome
+/// by the caller.
 enum SyntheticClass<'a> {
-    Shadow {
-        /// Present atom keys the node binds (lost to later nodes).
+    Bound {
+        /// Present atom keys the node binds (collision shadows included: the
+        /// atoms lost to later nodes).
         bindings: &'a [String],
         /// Count of genuinely-missing bound decls (`blueprint-missing-decls`).
         missing_count: usize,
@@ -523,6 +559,22 @@ enum SyntheticClass<'a> {
     PlannedOnly,
 }
 
+/// Derived `verification-status` (and `trusted-reason`) for one node atom.
+/// Returns `(status, reason)`.
+///
+/// A bound node atom's status aggregates its whole binding, one *component*
+/// per bound decl: each present decl contributes its final machine status,
+/// each genuinely-missing decl contributes `unverified`, and each
+/// upstream-proved absent decl contributes `trusted`. Aggregation is
+/// failure-first and trust-sticky: any `failed` component → `failed`; else any
+/// `unverified`/absent/unknown component → `unverified`; else any `trusted`
+/// component → `trusted` (an attestation anywhere in the binding caps the
+/// whole at attested — ranking `trusted` between the machine rungs would
+/// instead hide the trust boundary); else any `verified` → `verified`; else
+/// `transitively-verified`. The reason is emitted only when the contributing
+/// trusted components agree on a single one (present decls' own
+/// `trusted-reason`s, plus `"upstream-proved"` for upstream components);
+/// disagreement omits it.
 fn derived_status_for(
     node: &BlueprintNode,
     class: SyntheticClass<'_>,
@@ -536,7 +588,7 @@ fn derived_status_for(
     let declared_proved =
         node.status_source == StatusSource::Declared && node.proof_status.claims_proved();
 
-    if let SyntheticClass::Shadow {
+    if let SyntheticClass::Bound {
         bindings,
         missing_count,
         upstream_count,
@@ -554,7 +606,7 @@ fn derived_status_for(
             )
         });
         let status = if bindings.is_empty() && missing_count == 0 && upstream_count == 0 {
-            // Degenerate: nothing to aggregate (should not happen for a shadow).
+            // Degenerate: nothing to aggregate (should not happen for a bound node).
             "unverified"
         } else if has("failed") {
             "failed"
@@ -630,17 +682,17 @@ fn derived_status_for(
 }
 
 /// Stamp a derived `verification-status` (plus `trusted-reason` where trust is
-/// attested) onto every synthetic (`language: "blueprint"`) atom, so the field
-/// is total across the extract. Real (`language: "lean"`) atoms are never
+/// attested) onto every node atom (`language: "blueprint"`), so the field is
+/// total across the node atoms. Real (`language: "lean"`) atoms are never
 /// touched — their machine status stays authoritative (P26).
 ///
 /// Must run AFTER the hub's `enrich_verification_status` propagation, for two
-/// reasons: a synthetic's own derived `"verified"` must not be vacuously
-/// upgraded to `"transitively-verified"` (synthetics have empty dependency
-/// lists, so the reverse-BFS would see a trivially clean closure), and a
-/// collision shadow inherits the winner's *final* (post-propagation) machine
-/// status. Statuses can never feed back into real-atom propagation: no code
-/// atom depends on a synthetic (`blueprint-*-uses` edges are extension-only).
+/// reasons: an unbound node atom's derived `"verified"` must not be vacuously
+/// upgraded to `"transitively-verified"` (empty dependency lists, so the
+/// reverse-BFS would see a trivially clean closure), and a bound node atom
+/// aggregates its decls' *final* (post-propagation) machine statuses. Statuses
+/// can never feed back into real-atom propagation: no code atom depends on a
+/// node atom (`blueprint-*-uses` edges are extension-only).
 ///
 /// Each node class derives from the strongest evidence available (normative
 /// decision tree: `docs/SCHEMA.md` §Derived verification-status). Returns the
@@ -673,22 +725,33 @@ pub fn derive_synthetic_verification(
                 .and_then(|v| v.as_array())
                 .map_or(0, |a| a.len())
         };
-        let class = if ext_bool("blueprint-shadow") {
-            SyntheticClass::Shadow {
+        // Classify by the explicit discriminator. `enrich()` writes it on every
+        // node atom in the same run (the only supported input to this pass), so
+        // anything else is a malformed input: derive conservatively and warn
+        // rather than guess from older flags.
+        let class = match ext_str("blueprint-node-class") {
+            Some("bound") => SyntheticClass::Bound {
                 bindings: report
-                    .shadow_bindings
+                    .bound_bindings
                     .get(&node.label)
                     .map(|b| b.as_slice())
                     .unwrap_or(&[]),
                 missing_count: ext_len("blueprint-missing-decls"),
                 upstream_count: ext_len("blueprint-upstream-decls"),
-            }
-        } else if ext_bool("blueprint-decl-missing") {
-            SyntheticClass::DeclMissing {
+            },
+            Some("decl-missing") => SyntheticClass::DeclMissing {
                 upstream_proved: ext_bool("blueprint-decl-upstream-proved"),
+            },
+            Some("planned-only") => SyntheticClass::PlannedOnly,
+            other => {
+                eprintln!(
+                    "warning: node atom {key} has {} blueprint-node-class; \
+                     deriving \"unverified\"",
+                    other.map_or("no".to_string(), |o| format!("unknown {o:?}"))
+                );
+                updates.push((key.clone(), "unverified".to_string(), None));
+                continue;
             }
-        } else {
-            SyntheticClass::PlannedOnly
         };
         let (status, reason) = derived_status_for(node, class, atoms);
         updates.push((key.clone(), status, reason));
@@ -798,6 +861,11 @@ pub struct Totals {
     /// Present atoms bound by more than one blueprint node.
     pub collisions: usize,
     pub mismatches: usize,
+    /// Node atoms emitted (`language: "blueprint"`, one per blueprint node) —
+    /// the checkable invariant against the Verso node count: equals `nodes`
+    /// unless a duplicate label or synthetic-key collision dropped one.
+    #[serde(rename = "node-atoms")]
+    pub node_atoms: usize,
 }
 
 #[derive(Debug, Default, serde::Serialize)]
@@ -881,6 +949,7 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
             partial_missing: report.partial_missing,
             collisions: report.collisions,
             mismatches: report.mismatches.len(),
+            node_atoms: report.node_atoms,
         },
         all,
         definitions,
@@ -2008,5 +2077,263 @@ mod tests {
         enrich_propagate_derive(&mut atoms, &model);
         let second = serde_json::to_value(&atoms).unwrap();
         assert_eq!(first, second, "re-run must be a fixed point");
+    }
+
+    // --- node atoms (one per blueprint node, Verso-node parity) ---
+
+    fn ext_str<'a>(atom: &'a Atom, key: &str) -> Option<&'a str> {
+        atom.extensions.get(key).and_then(|v| v.as_str())
+    }
+
+    fn uses_of(atom: &Atom, key: &str) -> Vec<String> {
+        atom.extensions
+            .get(key)
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Every blueprint node — bound, planned-only, decl-missing — leaves exactly
+    /// one node atom, with the right class discriminator.
+    #[test]
+    fn one_node_atom_per_node_with_class() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:bound",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "thm:planned",
+            &[],
+            StatementStatus::Ready,
+            ProofStatus::Ready,
+        ));
+        model.nodes.push(node(
+            "thm:ghost",
+            &["Foo.ghost"],
+            StatementStatus::Formalized,
+            ProofStatus::Proved,
+        ));
+
+        let report = enrich(&mut atoms, &model);
+        let node_atoms: Vec<(&String, &Atom)> = atoms
+            .iter()
+            .filter(|(_, a)| a.language == "blueprint")
+            .collect();
+        assert_eq!(
+            node_atoms.len(),
+            model.nodes.len(),
+            "one node atom per node"
+        );
+        assert_eq!(report.node_atoms, model.nodes.len());
+        assert_eq!(
+            ext_str(&atoms["probe:blueprint:thm:bound"], "blueprint-node-class"),
+            Some("bound")
+        );
+        assert_eq!(
+            ext_str(
+                &atoms["probe:blueprint:thm:planned"],
+                "blueprint-node-class"
+            ),
+            Some("planned-only")
+        );
+        assert_eq!(
+            ext_str(&atoms["probe:blueprint:thm:ghost"], "blueprint-node-class"),
+            Some("decl-missing")
+        );
+        // The bound node atom carries its binding as dependencies; it is not a shadow.
+        let bound = &atoms["probe:blueprint:thm:bound"];
+        assert_eq!(bound.dependencies, ["probe:Foo.a".to_string()].into());
+        assert!(!bound.extensions.contains_key("blueprint-shadow"));
+    }
+
+    /// A plain bound node atom (no collision) aggregates its decls' final
+    /// machine statuses, exactly like shadows do.
+    #[test]
+    fn bound_node_atom_aggregates_binding_status() {
+        // All decls clean -> transitively-verified (after propagation upgrade).
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:clean",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        assert_eq!(
+            vs(&atoms["probe:blueprint:thm:clean"]),
+            Some("transitively-verified")
+        );
+
+        // One contaminated decl caps the node atom at unverified.
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        atoms.insert(
+            "probe:Foo.b".to_string(),
+            atom_with_status(Some("unverified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:mixed",
+            &["Foo.a", "Foo.b"],
+            StatementStatus::Formalized,
+            ProofStatus::Proved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        assert_eq!(vs(&atoms["probe:blueprint:thm:mixed"]), Some("unverified"));
+    }
+
+    /// Uses-edge resolution is class-dependent: node atoms resolve node-to-node
+    /// (closed per-node graph); enriched lean atoms keep today's resolution to
+    /// code representatives, byte-for-byte.
+    #[test]
+    fn uses_resolution_splits_by_atom_class() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        atoms.insert(
+            "probe:Foo.b".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        let mut used = node(
+            "thm:used",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        used.statement_uses = vec![];
+        model.nodes.push(used);
+        let mut user_bound = node(
+            "thm:user_bound",
+            &["Foo.b"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        user_bound.statement_uses = vec!["thm:used".to_string()];
+        model.nodes.push(user_bound);
+        let mut user_planned = node(
+            "thm:user_planned",
+            &[],
+            StatementStatus::Ready,
+            ProofStatus::Ready,
+        );
+        user_planned.statement_uses = vec!["thm:used".to_string()];
+        model.nodes.push(user_planned);
+
+        enrich(&mut atoms, &model);
+        // Lean atom: unchanged resolution — used label -> its real atom.
+        assert_eq!(
+            uses_of(&atoms["probe:Foo.b"], "blueprint-statement-uses"),
+            vec!["probe:Foo.a".to_string()]
+        );
+        assert!(!atoms["probe:Foo.b"]
+            .extensions
+            .contains_key("blueprint-node-class"));
+        // Node atoms (bound and planned alike): node-to-node resolution.
+        assert_eq!(
+            uses_of(
+                &atoms["probe:blueprint:thm:user_bound"],
+                "blueprint-statement-uses"
+            ),
+            vec!["probe:blueprint:thm:used".to_string()]
+        );
+        assert_eq!(
+            uses_of(
+                &atoms["probe:blueprint:thm:user_planned"],
+                "blueprint-statement-uses"
+            ),
+            vec!["probe:blueprint:thm:used".to_string()]
+        );
+    }
+
+    /// A collision produces node atoms for BOTH labels; only the loser is
+    /// flagged as a shadow, and both aggregate over the same decl.
+    #[test]
+    fn collision_yields_node_atoms_for_winner_and_loser() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:loser",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "thm:winner",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        let report = enrich_propagate_derive(&mut atoms, &model);
+        assert_eq!(report.collision_shadowed, 1);
+        assert_eq!(report.node_atoms, 2);
+        let loser = &atoms["probe:blueprint:thm:loser"];
+        let winner = &atoms["probe:blueprint:thm:winner"];
+        assert_eq!(
+            loser
+                .extensions
+                .get("blueprint-shadow")
+                .and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert!(!winner.extensions.contains_key("blueprint-shadow"));
+        assert_eq!(ext_str(loser, "blueprint-node-class"), Some("bound"));
+        assert_eq!(ext_str(winner, "blueprint-node-class"), Some("bound"));
+        assert_eq!(vs(loser), Some("transitively-verified"));
+        assert_eq!(vs(winner), Some("transitively-verified"));
+    }
+
+    /// The summary sidecar exposes the node-atom count as the checkable
+    /// invariant against the Verso node count.
+    #[test]
+    fn summary_reports_node_atoms() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:bound",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "thm:planned",
+            &[],
+            StatementStatus::Ready,
+            ProofStatus::Ready,
+        ));
+        let report = enrich(&mut atoms, &model);
+        let summary = summarize(&model, &report);
+        assert_eq!(summary.totals.node_atoms, 2);
+        assert_eq!(summary.totals.node_atoms, summary.totals.nodes);
     }
 }

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-12
+
+### Added
+- **Node atoms — Verso-node parity** (3.x additive, one value change below): every blueprint node, bound included, now leaves exactly one `language: "blueprint"` atom keyed `probe:blueprint:<label>`, so the extract's node-atom count matches the blueprint's node count (new `totals.node-atoms` invariant in the summary; committed example artifacts predate it). Node atoms carry the node's `blueprint-*` fields plus a new `blueprint-node-class` discriminator (`"bound"` / `"planned-only"` / `"decl-missing"`); a **bound** node atom additionally carries its present decls as `dependencies` (the node→code mapping, and downstream-propagation stability) and derives its `verification-status` by aggregating its whole binding — present decls contribute their final machine status, genuinely-missing decls `unverified`, upstream-proved absent decls `trusted` (failure-first, trust-sticky, as introduced in 0.5.0 for shadows). The 0.5.0 shadow synthetic is now simply the bound node atom of a collision loser (still flagged `blueprint-shadow`). Enriched real Lean atoms are **byte-identical** to 0.5.0 output.
+
+### Changed
+- On node atoms (including pre-existing planned-only/decl-missing synthetics), `blueprint-statement-uses`/`blueprint-proof-uses` now resolve **node-to-node** (each used label → its node-atom key), making the node atoms plus their uses edges a closed per-node graph matching the Verso blueprint (dangling source references warn and stay dangling). Resolution on enriched real atoms is unchanged (code representatives, as before). Consumer guidance (normative in `docs/SCHEMA.md` §Node atoms): code-level stats/graphs → `language: "lean"` atoms; blueprint-level progress and the paper graph → node atoms; never aggregate statuses across both layers.
+- **Full consumer-impact list** (beyond the uses retargeting): atom cardinality grows by one per bound node; `language: "blueprint"` now covers *all* nodes, not just unbound ones; bound node atoms put node→decl edges into core `dependencies`, which generic hub consumers interpret as code dependencies — `probe summary` will count verified bound node atoms as verified lemmas and `probe project` reverse traversal can pull them in unless `language: "blueprint"` is filtered (see `docs/SCHEMA.md` §Node atoms → Which layer to read); teaching the hub to exclude blueprint-language atoms natively is a tracked follow-up.
+- Node-atom parity is enforced: `extract` now **fails** (instead of warning and writing an incomplete graph) when the emitted node-atom count differs from the blueprint's node count (duplicate label or synthetic-key collision).
+- `scripts/blueprint_stats.py` treats node atoms as the canonical per-node layer (real-atom copies are read only for labels without a node atom, i.e. pre-0.6.0 extracts) and recognizes `blueprint-node-class: "bound"` when classifying.
+- Rust API (for library consumers): `EnrichReport::shadow_bindings` is renamed to `bound_bindings` (now populated for every bound node, not only collision losers); `EnrichReport` and the summary `Totals` gained fields (`node_atoms`); `BlueprintExtensions` gained `node_class`.
+
 ## [0.5.0] - 2026-08-12
 
 ### Added
