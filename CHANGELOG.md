@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-12
+
+### Added
+- Derived `verification-status` on synthetic (`language: "blueprint"`) atoms (3.x additive on the wire, but consumer-visible: counts/colors keyed on the field change), making the field total across the CLI's synthetic atoms. Real atoms keep probe-lean's machine status untouched (P26). Governing rule: machine-vocabulary values (`verified`/`transitively-verified`) are only ever *inherited* from decls probe-lean actually checked; claims — human or renderer — cap at `trusted`; losing binding evidence can never improve a status. Per node class: a collision shadow aggregates its **whole binding** (present decls contribute their final machine status, genuinely-missing decls contribute `unverified`, upstream-proved absent decls contribute `trusted`; failure-first and trust-sticky — any `failed` → `failed`, else any `unverified`/absent/unknown → `unverified`, else any `trusted` → `trusted`, else any `verified` → `verified`, else `transitively-verified`; `trusted-reason` copied only when the trusted components agree on a single reason); an upstream-proved decl-missing node gets `trusted` + `trusted-reason: "upstream-proved"`; a `declared` (Massot) node claiming `proved`/`fully-proved` gets `trusted` + `trusted-reason: "declared"`; everything else is `unverified` — including a code-derived *planned-only* node claiming `proved`/`fully-proved`, which is a drift signal (the Verso renderer requires associated code to judge a proof) and warns. The pass runs after the hub's transitive-verification propagation (shadows inherit post-propagation values), and shadows carry their present bindings as `dependencies` so a *later* `probe enrich` recomputes their status over the real closure instead of vacuously upgrading it. Normative decision tree in `docs/SCHEMA.md` §Derived verification-status. Consumers that detected synthetics by the *absence* of `verification-status` should key on `language: "blueprint"` instead; consumers aggregating statuses/trust bases should exclude `blueprint-shadow` atoms (their status mirrors decls counted elsewhere).
+
+### Fixed
+- Verso adapter: `provenance.outWorkspace` is now checked for truthiness, not key presence — a future manifest emitting `"outWorkspace": false`/`null` no longer counts a decl as out-of-workspace (upstream-proved).
+- A synthetic atom key colliding with a surviving non-blueprint atom from the input no longer silently overwrites that atom; the input atom is kept and a warning names the dropped synthetic.
+
 ## [0.4.0] - 2026-08-04
 
 ### Changed

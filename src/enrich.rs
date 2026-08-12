@@ -68,6 +68,11 @@ pub struct EnrichReport {
     /// Labels of fully-proved *theorems* decl-missing here but proved upstream
     /// (see `docs/SCHEMA.md` §Machine reconciliation → upstream-proved).
     pub upstream_proved_theorems: Vec<String>,
+    /// For each collision-shadow node (by label), the present atom keys its
+    /// binding resolves to — the atoms it lost to later nodes. Consumed by
+    /// [`derive_synthetic_verification`] so a shadow can inherit the machine
+    /// status of the decl(s) it is genuinely bound to.
+    pub shadow_bindings: HashMap<String, Vec<String>>,
 }
 
 fn machine_status(atom: &Atom) -> Option<String> {
@@ -416,6 +421,9 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
             // Preserve this node as a shadow synthetic atom so the extract stays
             // node-complete (and keeps its mismatch / missing-decls signal).
             report.collision_shadowed += 1;
+            report
+                .shadow_bindings
+                .insert(node.label.clone(), present.clone());
             let ext = make_extensions(
                 node,
                 &uses_index,
@@ -426,7 +434,14 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
                 upstream_absent,
                 true,
             );
-            to_insert.push((synthetic_key(&node.label), synthetic_atom(node, &ext)));
+            let mut atom = synthetic_atom(node, &ext);
+            // A shadow genuinely binds these present decls; carrying them as
+            // dependencies keeps its derived verification-status stable under a
+            // later `probe enrich` (the hub recomputes over the real closure
+            // instead of vacuously upgrading an empty one). Edges point
+            // synthetic -> real only, so real-atom statuses are unaffected.
+            atom.dependencies = present.iter().cloned().collect();
+            to_insert.push((synthetic_key(&node.label), atom));
             report.synthesized += 1;
         } else {
             let ext = make_extensions(
@@ -454,10 +469,251 @@ pub fn enrich(atoms: &mut BTreeMap<String, Atom>, model: &BlueprintModel) -> Enr
             report.duplicate_synthetic += 1;
             eprintln!("warning: duplicate synthetic blueprint atom {key}; keeping the last");
         }
+        // After the scrub only non-blueprint atoms survive, so a collision here
+        // means the synthetic key would clobber a real/foreign atom from the
+        // input (a decl or merged-spine key that happens to spell
+        // `probe:blueprint:<label>`). Keep the input atom and drop the
+        // synthetic rather than destroying data.
+        if let Some(existing) = atoms.get(&key) {
+            if existing.language != "blueprint" {
+                eprintln!(
+                    "warning: synthetic key {key} collides with an existing {} atom from the \
+                     input; keeping the input atom and skipping the synthetic",
+                    existing.language
+                );
+                continue;
+            }
+        }
         atoms.insert(key, atom);
     }
 
     report
+}
+
+/// Derived `verification-status` (and `trusted-reason`) for one synthetic atom.
+/// Returns `(status, reason)`.
+///
+/// A shadow's status aggregates its whole binding, one *component* per bound
+/// decl: each present decl contributes its final machine status, each
+/// genuinely-missing decl contributes `unverified`, and each upstream-proved
+/// absent decl contributes `trusted`. Aggregation is failure-first and
+/// trust-sticky: any `failed` component → `failed`; else any
+/// `unverified`/absent/unknown component → `unverified`; else any `trusted`
+/// component → `trusted` (an attestation anywhere in the binding caps the
+/// whole at attested — ranking `trusted` between the machine rungs would
+/// instead hide the trust boundary); else any `verified` → `verified`; else
+/// `transitively-verified`. The reason is emitted only when the contributing
+/// trusted components agree on a single one (present decls' own
+/// `trusted-reason`s, plus `"upstream-proved"` for upstream components);
+/// disagreement omits it.
+/// How a synthetic atom classifies for status derivation, read off the join
+/// outcome by the caller.
+enum SyntheticClass<'a> {
+    Shadow {
+        /// Present atom keys the node binds (lost to later nodes).
+        bindings: &'a [String],
+        /// Count of genuinely-missing bound decls (`blueprint-missing-decls`).
+        missing_count: usize,
+        /// Count of upstream-proved absent decls (`blueprint-upstream-decls`).
+        upstream_count: usize,
+    },
+    DeclMissing {
+        upstream_proved: bool,
+    },
+    PlannedOnly,
+}
+
+fn derived_status_for(
+    node: &BlueprintNode,
+    class: SyntheticClass<'_>,
+    atoms: &BTreeMap<String, Atom>,
+) -> (String, Option<String>) {
+    use crate::model::StatusSource;
+
+    // A human `\leanok` claim of a complete proof: human-attested, so `trusted`
+    // rather than a machine-vocabulary status (it may well be proven in another
+    // repo, but nothing here checked it).
+    let declared_proved =
+        node.status_source == StatusSource::Declared && node.proof_status.claims_proved();
+
+    if let SyntheticClass::Shadow {
+        bindings,
+        missing_count,
+        upstream_count,
+    } = class
+    {
+        let statuses: Vec<Option<String>> = bindings
+            .iter()
+            .map(|key| atoms.get(key).and_then(machine_status))
+            .collect();
+        let has = |s: &str| statuses.iter().any(|st| st.as_deref() == Some(s));
+        let has_unknown = statuses.iter().any(|st| {
+            !matches!(
+                st.as_deref(),
+                Some("failed" | "unverified" | "verified" | "trusted" | "transitively-verified")
+            )
+        });
+        let status = if bindings.is_empty() && missing_count == 0 && upstream_count == 0 {
+            // Degenerate: nothing to aggregate (should not happen for a shadow).
+            "unverified"
+        } else if has("failed") {
+            "failed"
+        } else if has("unverified") || has_unknown || missing_count > 0 {
+            "unverified"
+        } else if has("trusted") || upstream_count > 0 {
+            "trusted"
+        } else if has("verified") {
+            "verified"
+        } else {
+            "transitively-verified"
+        };
+        // Keep inherited trust auditable, but only when unambiguous: collect
+        // the distinct reasons across the trusted components and emit the
+        // single agreed one, or nothing.
+        let reason = if status == "trusted" {
+            let mut reasons: Vec<String> = bindings
+                .iter()
+                .filter_map(|key| {
+                    let atom = atoms.get(key)?;
+                    if machine_status(atom).as_deref() == Some("trusted") {
+                        atom.extensions
+                            .get("trusted-reason")
+                            .and_then(|v| v.as_str())
+                            .map(str::to_string)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if upstream_count > 0 {
+                reasons.push("upstream-proved".to_string());
+            }
+            reasons.sort();
+            reasons.dedup();
+            match reasons.as_slice() {
+                [only] => Some(only.clone()),
+                _ => None,
+            }
+        } else {
+            None
+        };
+        return (status.to_string(), reason);
+    }
+    if let SyntheticClass::DeclMissing { upstream_proved } = class {
+        if upstream_proved {
+            // The renderer proved every binding out-of-workspace (present +
+            // proved in a dependency): machine-checked elsewhere, so `trusted`.
+            return ("trusted".to_string(), Some("upstream-proved".to_string()));
+        }
+        if declared_proved {
+            return ("trusted".to_string(), Some("declared".to_string()));
+        }
+        return ("unverified".to_string(), None);
+    }
+    // Planned-only: no binding at all — there is nothing checkable behind the
+    // node, so no machine-vocabulary status is ever minted here. A code-derived
+    // proved claim on an unbound node is a contradiction (the Verso renderer
+    // requires associated code to judge a proof), i.e. likely manifest drift or
+    // lost preview linkage: losing binding evidence must not *improve* the
+    // status, so it derives `unverified`, loudly.
+    if node.status_source == StatusSource::CodeDerived && node.proof_status.claims_proved() {
+        eprintln!(
+            "warning: code-derived planned-only node {} claims proof status {:?} but binds no \
+             declaration; deriving \"unverified\" (possible manifest drift)",
+            node.label, node.proof_status
+        );
+    }
+    if declared_proved {
+        return ("trusted".to_string(), Some("declared".to_string()));
+    }
+    ("unverified".to_string(), None)
+}
+
+/// Stamp a derived `verification-status` (plus `trusted-reason` where trust is
+/// attested) onto every synthetic (`language: "blueprint"`) atom, so the field
+/// is total across the extract. Real (`language: "lean"`) atoms are never
+/// touched — their machine status stays authoritative (P26).
+///
+/// Must run AFTER the hub's `enrich_verification_status` propagation, for two
+/// reasons: a synthetic's own derived `"verified"` must not be vacuously
+/// upgraded to `"transitively-verified"` (synthetics have empty dependency
+/// lists, so the reverse-BFS would see a trivially clean closure), and a
+/// collision shadow inherits the winner's *final* (post-propagation) machine
+/// status. Statuses can never feed back into real-atom propagation: no code
+/// atom depends on a synthetic (`blueprint-*-uses` edges are extension-only).
+///
+/// Each node class derives from the strongest evidence available (normative
+/// decision tree: `docs/SCHEMA.md` §Derived verification-status). Returns the
+/// number of synthetic atoms stamped.
+pub fn derive_synthetic_verification(
+    atoms: &mut BTreeMap<String, Atom>,
+    model: &BlueprintModel,
+    report: &EnrichReport,
+) -> usize {
+    let node_by_label: HashMap<&str, &BlueprintNode> = model
+        .nodes
+        .iter()
+        .map(|n| (n.label.as_str(), n))
+        .collect();
+
+    // Two phases: shadow inheritance reads other atoms, so collect the updates
+    // over an immutable view first, then apply.
+    let mut updates: Vec<(String, String, Option<String>)> = Vec::new();
+    for (key, atom) in atoms.iter() {
+        if atom.language != "blueprint" {
+            continue;
+        }
+        let ext_str = |k: &str| atom.extensions.get(k).and_then(|v| v.as_str());
+        let ext_bool = |k: &str| atom.extensions.get(k).and_then(|v| v.as_bool()) == Some(true);
+        let Some(node) = ext_str("blueprint-label").and_then(|l| node_by_label.get(l)) else {
+            // A synthetic without a resolvable node (should not happen: enrich
+            // builds every synthetic from a model node in the same run).
+            continue;
+        };
+        let ext_len = |k: &str| {
+            atom.extensions
+                .get(k)
+                .and_then(|v| v.as_array())
+                .map_or(0, |a| a.len())
+        };
+        let class = if ext_bool("blueprint-shadow") {
+            SyntheticClass::Shadow {
+                bindings: report
+                    .shadow_bindings
+                    .get(&node.label)
+                    .map(|b| b.as_slice())
+                    .unwrap_or(&[]),
+                missing_count: ext_len("blueprint-missing-decls"),
+                upstream_count: ext_len("blueprint-upstream-decls"),
+            }
+        } else if ext_bool("blueprint-decl-missing") {
+            SyntheticClass::DeclMissing {
+                upstream_proved: ext_bool("blueprint-decl-upstream-proved"),
+            }
+        } else {
+            SyntheticClass::PlannedOnly
+        };
+        let (status, reason) = derived_status_for(node, class, atoms);
+        updates.push((key.clone(), status, reason));
+    }
+
+    let count = updates.len();
+    for (key, status, reason) in updates {
+        if let Some(atom) = atoms.get_mut(&key) {
+            atom.extensions
+                .insert("verification-status".to_string(), Value::String(status));
+            match reason {
+                Some(r) => {
+                    atom.extensions
+                        .insert("trusted-reason".to_string(), Value::String(r));
+                }
+                None => {
+                    atom.extensions.remove("trusted-reason");
+                }
+            }
+        }
+    }
+    count
 }
 
 /// A two-axis histogram over blueprint nodes.
@@ -1286,5 +1542,474 @@ mod tests {
         assert_eq!(summary.headline.theorems_fully_proved, 1);
         assert!((summary.headline.fraction - 0.5).abs() < 1e-9);
         assert_eq!(summary.definitions.statement.formalized, 1);
+    }
+
+    // --- derived verification-status for synthetic atoms ---
+
+    /// Run the same pipeline order as `run_extract`: join, hub propagation,
+    /// then derived statuses for synthetics.
+    fn enrich_propagate_derive(
+        atoms: &mut BTreeMap<String, Atom>,
+        model: &BlueprintModel,
+    ) -> EnrichReport {
+        let report = enrich(atoms, model);
+        probe::commands::propagate::enrich_verification_status(atoms);
+        derive_synthetic_verification(atoms, model, &report);
+        report
+    }
+
+    fn vs(atom: &Atom) -> Option<&str> {
+        atom.extensions
+            .get("verification-status")
+            .and_then(|v| v.as_str())
+    }
+
+    fn trusted_reason(atom: &Atom) -> Option<&str> {
+        atom.extensions
+            .get("trusted-reason")
+            .and_then(|v| v.as_str())
+    }
+
+    /// A planned-only node binds nothing, so no machine-vocabulary status is
+    /// ever minted for it — a code-derived proved/fully-proved claim on an
+    /// unbound node signals manifest drift (losing binding evidence must not
+    /// improve the status), and derives "unverified" like the rest.
+    #[test]
+    fn derives_planned_only_code_derived_always_unverified() {
+        for proof in [
+            ProofStatus::None,
+            ProofStatus::Ready,
+            ProofStatus::Proved,
+            ProofStatus::FullyProved,
+        ] {
+            let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+            let mut model = BlueprintModel::default();
+            model
+                .nodes
+                .push(node("thm:p", &[], StatementStatus::Ready, proof));
+            enrich_propagate_derive(&mut atoms, &model);
+            let a = &atoms["probe:blueprint:thm:p"];
+            assert_eq!(vs(a), Some("unverified"), "proof rung {proof:?}");
+            assert_eq!(trusted_reason(a), None);
+        }
+    }
+
+    /// A shadow's derived status must be stable under a LATER hub propagation
+    /// over the emitted file: the shadow carries its present bindings as
+    /// dependencies, so re-running `enrich_verification_status` recomputes over
+    /// the real closure instead of vacuously upgrading "verified" (which an
+    /// empty dependency list would).
+    #[test]
+    fn shadow_verified_survives_second_propagation_pass() {
+        let mut atoms = BTreeMap::new();
+        // Foo.v is locally verified but contaminated (depends on unverified
+        // Foo.bad), so it stays "verified" through propagation.
+        let mut v = atom_with_status(Some("verified"));
+        v.dependencies = ["probe:Foo.bad".to_string()].into();
+        atoms.insert("probe:Foo.v".to_string(), v);
+        atoms.insert(
+            "probe:Foo.bad".to_string(),
+            atom_with_status(Some("unverified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:loser",
+            &["Foo.v"],
+            StatementStatus::Formalized,
+            ProofStatus::Proved,
+        ));
+        model.nodes.push(node(
+            "thm:winner",
+            &["Foo.v"],
+            StatementStatus::Formalized,
+            ProofStatus::Proved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let shadow = &atoms["probe:blueprint:thm:loser"];
+        assert_eq!(vs(shadow), Some("verified"));
+        assert_eq!(
+            shadow.dependencies,
+            ["probe:Foo.v".to_string()].into(),
+            "shadow carries its present bindings as dependencies"
+        );
+        // A downstream consumer runs `probe enrich` over the file again.
+        probe::commands::propagate::enrich_verification_status(&mut atoms);
+        assert_eq!(
+            vs(&atoms["probe:blueprint:thm:loser"]),
+            Some("verified"),
+            "second propagation must not vacuously upgrade the shadow"
+        );
+    }
+
+    /// A shadow with a genuinely-missing binding must not report a clean status
+    /// from its present decls alone: the missing decl is an unverified
+    /// component of the aggregate.
+    #[test]
+    fn shadow_with_missing_binding_is_unverified() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")), // upgraded to transitively-verified
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:loser",
+            &["Foo.a", "Foo.ghost"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "thm:winner",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let shadow = &atoms["probe:blueprint:thm:loser"];
+        assert_eq!(vs(shadow), Some("unverified"));
+        assert_eq!(trusted_reason(shadow), None);
+    }
+
+    /// A mixed local/upstream shadow: the upstream part is renderer-proved in a
+    /// dependency, so it contributes a `trusted` component — the aggregate is
+    /// capped at "trusted" (with the upstream reason), not the local machine
+    /// status.
+    #[test]
+    fn shadow_with_upstream_binding_is_trusted_upstream_proved() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")), // upgraded to transitively-verified
+        );
+        let mut model = BlueprintModel::default();
+        let mut loser = node(
+            "thm:loser",
+            &["Foo.a", "Up.done"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        loser.external_upstream_proved = vec!["Up.done".to_string()];
+        model.nodes.push(loser);
+        model.nodes.push(node(
+            "thm:winner",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let shadow = &atoms["probe:blueprint:thm:loser"];
+        assert_eq!(vs(shadow), Some("trusted"));
+        assert_eq!(trusted_reason(shadow), Some("upstream-proved"));
+    }
+
+    /// `trusted` is not ranked between the machine rungs: an attestation
+    /// anywhere in the binding caps the aggregate at "trusted", so a
+    /// {verified, trusted} binding is trusted (not a machine-looking
+    /// "verified" that hides the axiom).
+    #[test]
+    fn shadow_trust_is_sticky_over_verified() {
+        let mut atoms = BTreeMap::new();
+        let mut v = atom_with_status(Some("verified"));
+        v.dependencies = ["probe:Foo.bad".to_string()].into(); // keeps it locally-verified
+        atoms.insert("probe:Foo.v".to_string(), v);
+        atoms.insert(
+            "probe:Foo.bad".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut ax = atom_with_status(Some("trusted"));
+        ax.extensions
+            .insert("trusted-reason".into(), Value::String("axiom".into()));
+        atoms.insert("probe:Foo.ax".to_string(), ax);
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "def:loser",
+            &["Foo.v", "Foo.ax"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "def:winner",
+            &["Foo.v", "Foo.ax"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let shadow = &atoms["probe:blueprint:def:loser"];
+        assert_eq!(vs(shadow), Some("trusted"));
+        assert_eq!(trusted_reason(shadow), Some("axiom"));
+    }
+
+    /// Disagreeing trusted reasons across the binding are not resolved by
+    /// picking one arbitrarily — the reason is omitted.
+    #[test]
+    fn shadow_with_ambiguous_trusted_reasons_omits_reason() {
+        let mut atoms = BTreeMap::new();
+        let mut ax = atom_with_status(Some("trusted"));
+        ax.extensions
+            .insert("trusted-reason".into(), Value::String("axiom".into()));
+        atoms.insert("probe:Foo.ax".to_string(), ax);
+        let mut ext = atom_with_status(Some("trusted"));
+        ext.extensions
+            .insert("trusted-reason".into(), Value::String("external".into()));
+        atoms.insert("probe:Foo.ext".to_string(), ext);
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "def:loser",
+            &["Foo.ax", "Foo.ext"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "def:winner",
+            &["Foo.ax", "Foo.ext"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let shadow = &atoms["probe:blueprint:def:loser"];
+        assert_eq!(vs(shadow), Some("trusted"));
+        assert_eq!(trusted_reason(shadow), None);
+    }
+
+    #[test]
+    fn derives_trusted_declared_for_massot_proved_claims() {
+        for (proof, expected, reason) in [
+            (ProofStatus::Ready, "unverified", None),
+            (ProofStatus::Proved, "trusted", Some("declared")),
+            (ProofStatus::FullyProved, "trusted", Some("declared")),
+        ] {
+            let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+            let mut model = BlueprintModel::default();
+            let mut n = node("thm:m", &[], StatementStatus::Ready, proof);
+            n.status_source = StatusSource::Declared;
+            model.nodes.push(n);
+            enrich_propagate_derive(&mut atoms, &model);
+            let a = &atoms["probe:blueprint:thm:m"];
+            assert_eq!(vs(a), Some(expected), "proof rung {proof:?}");
+            assert_eq!(trusted_reason(a), reason);
+        }
+    }
+
+    #[test]
+    fn derives_unverified_for_genuine_gap_despite_proved_claim() {
+        // Code-derived decl-missing with no upstream evidence: a fully-proved
+        // claim must NOT mint a machine-looking status.
+        let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:gap",
+            &["Foo.ghost"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let a = &atoms["probe:blueprint:thm:gap"];
+        assert_eq!(vs(a), Some("unverified"));
+        assert_eq!(trusted_reason(a), None);
+    }
+
+    #[test]
+    fn derives_trusted_upstream_proved_for_upstream_decl_missing() {
+        let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+        let mut model = BlueprintModel::default();
+        let mut n = node(
+            "thm:up",
+            &["Nat.mul_assoc"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        n.external_upstream_proved = vec!["Nat.mul_assoc".to_string()];
+        model.nodes.push(n);
+        enrich_propagate_derive(&mut atoms, &model);
+        let a = &atoms["probe:blueprint:thm:up"];
+        assert_eq!(vs(a), Some("trusted"));
+        assert_eq!(trusted_reason(a), Some("upstream-proved"));
+    }
+
+    #[test]
+    fn derives_trusted_declared_for_massot_decl_missing_proved_claim() {
+        // Massot \lean{Foo} + \leanok with Foo absent: the human claim may well
+        // be "proven in another repo" — trusted, attributed to the declaration.
+        let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+        let mut model = BlueprintModel::default();
+        let mut n = node(
+            "thm:elsewhere",
+            &["Foo.ghost"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        n.status_source = StatusSource::Declared;
+        model.nodes.push(n);
+        enrich_propagate_derive(&mut atoms, &model);
+        let a = &atoms["probe:blueprint:thm:elsewhere"];
+        assert_eq!(vs(a), Some("trusted"));
+        assert_eq!(trusted_reason(a), Some("declared"));
+    }
+
+    #[test]
+    fn shadow_inherits_final_post_propagation_status() {
+        // Foo.a is "verified" with no dependencies, so the hub propagation
+        // upgrades it to "transitively-verified"; the shadow must inherit the
+        // FINAL value, proving the pass runs after propagation.
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:loser",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "thm:winner",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        let report = enrich_propagate_derive(&mut atoms, &model);
+        assert_eq!(report.collision_shadowed, 1);
+        let shadow = &atoms["probe:blueprint:thm:loser"];
+        assert_eq!(
+            shadow.extensions.get("blueprint-shadow").unwrap().as_bool(),
+            Some(true)
+        );
+        assert_eq!(vs(shadow), Some("transitively-verified"));
+        // The winner's real atom itself is of course untouched by the derive pass.
+        assert_eq!(vs(&atoms["probe:Foo.a"]), Some("transitively-verified"));
+    }
+
+    #[test]
+    fn shadow_inherits_weakest_status_across_bindings() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")), // upgraded to transitively-verified
+        );
+        atoms.insert(
+            "probe:Foo.b".to_string(),
+            atom_with_status(Some("unverified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:loser",
+            &["Foo.a", "Foo.b"],
+            StatementStatus::Formalized,
+            ProofStatus::Proved,
+        ));
+        model.nodes.push(node(
+            "thm:winner",
+            &["Foo.a", "Foo.b"],
+            StatementStatus::Formalized,
+            ProofStatus::Proved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        assert_eq!(vs(&atoms["probe:blueprint:thm:loser"]), Some("unverified"));
+    }
+
+    #[test]
+    fn shadow_falls_back_to_unverified_on_statusless_base() {
+        // e.g. an atom base produced with --skip-verify.
+        let mut atoms = BTreeMap::new();
+        atoms.insert("probe:Foo.a".to_string(), atom_with_status(None));
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:loser",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "thm:winner",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        assert_eq!(vs(&atoms["probe:blueprint:thm:loser"]), Some("unverified"));
+    }
+
+    #[test]
+    fn shadow_copies_trusted_reason_from_binding() {
+        let mut atoms = BTreeMap::new();
+        let mut axiom = atom_with_status(Some("trusted"));
+        axiom
+            .extensions
+            .insert("trusted-reason".into(), Value::String("axiom".into()));
+        atoms.insert("probe:Foo.ax".to_string(), axiom);
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "def:loser",
+            &["Foo.ax"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "def:winner",
+            &["Foo.ax"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let shadow = &atoms["probe:blueprint:def:loser"];
+        assert_eq!(vs(shadow), Some("trusted"));
+        assert_eq!(trusted_reason(shadow), Some("axiom"));
+    }
+
+    #[test]
+    fn real_atoms_are_untouched_by_derivation() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.bar".to_string(),
+            atom_with_status(Some("unverified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:bar",
+            &["Foo.bar"],
+            StatementStatus::Formalized,
+            ProofStatus::None,
+        ));
+        let before = serde_json::to_value(&atoms["probe:Foo.bar"].extensions).unwrap();
+        enrich_propagate_derive(&mut atoms, &model);
+        let after = &atoms["probe:Foo.bar"];
+        // The bound atom gained blueprint-* fields but its machine status and
+        // trusted-reason are exactly as before.
+        assert_eq!(vs(after), Some("unverified"));
+        assert!(!after.extensions.contains_key("trusted-reason"));
+        assert_eq!(
+            before.get("verification-status"),
+            after.extensions.get("verification-status")
+        );
+    }
+
+    #[test]
+    fn derivation_is_idempotent_across_reruns() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        model.nodes.push(node(
+            "thm:bound",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        ));
+        model.nodes.push(node(
+            "thm:planned",
+            &[],
+            StatementStatus::Ready,
+            ProofStatus::Ready,
+        ));
+        enrich_propagate_derive(&mut atoms, &model);
+        let first = serde_json::to_value(&atoms).unwrap();
+        // Re-run over the already-enriched, already-stamped map.
+        enrich_propagate_derive(&mut atoms, &model);
+        let second = serde_json::to_value(&atoms).unwrap();
+        assert_eq!(first, second, "re-run must be a fixed point");
     }
 }
