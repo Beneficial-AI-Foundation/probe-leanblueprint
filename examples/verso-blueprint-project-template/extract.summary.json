@@ -3,7 +3,7 @@
   "schema-version": "3.0",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.3.0",
+    "version": "0.7.0",
     "command": "extract"
   },
   "source": {
@@ -23,7 +23,7 @@
       }
     ]
   },
-  "timestamp": "2026-07-28T12:01:37Z",
+  "timestamp": "2026-08-14T02:18:55Z",
   "data": {
     "totals": {
       "nodes": 9,
@@ -33,7 +33,8 @@
       "decl-missing-upstream-proved": 2,
       "partial-missing": 0,
       "collisions": 0,
-      "mismatches": 0
+      "mismatches": 0,
+      "node-atoms": 9
     },
     "all": {
       "statement": {

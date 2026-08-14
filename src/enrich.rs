@@ -18,10 +18,51 @@ use crate::model::{
     BlueprintExtensions, BlueprintModel, BlueprintNode, NodeKind, ProofStatus, StatementStatus,
 };
 
-/// Marker code-path for synthetic planned atoms. Non-empty so P3 stub detection
-/// (`code-path == "" && lines 0,0`) never misclassifies a planned node as a stub.
+/// Root folder of the virtual location hierarchy for node atoms: a node atom
+/// lives at `blueprint/<chapter-slug>`, giving frontends a real place to file
+/// paper items (one `blueprint/` tree beside the code folders, one subfolder
+/// per chapter). Always non-empty, so P3 stub detection
+/// (`code-path == "" && lines 0,0`) never misclassifies a node atom as a stub.
 // @kb: kb/engineering/properties.md#p3-stub-detection-is-structural
-const BLUEPRINT_CODE_PATH: &str = "blueprint";
+const BLUEPRINT_CODE_PATH_ROOT: &str = "blueprint";
+
+/// Location component for nodes whose blueprint gives no chapter — the same
+/// word the summary's by-chapter grouping uses for them.
+const UNGROUPED: &str = "ungrouped";
+
+/// Longest slug a chapter or group contributes to a location. Keeps the
+/// synthesized `code-path`/`code-module` far below consumers' path-column
+/// limits (VeriLib stores paths in 512-char columns) even with both levels
+/// present.
+const LOCATION_COMPONENT_MAX: usize = 64;
+
+/// One path/module component from a raw chapter or group name, or `None` when
+/// nothing survives sanitization. Only alphanumerics (unicode included), `_`
+/// and `-` pass through; every other char — whitespace, path separators, dots,
+/// URL delimiters, control chars — collapses into a single `-`, so a raw name
+/// can never add path segments, module levels, or unprintable bytes. Distinct
+/// raw names may share a slug (`A B` and `A.B` both become `A-B`); that is
+/// accepted — the slug is a display grouping, and the adapter-provided
+/// originals stay in `blueprint-chapter` / `blueprint-group`.
+fn location_component(raw: &str) -> Option<String> {
+    let mut out = String::with_capacity(raw.len().min(LOCATION_COMPONENT_MAX));
+    for c in raw.chars() {
+        if out.len() >= LOCATION_COMPONENT_MAX {
+            break;
+        }
+        if c.is_alphanumeric() || matches!(c, '_' | '-') {
+            out.push(c);
+        } else if !out.is_empty() && !out.ends_with('-') {
+            out.push('-');
+        }
+    }
+    let out = out.trim_end_matches('-');
+    if out.is_empty() {
+        None
+    } else {
+        Some(out.to_string())
+    }
+}
 
 fn code_name_for_decl(decl: &str) -> String {
     format!("{}{decl}", crate::PROBE_PREFIX)
@@ -212,11 +253,21 @@ fn synthetic_atom(node: &BlueprintNode, ext: &BlueprintExtensions) -> Atom {
         .next()
         .unwrap_or(&node.label)
         .to_string();
+    let chapter = node
+        .chapter
+        .as_deref()
+        .and_then(location_component)
+        .unwrap_or_else(|| UNGROUPED.to_string());
+    let mut code_module = format!("Blueprint.{chapter}");
+    if let Some(group) = node.group.as_deref().and_then(location_component) {
+        code_module.push('.');
+        code_module.push_str(&group);
+    }
     let mut atom = Atom {
         display_name,
         dependencies: Default::default(),
-        code_module: node.group.clone().unwrap_or_default(),
-        code_path: BLUEPRINT_CODE_PATH.to_string(),
+        code_module,
+        code_path: format!("{BLUEPRINT_CODE_PATH_ROOT}/{chapter}"),
         code_text: CodeText {
             lines_start: 0,
             lines_end: 0,
@@ -907,8 +958,11 @@ pub fn summarize(model: &BlueprintModel, report: &EnrichReport) -> Summary {
         let chapter = by_chapter
             .entry(
                 node.chapter
-                    .clone()
-                    .unwrap_or_else(|| "ungrouped".to_string()),
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|c| !c.is_empty())
+                    .map(str::to_string)
+                    .unwrap_or_else(|| UNGROUPED.to_string()),
             )
             .or_default();
         chapter.nodes += 1;
@@ -2099,6 +2153,93 @@ mod tests {
 
     /// Every blueprint node — bound, planned-only, decl-missing — leaves exactly
     /// one node atom, with the right class discriminator.
+    #[test]
+    fn node_atom_location_from_chapter_and_group() {
+        let mut model = BlueprintModel::default();
+        let mut with_both = node(
+            "thm:located",
+            &[],
+            StatementStatus::Ready,
+            ProofStatus::Ready,
+        );
+        with_both.chapter = Some("Core Constructions 2.1".to_string());
+        with_both.group = Some("cmz_amac".to_string());
+        model.nodes.push(with_both);
+        model.nodes.push(node(
+            "thm:bare",
+            &[],
+            StatementStatus::Ready,
+            ProofStatus::Ready,
+        ));
+
+        let mut atoms = BTreeMap::new();
+        enrich(&mut atoms, &model);
+
+        let located = &atoms["probe:blueprint:thm:located"];
+        assert_eq!(located.code_path, "blueprint/Core-Constructions-2-1");
+        assert_eq!(
+            located.code_module,
+            "Blueprint.Core-Constructions-2-1.cmz_amac"
+        );
+
+        let bare = &atoms["probe:blueprint:thm:bare"];
+        assert_eq!(bare.code_path, "blueprint/ungrouped");
+        assert_eq!(bare.code_module, "Blueprint.ungrouped");
+    }
+
+    #[test]
+    fn location_component_sanitizes_to_one_segment() {
+        assert_eq!(
+            location_component("Hecke algebras").as_deref(),
+            Some("Hecke-algebras")
+        );
+        assert_eq!(
+            location_component(" a/b\\c.d  e ").as_deref(),
+            Some("a-b-c-d-e")
+        );
+        assert_eq!(location_component("Core").as_deref(), Some("Core"));
+        assert_eq!(location_component("µCMZ").as_deref(), Some("µCMZ"));
+        assert_eq!(
+            location_component("x?y#z%2Fw\u{0}\u{200b}v").as_deref(),
+            Some("x-y-z-2Fw-v")
+        );
+        assert_eq!(location_component("  /. "), None);
+        assert_eq!(location_component(""), None);
+        let long = location_component(&"a".repeat(500)).unwrap();
+        assert!(long.len() <= 68, "capped, got {}", long.len());
+    }
+
+    #[test]
+    fn node_atom_location_degenerate_group_and_chapter() {
+        let mut model = BlueprintModel::default();
+        // A group literally named "ungrouped" is a real group and keeps its
+        // module level; a group that sanitizes to nothing contributes none.
+        let mut named_ungrouped =
+            node("thm:named", &[], StatementStatus::Ready, ProofStatus::Ready);
+        named_ungrouped.chapter = Some("Core".to_string());
+        named_ungrouped.group = Some("ungrouped".to_string());
+        model.nodes.push(named_ungrouped);
+        let mut degenerate = node(
+            "thm:degenerate",
+            &[],
+            StatementStatus::Ready,
+            ProofStatus::Ready,
+        );
+        degenerate.chapter = Some(" /. ".to_string());
+        degenerate.group = Some(" /. ".to_string());
+        model.nodes.push(degenerate);
+
+        let mut atoms = BTreeMap::new();
+        enrich(&mut atoms, &model);
+
+        let named = &atoms["probe:blueprint:thm:named"];
+        assert_eq!(named.code_module, "Blueprint.Core.ungrouped");
+
+        let degenerate = &atoms["probe:blueprint:thm:degenerate"];
+        assert_eq!(degenerate.code_path, "blueprint/ungrouped");
+        assert_eq!(degenerate.code_module, "Blueprint.ungrouped");
+    }
+
     #[test]
     fn one_node_atom_per_node_with_class() {
         let mut atoms = BTreeMap::new();
