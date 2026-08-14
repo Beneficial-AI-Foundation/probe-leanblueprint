@@ -3,7 +3,7 @@
   "schema-version": "3.0",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "command": "extract"
   },
   "source": {
@@ -23,7 +23,7 @@
       }
     ]
   },
-  "timestamp": "2026-08-14T02:18:55Z",
+  "timestamp": "2026-08-14T05:15:10Z",
   "data": {
     "totals": {
       "nodes": 9,

@@ -3,7 +3,7 @@
   "schema-version": "3.0",
   "tool": {
     "name": "probe-leanblueprint",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "command": "extract"
   },
   "source": {
@@ -13,7 +13,7 @@
     "package": "ProjectTemplate",
     "package-version": "6561770"
   },
-  "timestamp": "2026-08-14T02:18:55Z",
+  "timestamp": "2026-08-14T05:15:10Z",
   "data": {
     "probe:ProjectTemplate.Blueprint.«the canonical document object name»": {
       "display-name": "the canonical document object name",
@@ -126,6 +126,11 @@
       "blueprint-label": "addition_assoc",
       "blueprint-node-class": "decl-missing",
       "blueprint-proof-status": "proved",
+      "blueprint-source-lines": {
+        "lines-end": 62,
+        "lines-start": 62
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Addition.lean",
       "blueprint-statement-status": "formalized",
       "blueprint-statement-uses": [
         "probe:blueprint:addition_spec"
@@ -157,6 +162,11 @@
       "blueprint-label": "addition_right_identity",
       "blueprint-node-class": "bound",
       "blueprint-proof-status": "proved",
+      "blueprint-source-lines": {
+        "lines-end": 32,
+        "lines-start": 32
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Addition.lean",
       "blueprint-statement-status": "formalized",
       "blueprint-statement-uses": [
         "probe:blueprint:addition_spec"
@@ -182,6 +192,11 @@
       "blueprint-label": "addition_runtime_note",
       "blueprint-node-class": "planned-only",
       "blueprint-proof-status": "ready",
+      "blueprint-source-lines": {
+        "lines-end": 73,
+        "lines-start": 73
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Addition.lean",
       "blueprint-statement-status": "ready",
       "blueprint-status-source": "code-derived",
       "blueprint-title": "Definition 1.4",
@@ -204,6 +219,11 @@
       "blueprint-label": "addition_spec",
       "blueprint-node-class": "planned-only",
       "blueprint-proof-status": "ready",
+      "blueprint-source-lines": {
+        "lines-end": 26,
+        "lines-start": 26
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Addition.lean",
       "blueprint-statement-status": "ready",
       "blueprint-status-source": "code-derived",
       "blueprint-title": "Definition 1.1",
@@ -228,6 +248,11 @@
       "blueprint-label": "collatz_conjecture",
       "blueprint-node-class": "bound",
       "blueprint-proof-status": "none",
+      "blueprint-source-lines": {
+        "lines-end": 49,
+        "lines-start": 49
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Collatz.lean",
       "blueprint-source-proof-status": "incomplete",
       "blueprint-statement-status": "formalized",
       "blueprint-statement-uses": [
@@ -257,6 +282,11 @@
       "blueprint-label": "collatz_step",
       "blueprint-node-class": "bound",
       "blueprint-proof-status": "proved",
+      "blueprint-source-lines": {
+        "lines-end": 35,
+        "lines-start": 35
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Collatz.lean",
       "blueprint-statement-status": "formalized",
       "blueprint-statement-uses": [
         "probe:blueprint:multiplication_spec",
@@ -285,6 +315,11 @@
       "blueprint-label": "multiplication_assoc",
       "blueprint-node-class": "decl-missing",
       "blueprint-proof-status": "fully-proved",
+      "blueprint-source-lines": {
+        "lines-end": 36,
+        "lines-start": 36
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Multiplication.lean",
       "blueprint-statement-status": "formalized",
       "blueprint-status-source": "code-derived",
       "blueprint-title": "Theorem 2.3",
@@ -313,6 +348,11 @@
       "blueprint-label": "multiplication_one_right",
       "blueprint-node-class": "bound",
       "blueprint-proof-status": "proved",
+      "blueprint-source-lines": {
+        "lines-end": 21,
+        "lines-start": 21
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Multiplication.lean",
       "blueprint-statement-status": "formalized",
       "blueprint-statement-uses": [
         "probe:blueprint:multiplication_spec"
@@ -338,6 +378,11 @@
       "blueprint-label": "multiplication_spec",
       "blueprint-node-class": "planned-only",
       "blueprint-proof-status": "none",
+      "blueprint-source-lines": {
+        "lines-end": 15,
+        "lines-start": 15
+      },
+      "blueprint-source-path": "ProjectTemplate/Chapters/Multiplication.lean",
       "blueprint-statement-status": "blocked",
       "blueprint-statement-uses": [
         "probe:blueprint:addition_spec"

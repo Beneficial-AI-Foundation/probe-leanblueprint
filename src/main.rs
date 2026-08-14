@@ -1,5 +1,6 @@
 mod setup;
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -552,30 +553,33 @@ const VERSO_SITE_SUBDIR: &str = "_out/site";
 fn build_verso_model(args: &ExtractArgs, render_root: &Path) -> Result<BlueprintModel> {
     // An explicit `--verso-manifest` is authoritative and never triggers a
     // render (the caller has pointed us at the artifact directly).
-    if let Some(p) = &args.verso_manifest {
-        return Ok(if p.is_file() {
+    let mut model = if let Some(p) = &args.verso_manifest {
+        if p.is_file() {
             verso::load_manifest(p)?
         } else {
             verso::load_from_dir(p)?
-        });
-    }
-
-    // Scope discovery to the canonical render-output root: read one generation,
-    // not every `blueprint-manifest.json` anywhere under the project.
-    let site = render_root.join(VERSO_SITE_SUBDIR);
-    match verso::load_from_dir(&site) {
-        Ok(model) => Ok(model),
-        Err(BlueprintError::NoManifest(_)) => {
-            if args.no_render {
-                return Err(BlueprintError::NoManifest(site).into());
-            }
-            render_verso_docs(args, render_root)?;
-            // Retry: the render must have produced at least one manifest under
-            // the canonical site root.
-            Ok(verso::load_from_dir(&site)?)
         }
-        Err(e) => Err(e.into()),
-    }
+    } else {
+        // Scope discovery to the canonical render-output root: read one
+        // generation, not every `blueprint-manifest.json` anywhere under the
+        // project.
+        let site = render_root.join(VERSO_SITE_SUBDIR);
+        match verso::load_from_dir(&site) {
+            Ok(model) => model,
+            Err(BlueprintError::NoManifest(_)) => {
+                if args.no_render {
+                    return Err(BlueprintError::NoManifest(site).into());
+                }
+                render_verso_docs(args, render_root)?;
+                // Retry: the render must have produced at least one manifest
+                // under the canonical site root.
+                verso::load_from_dir(&site)?
+            }
+            Err(e) => return Err(e.into()),
+        }
+    };
+    finalize_verso_sources(&mut model, &args.project);
+    Ok(model)
 }
 
 /// Render the Verso docs in-place so `blueprint-manifest.json` exists. Runs the
@@ -629,8 +633,244 @@ fn build_massot_model(args: &ExtractArgs) -> Result<BlueprintModel> {
         return Err(BlueprintError::WebTexNotFound(web_tex).into());
     }
     let emitter = emitter::resolve_emitter(args.emitter.as_deref())?;
-    let model = massot::run(&args.python, emitter.path(), &web_tex)?;
+    let mut model = massot::run(&args.python, emitter.path(), &web_tex)?;
+    finalize_massot_sources(&mut model, &args.project, &web_tex);
     Ok(model)
+}
+
+/// Longest statement content carried per node atom, in bytes of UTF-8
+/// (statements are short; the cap only defends against pathological inputs).
+const STATEMENT_TEXT_MAX: usize = 10_000;
+
+fn cap_statement(text: &str) -> String {
+    if text.len() <= STATEMENT_TEXT_MAX {
+        return text.to_string();
+    }
+    let mut end = STATEMENT_TEXT_MAX;
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    text[..end].to_string()
+}
+
+/// A repo-relative path in POSIX form, the shape `code-path` uses.
+fn path_to_posix(path: &Path) -> String {
+    path.components()
+        .map(|c| c.as_os_str().to_string_lossy())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+/// Does a relative path try to leave its base (a `..` component)?
+fn escapes_base(path: &Path) -> bool {
+    path.components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+}
+
+/// Rebase Massot node anchors (emitted relative to the `web.tex` directory)
+/// onto the project root. Anchors are dropped when the blueprint sources live
+/// outside the project (unusual, e.g. an out-of-tree `--blueprint-src`) or the
+/// emitted path is absolute / tries to escape via `..`; embedded statement
+/// text is kept either way (and byte-capped here — the emitter's own cap
+/// counts code points, not bytes).
+fn finalize_massot_sources(model: &mut BlueprintModel, project: &Path, web_tex: &Path) {
+    let prefix = std::fs::canonicalize(web_tex)
+        .ok()
+        .and_then(|w| w.parent().map(Path::to_path_buf))
+        .zip(std::fs::canonicalize(project).ok())
+        .and_then(|(dir, root)| dir.strip_prefix(&root).ok().map(Path::to_path_buf));
+    let mut dropped = 0usize;
+    for node in &mut model.nodes {
+        if let Some(text) = node.statement_text.take() {
+            node.statement_text = Some(cap_statement(&text));
+        }
+        let Some(rel) = node.source_path.take() else {
+            continue;
+        };
+        let rel_path = Path::new(&rel);
+        match &prefix {
+            Some(prefix) if !rel_path.is_absolute() && !escapes_base(rel_path) => {
+                node.source_path = Some(path_to_posix(&prefix.join(rel_path)));
+            }
+            _ => {
+                node.source_lines = None;
+                dropped += 1;
+            }
+        }
+    }
+    if dropped > 0 {
+        eprintln!(
+            "warning: blueprint sources are outside the project root; \
+             dropped source anchors for {dropped} node(s)"
+        );
+    }
+}
+
+/// Bound on any single blueprint source file read for content slicing —
+/// docs sources are small; anything bigger is not a statement source.
+const SOURCE_FILE_MAX: u64 = 4 * 1024 * 1024;
+
+/// Safely open a blueprint source file for content slicing. The path — as the
+/// manifest provides it, machine-absolute or project-relative — must
+/// canonicalize to a **regular file under the canonicalized project root**
+/// and be at most [`SOURCE_FILE_MAX`] bytes; devices, FIFOs, out-of-project
+/// files (including via symlink or `..`), and oversized files are all
+/// rejected, so a hostile manifest cannot make the tool read or embed
+/// arbitrary host content. Returns the project-relative POSIX path and the
+/// file text.
+fn read_project_source(
+    root: Option<&Path>,
+    project: &Path,
+    raw: &Path,
+) -> Option<(String, String)> {
+    let root = root?;
+    let candidate = if raw.is_absolute() {
+        raw.to_path_buf()
+    } else {
+        project.join(raw)
+    };
+    let canon = std::fs::canonicalize(&candidate).ok()?;
+    let rel = canon.strip_prefix(root).ok()?.to_path_buf();
+    let meta = std::fs::metadata(&canon).ok()?;
+    if !meta.is_file() || meta.len() > SOURCE_FILE_MAX {
+        return None;
+    }
+    let text = std::fs::read_to_string(&canon).ok()?;
+    Some((path_to_posix(&rel), text))
+}
+
+/// Parse a line as the directive-block opener of `label`: a colon fence (≥ 3),
+/// a directive kind other than `proof`, and `label` as the **first** quoted
+/// string on the line — so `:::theorem "B" (uses := "A")` never matches node
+/// `A`, and a node's `:::proof` block is never taken as its statement.
+/// Returns the fence length.
+fn verso_opener(line: &str, label: &str) -> Option<usize> {
+    let trimmed = line.trim_start();
+    let colons = trimmed.chars().take_while(|&c| c == ':').count();
+    if colons < 3 {
+        return None;
+    }
+    let rest = &trimmed[colons..];
+    let kind = rest
+        .split(|c: char| c.is_whitespace() || c == '"')
+        .next()
+        .unwrap_or("");
+    if kind.eq_ignore_ascii_case("proof") {
+        return None;
+    }
+    let first_quoted = rest.split('"').nth(1)?;
+    (first_quoted == label).then_some(colons)
+}
+
+/// Find a node's directive block in a Verso docs source: the opener line
+/// through its matching closing fence (a bare line of the same colon count, so
+/// nested blocks with different fence lengths are skipped). Lines inside
+/// markdown code fences (``` … ```) are ignored in both searches, so directive
+/// examples in code blocks neither open nor close anything. The manifest's
+/// anchor line is a hint only (manifests carry zero-length ranges and go stale
+/// as docs are edited): when the hint is not the opener, the file is scanned
+/// and the block is used only if the match is **unique**. An unterminated
+/// block yields no span (an opener line alone is not statement content).
+/// Returns a 1-based inclusive span.
+fn find_verso_block(lines: &[&str], label: &str, hint: Option<usize>) -> Option<(usize, usize)> {
+    let mut in_code = false;
+    let mut masked = vec![false; lines.len()];
+    let mut openers = Vec::new();
+    for (i, line) in lines.iter().enumerate() {
+        if line.trim_start().starts_with("```") {
+            in_code = !in_code;
+            masked[i] = true;
+            continue;
+        }
+        masked[i] = in_code;
+        if !in_code && verso_opener(line, label).is_some() {
+            openers.push(i);
+        }
+    }
+    let start = match hint
+        .and_then(|h| h.checked_sub(1))
+        .filter(|h| openers.contains(h))
+    {
+        Some(hinted) => hinted,
+        None => match openers.as_slice() {
+            [only] => *only,
+            _ => return None,
+        },
+    };
+    let fence = ":".repeat(verso_opener(lines[start], label)?);
+    let end = (start + 1..lines.len()).find(|&i| !masked[i] && lines[i].trim() == fence)?;
+    Some((start + 1, end + 1))
+}
+
+/// Resolve Verso node anchors and content: validate + read each referenced
+/// source file once (see [`read_project_source`]), re-locate the node's
+/// directive block (see [`find_verso_block`]), slice it as statement content,
+/// and emit the project-relative path. Policy for the failure modes:
+///
+/// - file unreadable / outside the project: keep the anchor only if the
+///   manifest's own path was already relative and escape-free (a portable
+///   claim); otherwise drop it (warned once, aggregated);
+/// - block not found / ambiguous / unterminated: keep the file pointer, drop
+///   the line claim (it is demonstrably not the declaration), attach no
+///   content — a stale line must not become mislabeled statement text;
+/// - block found away from the manifest's line: re-anchor (noted once,
+///   aggregated — the manifest predates local edits).
+fn finalize_verso_sources(model: &mut BlueprintModel, project: &Path) {
+    let root = std::fs::canonicalize(project).ok();
+    let mut cache: HashMap<String, Option<(String, Vec<String>)>> = HashMap::new();
+    let mut dropped = 0usize;
+    let mut reanchored = 0usize;
+    for node in &mut model.nodes {
+        let Some(raw) = node.source_path.take() else {
+            continue;
+        };
+        let entry = cache.entry(raw.clone()).or_insert_with(|| {
+            read_project_source(root.as_deref(), project, Path::new(&raw))
+                .map(|(rel, text)| (rel, text.lines().map(str::to_string).collect()))
+        });
+        let Some((rel, lines)) = entry else {
+            let raw_path = Path::new(&raw);
+            if raw_path.is_absolute() || escapes_base(raw_path) {
+                node.source_lines = None;
+                dropped += 1;
+            } else {
+                node.source_path = Some(path_to_posix(raw_path));
+            }
+            continue;
+        };
+        node.source_path = Some(rel.clone());
+        let line_refs: Vec<&str> = lines.iter().map(String::as_str).collect();
+        let hint = node.source_lines.map(|(s, _)| s as usize);
+        match find_verso_block(&line_refs, &node.label, hint) {
+            Some((start, end)) => {
+                if hint != Some(start) {
+                    reanchored += 1;
+                }
+                node.source_lines = Some((start as u32, end as u32));
+                let span = line_refs[start - 1..end].join("\n");
+                let span = span.trim();
+                if !span.is_empty() {
+                    node.statement_text = Some(cap_statement(span));
+                    node.statement_format = Some("verso".to_string());
+                }
+            }
+            None => {
+                node.source_lines = None;
+            }
+        }
+    }
+    if reanchored > 0 {
+        eprintln!(
+            "note: re-anchored {reanchored} node(s) whose Verso manifest line was stale \
+             (docs edited since the last render?)"
+        );
+    }
+    if dropped > 0 {
+        eprintln!(
+            "warning: {dropped} node anchor(s) in the Verso manifest do not resolve under \
+             the project root (manifest rendered elsewhere?); anchors dropped"
+        );
+    }
 }
 
 /// Sanitize a provenance field for use in a filename, mirroring
@@ -1302,5 +1542,80 @@ mod tests {
         let source = select_source(&provenance, Some("chosen"), Some("9")).unwrap();
         assert_eq!(source.package, "chosen");
         assert_eq!(source.package_version, "9");
+    }
+
+    #[test]
+    fn verso_block_found_via_hint_scan_and_fence_matching() {
+        let text = "\
+prose above
+::::definition \"outer\" (parent := \"p\")
+outer statement
+:::lemma \"inner\"
+inner statement
+:::
+more outer
+::::
+prose below";
+        let lines: Vec<&str> = text.lines().collect();
+        // Correct hint: block spans opener to the matching 4-colon fence,
+        // skipping the inner 3-colon block's closer.
+        assert_eq!(find_verso_block(&lines, "outer", Some(2)), Some((2, 8)));
+        // Stale hint pointing at prose: full-file scan recovers the block.
+        assert_eq!(find_verso_block(&lines, "outer", Some(1)), Some((2, 8)));
+        assert_eq!(find_verso_block(&lines, "inner", None), Some((4, 6)));
+        // Unknown label: no block.
+        assert_eq!(find_verso_block(&lines, "missing", Some(3)), None);
+        // Unterminated block: an opener alone is not statement content.
+        let open_only: Vec<&str> = ["::: definition \"solo\"", "body"].to_vec();
+        assert_eq!(find_verso_block(&open_only, "solo", None), None);
+    }
+
+    #[test]
+    fn verso_opener_rejects_lookalikes() {
+        // Another node's opener that merely *uses* the label never matches.
+        assert_eq!(verso_opener(":::theorem \"B\" (uses := \"A\")", "A"), None);
+        assert!(verso_opener(":::theorem \"B\" (uses := \"A\")", "B").is_some());
+        // A node's proof block is not its statement.
+        assert_eq!(verso_opener(":::proof \"A\"", "A"), None);
+        // Fence shorter than 3 is prose.
+        assert_eq!(verso_opener(":: definition \"A\"", "A"), None);
+    }
+
+    #[test]
+    fn verso_block_ignores_code_fences_and_ambiguity() {
+        let text = "\
+```
+:::definition \"a\"
+looks real but is an example
+:::
+```
+:::definition \"a\"
+the real statement
+:::";
+        let lines: Vec<&str> = text.lines().collect();
+        // The fenced example neither opens nor closes; the real block wins.
+        assert_eq!(find_verso_block(&lines, "a", None), Some((6, 8)));
+
+        let dup = "\
+:::definition \"d\"
+first
+:::
+:::definition \"d\"
+second
+:::";
+        let dup_lines: Vec<&str> = dup.lines().collect();
+        // Ambiguous without a verified hint: refuse to guess.
+        assert_eq!(find_verso_block(&dup_lines, "d", None), None);
+        // A hint pointing at one of the candidates disambiguates.
+        assert_eq!(find_verso_block(&dup_lines, "d", Some(4)), Some((4, 6)));
+    }
+
+    #[test]
+    fn cap_statement_respects_char_boundaries() {
+        assert_eq!(cap_statement("short"), "short");
+        let long = "µ".repeat(STATEMENT_TEXT_MAX); // 2 bytes per char
+        let capped = cap_statement(&long);
+        assert!(capped.len() <= STATEMENT_TEXT_MAX);
+        assert!(capped.chars().all(|c| c == 'µ'));
     }
 }

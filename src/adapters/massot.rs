@@ -51,6 +51,16 @@ struct EmitNode {
     issue: Option<String>,
     #[serde(default)]
     chapter: Option<String>,
+    /// Anchor of the node's `\label{...}` in the blueprint sources, relative
+    /// to the `web.tex` directory (the emitter's cwd); rebased onto the
+    /// project root by the caller.
+    #[serde(default)]
+    source_path: Option<String>,
+    #[serde(default)]
+    source_line: Option<u32>,
+    /// plasTeX's reconstructed LaTeX of the environment.
+    #[serde(default)]
+    source: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -111,6 +121,12 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
     // adapter), so a repeated label in the emitter output is not double-counted.
     let mut index_by_label: HashMap<String, usize> = HashMap::new();
     for n in &out.nodes {
+        let statement_text = n
+            .source
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
         let built = BlueprintNode {
             label: n.label.clone(),
             kind: Some(NodeKind::from_source(&n.kind)),
@@ -133,6 +149,17 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
                 .map(str::trim)
                 .filter(|c| !c.is_empty())
                 .map(str::to_string),
+            // Emitted relative to the web.tex directory; the CLI rebases it
+            // onto the project root after the model is built.
+            source_path: n
+                .source_path
+                .as_deref()
+                .map(str::trim)
+                .filter(|p| !p.is_empty())
+                .map(str::to_string),
+            source_lines: n.source_line.map(|l| (l, l)),
+            statement_text: statement_text.clone(),
+            statement_format: statement_text.is_some().then(|| "latex".to_string()),
             title: None,
             discussion: n.issue.clone(),
             status_source: StatusSource::Declared,
@@ -197,7 +224,8 @@ mod tests {
             {"label":"def:foo","kind":"definition","lean_decls":["Foo.foo"],
              "leanok":true,"mathlibok":false,"notready":false,"can_state":true,
              "can_prove":false,"proved":false,"fully_proved":true,"issue":null,
-             "chapter":"Selected laws"},
+             "chapter":"Selected laws","source_path":"chapter/laws.tex","source_line":12,
+             "source":"\\begin{definition}\\label{def:foo} A foo. \\end{definition}"},
             {"label":"thm:bar","kind":"theorem","lean_decls":["Foo.bar"],
              "leanok":false,"mathlibok":false,"notready":false,"can_state":true,
              "can_prove":true,"proved":true,"fully_proved":true,"issue":"42"},
@@ -217,6 +245,16 @@ mod tests {
         assert_eq!(foo.statement_status, StatementStatus::Formalized);
         assert_eq!(foo.lean_decls, vec!["Foo.foo"]);
         assert_eq!(foo.chapter.as_deref(), Some("Selected laws"));
+        // Anchor as emitted (web.tex-relative; the CLI rebases it) and the
+        // reconstructed environment LaTeX as statement content.
+        assert_eq!(foo.source_path.as_deref(), Some("chapter/laws.tex"));
+        assert_eq!(foo.source_lines, Some((12, 12)));
+        assert!(foo
+            .statement_text
+            .as_deref()
+            .unwrap()
+            .starts_with("\\begin{definition}"));
+        assert_eq!(foo.statement_format.as_deref(), Some("latex"));
 
         let qux = model.nodes.iter().find(|n| n.label == "thm:qux").unwrap();
         assert_eq!(qux.chapter, None);

@@ -51,6 +51,10 @@ fn node(label: &str, decls: &[&str], kind: NodeKind, proof: ProofStatus) -> Blue
         chapter: None,
         title: None,
         discussion: None,
+        source_path: None,
+        source_lines: None,
+        statement_text: None,
+        statement_format: None,
         status_source: StatusSource::CodeDerived,
     }
 }

@@ -43,6 +43,48 @@ def _chapter_title(node):
     return title
 
 
+def _label_anchors():
+    """Map every `\\label{...}` in the blueprint source tree (cwd) to its
+    `(path, 1-based line)` — node ids are exactly these labels, and plasTeX
+    does not retain per-environment positions, so the anchor is recovered from
+    the source text. First occurrence wins (duplicate labels are a blueprint
+    bug plasTeX warns about separately)."""
+    import os
+    import re
+
+    anchors = {}
+    pattern = re.compile(r"\\label\s*\{([^}]*)\}")
+    # An unescaped % starts a TeX comment: strip it so `% \label{x}` in a
+    # comment can never beat the real declaration site.
+    comment = re.compile(r"(?<!\\)%.*")
+    for root, dirs, files in os.walk("."):
+        dirs.sort()  # deterministic traversal, so first-wins is stable
+        for name in sorted(files):
+            if not name.endswith(".tex"):
+                continue
+            path = os.path.normpath(os.path.join(root, name))
+            try:
+                with open(path, encoding="utf-8", errors="replace") as fh:
+                    for lineno, line in enumerate(fh, start=1):
+                        for match in pattern.finditer(comment.sub("", line)):
+                            anchors.setdefault(match.group(1), (path, lineno))
+            except OSError:
+                continue
+    return anchors
+
+
+def _statement_source(node, limit=10000):
+    """plasTeX's reconstructed LaTeX of the environment (statement content),
+    capped defensively."""
+    try:
+        text = node.source
+    except Exception:
+        return None
+    if not isinstance(text, str) or not text.strip():
+        return None
+    return text.strip()[:limit]
+
+
 def extract(path):
     import os
 
@@ -65,6 +107,7 @@ def extract(path):
     document = tex.ownerDocument
 
     graphs = document.userdata.get("dep_graph", {}).get("graphs", {})
+    anchors = _label_anchors()
     nodes = {}
     edges = []
     for _section, graph in graphs.items():
@@ -72,6 +115,7 @@ def extract(path):
             label = node.id
             if label in nodes:
                 continue
+            anchor = anchors.get(label)
             data = node.userdata
             nodes[label] = {
                 "label": label,
@@ -86,6 +130,9 @@ def extract(path):
                 "fully_proved": bool(data.get("fully_proved", False)),
                 "issue": data.get("issue"),
                 "chapter": _chapter_title(node),
+                "source_path": anchor[0] if anchor else None,
+                "source_line": anchor[1] if anchor else None,
+                "source": _statement_source(node),
             }
         for s, t in graph.edges:
             edges.append({"source": s.id, "target": t.id, "axis": "statement"})

@@ -111,6 +111,47 @@ struct Preview {
     key: String,
     #[serde(rename = "codeData", default)]
     code_data: Option<CodeData>,
+    /// `"statement"` or `"proof"` — a node's `previewKey` points at its
+    /// statement-facet block preview, whose `sourceLocation` anchors the node's
+    /// declaration in the Verso docs sources.
+    #[serde(default)]
+    facet: Option<String>,
+    #[serde(rename = "sourceLocation", default)]
+    source_location: Option<SourceLocation>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SourceLocation {
+    #[serde(default)]
+    ok: Option<bool>,
+    #[serde(default)]
+    location: Option<Location>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Location {
+    /// Absolute path on the rendering machine; the CLI relativizes it against
+    /// the project root after the model is built.
+    #[serde(default)]
+    path: Option<String>,
+    #[serde(default)]
+    range: Option<Range>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Range {
+    #[serde(default)]
+    start: Option<Position>,
+    #[serde(default)]
+    end: Option<Position>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Position {
+    /// 0-based, LSP-style (the manifest's `#L58` href corresponds to
+    /// `line: 57`).
+    #[serde(default)]
+    line: Option<u32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -275,6 +316,30 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
         }
     }
 
+    // Index preview key -> declaration anchor (statement facet only: that is
+    // the preview a node's `previewKey` names, and the span VeriLib displays).
+    // Lines arrive 0-based (LSP-style) and leave 1-based inclusive.
+    let mut anchor_by_preview: HashMap<String, (String, u32, u32)> = HashMap::new();
+    for preview in &manifest.previews {
+        if preview.facet.as_deref() != Some("statement") {
+            continue;
+        }
+        let Some(loc) = preview
+            .source_location
+            .as_ref()
+            .filter(|s| s.ok == Some(true))
+            .and_then(|s| s.location.as_ref())
+        else {
+            continue;
+        };
+        let (Some(path), Some(range)) = (loc.path.as_ref(), loc.range.as_ref()) else {
+            continue;
+        };
+        let start = range.start.as_ref().and_then(|p| p.line).unwrap_or(0) + 1;
+        let end = (range.end.as_ref().and_then(|p| p.line).unwrap_or(start - 1) + 1).max(start);
+        anchor_by_preview.insert(preview.key.clone(), (path.clone(), start, end));
+    }
+
     let mut model = BlueprintModel::default();
     // A label can appear in multiple graphs within one manifest (e.g. statement
     // and proof sub-graphs). De-duplicate within the manifest so a node is not
@@ -288,6 +353,13 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
                 .and_then(|k| decls_by_preview.get(k))
                 .cloned()
                 .unwrap_or_default();
+            // Machine-absolute at this point; the CLI relativizes the path and
+            // reads the statement span after the model is built (the manifest
+            // itself carries no rendered content, only the anchor).
+            let anchor = node
+                .preview_key
+                .as_ref()
+                .and_then(|k| anchor_by_preview.get(k));
 
             let built = BlueprintNode {
                 label: node.label.clone(),
@@ -321,6 +393,12 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
                     .or_else(|| chapter.map(str::to_string)),
                 title: node.title.clone(),
                 discussion: None,
+                source_path: anchor.map(|(p, _, _)| p.clone()),
+                source_lines: anchor.map(|&(_, s, e)| (s, e)),
+                // Filled by the CLI from the anchored span; the manifest ships
+                // no rendered content.
+                statement_text: None,
+                statement_format: None,
                 status_source: StatusSource::CodeDerived,
             };
 
@@ -483,8 +561,12 @@ mod tests {
             ]
           }],
           "previews": [
-            {"key":"a--statement","codeData":{"external":{"decls":[{"canonical":"Foo.a"}]}}},
-            {"key":"b--statement","codeData":{"external":{"decls":[{"canonical":"Foo.b"}]}}}
+            {"key":"a--statement","facet":"statement","codeData":{"external":{"decls":[{"canonical":"Foo.a"}]}},
+             "sourceLocation":{"ok":true,"location":{"path":"/render/box/docs/Chap.lean",
+               "range":{"start":{"line":57},"end":{"line":67}}}}},
+            {"key":"b--statement","facet":"proof","codeData":{"external":{"decls":[{"canonical":"Foo.b"}]}},
+             "sourceLocation":{"ok":true,"location":{"path":"/render/box/docs/Chap.lean",
+               "range":{"start":{"line":90},"end":{"line":99}}}}}
           ]
         }"#;
         let model = parse_manifest(text, Some("Chap-One")).unwrap();
@@ -494,9 +576,17 @@ mod tests {
         assert_eq!(a.lean_decls, vec!["Foo.a"]);
         assert_eq!(a.statement_status, StatementStatus::Formalized);
         assert_eq!(a.proof_status, ProofStatus::FullyProved);
+        // Statement-facet anchor: machine-absolute path kept for the CLI to
+        // resolve, 0-based lines converted to 1-based inclusive.
+        assert_eq!(a.source_path.as_deref(), Some("/render/box/docs/Chap.lean"));
+        assert_eq!(a.source_lines, Some((58, 68)));
+        assert_eq!(a.statement_text, None);
         let b = model.nodes.iter().find(|n| n.label == "b").unwrap();
         assert_eq!(b.statement_uses, vec!["a"]);
         assert_eq!(b.statement_status, StatementStatus::Ready);
+        // A proof-facet preview is not a statement anchor.
+        assert_eq!(b.source_path, None);
+        assert_eq!(b.source_lines, None);
     }
 
     #[test]

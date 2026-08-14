@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-14
+
+### Added
+- **Node source anchors + statement content** (3.x additive; node atoms only; both best-effort): `blueprint-source-path` + `blueprint-source-lines` anchor the node's declaration site (Verso: from the statement-facet block preview's `sourceLocation`, treated as a hint — the local directive block is re-located and verified, since manifests carry zero-length ranges and go stale; Massot: the `\label{<id>}` site found by scanning the blueprint LaTeX, comment-aware and deterministic), and `blueprint-statement-text` + `blueprint-statement-format` carry the node's statement as authored (Verso: the verified block span sliced from the local docs source, format `verso`; Massot: plasTeX's reconstructed environment LaTeX, format `latex`; capped at 10,000 bytes regardless of anchor availability). Carries displayable node content for VeriLib (untrusted source markup — renderers must escape/sandbox) plus click-through anchors. Content slicing only reads regular files resolving under the project root, size-capped — hostile manifest paths (devices, symlink/`..` escapes, oversized files) contribute nothing. Enriched real Lean atoms are untouched.
+
 ## [0.7.0] - 2026-08-14
 
 ### Changed

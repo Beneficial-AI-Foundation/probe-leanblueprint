@@ -15,7 +15,8 @@ use probe::types::{Atom, CodeText};
 use serde_json::Value;
 
 use crate::model::{
-    BlueprintExtensions, BlueprintModel, BlueprintNode, NodeKind, ProofStatus, StatementStatus,
+    BlueprintExtensions, BlueprintModel, BlueprintNode, NodeKind, ProofStatus, SourceLines,
+    StatementStatus,
 };
 
 /// Root folder of the virtual location hierarchy for node atoms: a node atom
@@ -189,6 +190,14 @@ fn make_extensions(
         upstream_decls,
         shadow,
         node_class: node_class.map(str::to_string),
+        // Source anchor and statement content are node-atom-only fields:
+        // enriched real atoms have real code behind code-path/code-text, so
+        // the shared extension set leaves these unset and synthetic_atom fills
+        // them from the node.
+        source_path: None,
+        source_lines: None,
+        statement_text: None,
+        statement_format: None,
     }
 }
 
@@ -216,6 +225,10 @@ const BLUEPRINT_KEYS: &[&str] = &[
     "blueprint-upstream-decls",
     "blueprint-shadow",
     "blueprint-node-class",
+    "blueprint-source-path",
+    "blueprint-source-lines",
+    "blueprint-statement-text",
+    "blueprint-statement-format",
 ];
 
 fn insert_extensions(atom: &mut Atom, ext: &BlueprintExtensions) {
@@ -263,6 +276,23 @@ fn synthetic_atom(node: &BlueprintNode, ext: &BlueprintExtensions) -> Atom {
         code_module.push('.');
         code_module.push_str(&group);
     }
+    let mut node_ext = ext.clone();
+    node_ext.source_path = node.source_path.clone();
+    node_ext.source_lines = node
+        .source_lines
+        .map(|(lines_start, lines_end)| SourceLines {
+            lines_start,
+            lines_end,
+        });
+    node_ext.statement_text = node.statement_text.clone();
+    // The format tag rides with the text: content without a declared markup is
+    // ambiguous to render, and a format without content is noise.
+    node_ext.statement_format = node
+        .statement_text
+        .is_some()
+        .then(|| node.statement_format.clone())
+        .flatten();
+    let ext = &node_ext;
     let mut atom = Atom {
         display_name,
         dependencies: Default::default(),
@@ -1071,6 +1101,10 @@ mod tests {
             chapter: None,
             title: None,
             discussion: None,
+            source_path: None,
+            source_lines: None,
+            statement_text: None,
+            statement_format: None,
             status_source: StatusSource::CodeDerived,
         }
     }
@@ -2238,6 +2272,59 @@ mod tests {
         let degenerate = &atoms["probe:blueprint:thm:degenerate"];
         assert_eq!(degenerate.code_path, "blueprint/ungrouped");
         assert_eq!(degenerate.code_module, "Blueprint.ungrouped");
+    }
+
+    #[test]
+    fn node_atom_carries_content_and_anchor_real_atom_does_not() {
+        let mut atoms = BTreeMap::new();
+        atoms.insert(
+            "probe:Foo.a".to_string(),
+            atom_with_status(Some("verified")),
+        );
+        let mut model = BlueprintModel::default();
+        let mut n = node(
+            "thm:anchored",
+            &["Foo.a"],
+            StatementStatus::Formalized,
+            ProofStatus::FullyProved,
+        );
+        n.source_path = Some("blueprint/src/chapter/laws.tex".to_string());
+        n.source_lines = Some((12, 12));
+        n.statement_text = Some("\\begin{theorem} x \\end{theorem}".to_string());
+        n.statement_format = Some("latex".to_string());
+        model.nodes.push(n);
+
+        enrich(&mut atoms, &model);
+
+        let node_atom = &atoms["probe:blueprint:thm:anchored"];
+        assert_eq!(
+            node_atom.extensions["blueprint-source-path"],
+            serde_json::json!("blueprint/src/chapter/laws.tex")
+        );
+        assert_eq!(
+            node_atom.extensions["blueprint-source-lines"],
+            serde_json::json!({"lines-start": 12, "lines-end": 12})
+        );
+        assert_eq!(
+            node_atom.extensions["blueprint-statement-format"],
+            serde_json::json!("latex")
+        );
+        assert!(node_atom
+            .extensions
+            .contains_key("blueprint-statement-text"));
+
+        // The enriched real atom gets blueprint context but never the node's
+        // content/anchor fields.
+        let real = &atoms["probe:Foo.a"];
+        assert!(real.extensions.contains_key("blueprint-label"));
+        for key in [
+            "blueprint-source-path",
+            "blueprint-source-lines",
+            "blueprint-statement-text",
+            "blueprint-statement-format",
+        ] {
+            assert!(!real.extensions.contains_key(key), "real atom leaked {key}");
+        }
     }
 
     #[test]
