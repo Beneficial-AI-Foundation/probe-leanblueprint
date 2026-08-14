@@ -510,7 +510,36 @@ Added (flattened) to enriched and synthetic atoms:
 
 Node atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint/<chapter-slug>"` (the node's virtual location — one `blueprint/` tree, one folder per chapter; `blueprint/ungrouped` when the blueprint gives no chapter or its slug is empty; always non-empty, so P3 stub detection never fires), `code-module` = `"Blueprint.<chapter-slug>[.<group-slug>]"` (the dotted-module analogue; the group level appears exactly when the node has a group whose slug is non-empty — a group literally named `ungrouped` keeps its level), `code-text` = `{0,0}`, and empty `dependencies` (except a **bound** node atom, which carries its present bindings as dependencies — see [Node atoms](#node-atoms)).
 
-Slug rules: alphanumerics (unicode included), `_` and `-` pass through; every other character collapses into a single `-`; components are capped (64 bytes) and never empty. A slug is a **display grouping, not an identity**: distinct raw names may share a slug (`A B` and `A.B` both give `A-B`), and the values preserved in `blueprint-chapter` / `blueprint-group` are the names **as the adapter provides them** — the Massot emitter forwards the LaTeX sectioning title, while a Verso manifest carries its own href-derived slug (a unicode chapter like `µCMZ` may already arrive flattened by Verso). Consumers needing exact identities must key on those extension fields, not on the location slugs. In CLI output they carry a **derived** `verification-status` (plus `trusted-reason` where applicable) computed per [Semantics → Derived verification-status](#derived-verification-status-node-atoms) — unlike a real atom's machine status, it reflects binding aggregation and blueprint-side evidence, never a fresh local probe-lean check.
+Slug rules: alphanumerics (unicode included), `_` and `-` pass through; every other character collapses into a single `-`; components are capped (64 bytes) and never empty. A slug is a **display grouping, not an identity**: distinct raw names may share a slug (`A B` and `A.B` both give `A-B`), and the values preserved in `blueprint-chapter` / `blueprint-group` are the names **as the adapter provides them** — the Massot emitter forwards the LaTeX sectioning title, while a Verso manifest carries its own href-derived slug (a unicode chapter like `µCMZ` may already arrive flattened by Verso). Consumers needing exact identities must key on those extension fields, not on the location slugs.
+
+**Source anchor and statement content (node atoms only, ≥ 0.8.0, all additive and best-effort):**
+
+| Field | Meaning |
+| --- | --- |
+| `blueprint-source-path` | Repo-relative path of the node's declaration site — Verso: the statement-facet block preview's `sourceLocation` (relativized against the project root; anchors from a manifest rendered on another machine cannot be resolved and are dropped with a warning); Massot: the `\label{<id>}` site found by scanning the blueprint LaTeX sources |
+| `blueprint-source-lines` | `{lines-start, lines-end}`, 1-based inclusive, shaped like core `code-text`. Massot recovers a point anchor (start = end, the label's line) |
+| `blueprint-statement-text` | The node's statement content as authored — Verso: the anchored span sliced from the local docs source; Massot: plasTeX's reconstructed environment LaTeX. Capped at 10,000 bytes |
+| `blueprint-statement-format` | Markup of the text: `"verso"` or `"latex"`. Present exactly when the text is |
+
+These describe the node's own declaration, so they appear **only on node atoms** — an enriched real Lean atom's content is its code (`code-path` / `code-text`), never a blueprint statement. Anchors and content are independent halves: a node can carry content without an anchor (Massot label not found; out-of-tree blueprint sources) or an anchor without content (Verso span unreadable locally, block not found/ambiguous in an edited file). Consumers must treat each as optional.
+
+Safety and precision notes:
+
+- `blueprint-statement-text` is **untrusted source markup**, not sanitized
+  HTML: renderers must escape or sandbox it, and faithful rendering may
+  depend on project-local macros the extract does not carry.
+- Content is only ever sliced from **regular files that resolve under the
+  project root** (size-capped); paths that escape the project — including via
+  symlinks or `..` — never contribute content, and their anchors are dropped.
+- The Verso block finder is a syntax **heuristic** (directive opener whose
+  first quoted string is the label, statement kinds only, code fences
+  ignored, unique match required when the manifest's line is stale); a
+  refused match yields a path without lines rather than a guessed span.
+- `blueprint-source-path` is relative to the **extraction project root**. In
+  overlay-render setups (a docs repo rendering another repo's code, e.g. the
+  `verso-carleson` example) that root is not the repository named in the
+  envelope's `source` — consumers building links across repositories need
+  provenance this schema does not yet carry (tracked follow-up). In CLI output they carry a **derived** `verification-status` (plus `trusted-reason` where applicable) computed per [Semantics → Derived verification-status](#derived-verification-status-node-atoms) — unlike a real atom's machine status, it reflects binding aggregation and blueprint-side evidence, never a fresh local probe-lean check.
 
 #### Derived core fields on node atoms
 

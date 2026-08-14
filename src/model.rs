@@ -152,6 +152,18 @@ pub struct BlueprintNode {
     pub title: Option<String>,
     /// GitHub discussion issue number (`\discussion`), if any.
     pub discussion: Option<String>,
+    /// Repo-relative path of the node's declaration site, if the adapter could
+    /// recover one (Verso: the block preview's `sourceLocation`; Massot: the
+    /// `\label{<id>}` site in the blueprint LaTeX).
+    pub source_path: Option<String>,
+    /// 1-based inclusive line span of the declaration site (Massot recovers a
+    /// point anchor: start == end).
+    pub source_lines: Option<(u32, u32)>,
+    /// The node's statement content as authored (Verso: the anchored span of
+    /// the docs source; Massot: plasTeX's reconstructed environment LaTeX).
+    pub statement_text: Option<String>,
+    /// Markup of `statement_text`: `"verso"` or `"latex"`.
+    pub statement_format: Option<String>,
     pub status_source: StatusSource,
 }
 
@@ -266,6 +278,18 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
             existing.discussion = incoming.discussion;
         }
     }
+    // Anchor (path + lines) and content (text + format) are independent
+    // halves (see docs/SCHEMA.md): adopt each pair first-wins on its own, so
+    // a copy carrying only content never blocks a later copy's anchor or
+    // vice versa. Within a pair the fields travel together.
+    if existing.source_path.is_none() {
+        existing.source_path = incoming.source_path;
+        existing.source_lines = incoming.source_lines;
+    }
+    if existing.statement_text.is_none() {
+        existing.statement_text = incoming.statement_text;
+        existing.statement_format = incoming.statement_format;
+    }
 }
 
 /// Append items from `src` to `dst` that are not already present, preserving
@@ -298,6 +322,10 @@ mod tests {
             chapter: None,
             title: None,
             discussion: None,
+            source_path: None,
+            source_lines: None,
+            statement_text: None,
+            statement_format: None,
             status_source: StatusSource::CodeDerived,
         }
     }
@@ -487,4 +515,40 @@ pub struct BlueprintExtensions {
         skip_serializing_if = "Option::is_none"
     )]
     pub node_class: Option<String>,
+    /// Node atoms only (see `docs/SCHEMA.md` §Node atoms): repo-relative path
+    /// of the node's declaration site.
+    #[serde(
+        rename = "blueprint-source-path",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub source_path: Option<String>,
+    /// Node atoms only: 1-based inclusive line span at `blueprint-source-path`.
+    #[serde(
+        rename = "blueprint-source-lines",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub source_lines: Option<SourceLines>,
+    /// Node atoms only: the node's statement content as authored.
+    #[serde(
+        rename = "blueprint-statement-text",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub statement_text: Option<String>,
+    /// Node atoms only: markup of `blueprint-statement-text` (`"verso"` /
+    /// `"latex"`). Present exactly when the text is.
+    #[serde(
+        rename = "blueprint-statement-format",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub statement_format: Option<String>,
+}
+
+/// Line span of a node's declaration site, shaped like the core `code-text`
+/// object for consumer familiarity (1-based, inclusive).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SourceLines {
+    #[serde(rename = "lines-start")]
+    pub lines_start: u32,
+    #[serde(rename = "lines-end")]
+    pub lines_end: u32,
 }
