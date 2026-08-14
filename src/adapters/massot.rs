@@ -49,6 +49,8 @@ struct EmitNode {
     fully_proved: bool,
     #[serde(default)]
     issue: Option<String>,
+    #[serde(default)]
+    chapter: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -125,7 +127,12 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
             statement_uses: stmt_uses.get(&n.label).cloned().unwrap_or_default(),
             proof_uses: proof_uses.get(&n.label).cloned().unwrap_or_default(),
             group: None,
-            chapter: None,
+            chapter: n
+                .chapter
+                .as_deref()
+                .map(str::trim)
+                .filter(|c| !c.is_empty())
+                .map(str::to_string),
             title: None,
             discussion: n.issue.clone(),
             status_source: StatusSource::Declared,
@@ -189,7 +196,8 @@ mod tests {
           "nodes": [
             {"label":"def:foo","kind":"definition","lean_decls":["Foo.foo"],
              "leanok":true,"mathlibok":false,"notready":false,"can_state":true,
-             "can_prove":false,"proved":false,"fully_proved":true,"issue":null},
+             "can_prove":false,"proved":false,"fully_proved":true,"issue":null,
+             "chapter":"Selected laws"},
             {"label":"thm:bar","kind":"theorem","lean_decls":["Foo.bar"],
              "leanok":false,"mathlibok":false,"notready":false,"can_state":true,
              "can_prove":true,"proved":true,"fully_proved":true,"issue":"42"},
@@ -208,6 +216,10 @@ mod tests {
         let foo = model.nodes.iter().find(|n| n.label == "def:foo").unwrap();
         assert_eq!(foo.statement_status, StatementStatus::Formalized);
         assert_eq!(foo.lean_decls, vec!["Foo.foo"]);
+        assert_eq!(foo.chapter.as_deref(), Some("Selected laws"));
+
+        let qux = model.nodes.iter().find(|n| n.label == "thm:qux").unwrap();
+        assert_eq!(qux.chapter, None);
 
         let bar = model.nodes.iter().find(|n| n.label == "thm:bar").unwrap();
         assert_eq!(bar.proof_status, ProofStatus::FullyProved);

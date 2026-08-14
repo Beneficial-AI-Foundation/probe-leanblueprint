@@ -391,16 +391,16 @@ fields, gains `blueprint-*`):
 ```
 
 **Planned-only node atom** (a blueprint node with no Lean binding — the
-roadmap layer). `language: "blueprint"` and a non-empty `code-path` marker so P3
-stub detection does not misclassify it:
+roadmap layer). `language: "blueprint"`, filed under its chapter's virtual
+folder (`code-path` non-empty, so P3 stub detection does not misclassify it):
 
 ```json
 {
   "probe:blueprint:aead_aes_gcm_correctness": {
     "display-name": "aead_aes_gcm_correctness",
     "dependencies": [],
-    "code-module": "aead_aes_gcm",
-    "code-path": "blueprint",
+    "code-module": "Blueprint.Authenticated-Encryption-with-Associated-Data.aead_aes_gcm",
+    "code-path": "blueprint/Authenticated-Encryption-with-Associated-Data",
     "code-text": { "lines-start": 0, "lines-end": 0 },
     "kind": "blueprint-theorem",
     "language": "blueprint",
@@ -436,8 +436,8 @@ whole binding):
   "probe:blueprint:aead": {
     "display-name": "aead",
     "dependencies": ["probe:AEADScheme"],
-    "code-module": "aead",
-    "code-path": "blueprint",
+    "code-module": "Blueprint.Authenticated-Encryption-with-Associated-Data",
+    "code-path": "blueprint/Authenticated-Encryption-with-Associated-Data",
     "code-text": { "lines-start": 0, "lines-end": 0 },
     "kind": "blueprint-definition",
     "language": "blueprint",
@@ -461,7 +461,9 @@ from the atom base — flagged rather than fabricating a code atom):
 {
   "probe:blueprint:ml_kem_scheme": {
     "display-name": "ml_kem_scheme",
-    "code-path": "blueprint",
+    "code-module": "Blueprint.Key-Encapsulation-Mechanism",
+    "code-path": "blueprint/Key-Encapsulation-Mechanism",
+    "blueprint-chapter": "Key-Encapsulation-Mechanism",
     "kind": "blueprint-definition",
     "language": "blueprint",
     "blueprint-label": "ml_kem_scheme",
@@ -506,7 +508,9 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-shadow` | bool | no | `true` on the node atom of a bound node that lost a same-decl collision (its every real atom was claimed by a later node, so the node atom is its only label-bearing record). Count a shadow node as bound |
 | `blueprint-node-class` | string | no | Node-atom class discriminator: `"bound"`, `"planned-only"`, or `"decl-missing"`. Present on every node atom, never on an enriched real atom (whose bytes are frozen). Additive (see Schema Evolution) |
 
-Node atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint"`, `code-text` = `{0,0}`, empty `dependencies` (except a **bound** node atom, which carries its present bindings as dependencies — see [Node atoms](#node-atoms)), and `code-module` set to the node's group (may be empty). In CLI output they carry a **derived** `verification-status` (plus `trusted-reason` where applicable) computed per [Semantics → Derived verification-status](#derived-verification-status-node-atoms) — unlike a real atom's machine status, it reflects binding aggregation and blueprint-side evidence, never a fresh local probe-lean check.
+Node atoms (`language: "blueprint"`) also carry: `kind` = `"blueprint-<definition|theorem>"`, `code-path` = `"blueprint/<chapter-slug>"` (the node's virtual location — one `blueprint/` tree, one folder per chapter; `blueprint/ungrouped` when the blueprint gives no chapter or its slug is empty; always non-empty, so P3 stub detection never fires), `code-module` = `"Blueprint.<chapter-slug>[.<group-slug>]"` (the dotted-module analogue; the group level appears exactly when the node has a group whose slug is non-empty — a group literally named `ungrouped` keeps its level), `code-text` = `{0,0}`, and empty `dependencies` (except a **bound** node atom, which carries its present bindings as dependencies — see [Node atoms](#node-atoms)).
+
+Slug rules: alphanumerics (unicode included), `_` and `-` pass through; every other character collapses into a single `-`; components are capped (64 bytes) and never empty. A slug is a **display grouping, not an identity**: distinct raw names may share a slug (`A B` and `A.B` both give `A-B`), and the values preserved in `blueprint-chapter` / `blueprint-group` are the names **as the adapter provides them** — the Massot emitter forwards the LaTeX sectioning title, while a Verso manifest carries its own href-derived slug (a unicode chapter like `µCMZ` may already arrive flattened by Verso). Consumers needing exact identities must key on those extension fields, not on the location slugs. In CLI output they carry a **derived** `verification-status` (plus `trusted-reason` where applicable) computed per [Semantics → Derived verification-status](#derived-verification-status-node-atoms) — unlike a real atom's machine status, it reflects binding aggregation and blueprint-side evidence, never a fresh local probe-lean check.
 
 #### Derived core fields on node atoms
 

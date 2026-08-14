@@ -23,6 +23,26 @@ def _item_kind(node):
     return item_kind(node)
 
 
+def _chapter_title(node):
+    """Title of the outermost sectioning ancestor (chapter, or the top-level
+    division the document actually uses), or None. Graph nodes are plasTeX DOM
+    elements, so the paper position is recovered by walking `parentNode` and
+    keeping the last ancestor whose `level` is a real sectioning level
+    (plasTeX: part=-1 ... subsubsection=3; `document` is a huge negative
+    sentinel and paragraphs sit at 100+)."""
+    title = None
+    current = getattr(node, "parentNode", None)
+    while current is not None:
+        level = getattr(current, "level", None)
+        if isinstance(level, int) and -2 <= level <= 3:
+            candidate = getattr(current, "title", None)
+            text = getattr(candidate, "textContent", candidate)
+            if isinstance(text, str) and text.strip():
+                title = text.strip()
+        current = getattr(current, "parentNode", None)
+    return title
+
+
 def extract(path):
     import os
 
@@ -65,6 +85,7 @@ def extract(path):
                 "proved": bool(data.get("proved", False)),
                 "fully_proved": bool(data.get("fully_proved", False)),
                 "issue": data.get("issue"),
+                "chapter": _chapter_title(node),
             }
         for s, t in graph.edges:
             edges.append({"source": s.id, "target": t.id, "axis": "statement"})

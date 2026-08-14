@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-14
+
+### Changed
+- **Node atoms gained real virtual locations** (3.x value change on existing fields, no schema bump): `code-path` is now `blueprint/<chapter-slug>` (was the constant `"blueprint"` marker) and `code-module` is `Blueprint.<chapter-slug>[.<group-slug>]` (was the bare Verso group, empty for most Massot nodes) — so frontends that build folder trees from atom locations can file every node atom under one `blueprint/` tree with one folder per chapter. `blueprint/ungrouped` collects nodes without a usable chapter. Slugs pass through alphanumerics (unicode included), `_` and `-`, collapse everything else into single `-`, and are capped at 64 bytes; they are a display grouping, not an identity — distinct names can share a slug, and exact values live in `blueprint-chapter` / `blueprint-group` as the adapter provides them (Verso: the manifest's href-derived slug; Massot: the LaTeX sectioning title). Consumers keying on the old constant `code-path == "blueprint"` should discriminate on `language == "blueprint"` instead (already the documented rule). Enriched real Lean atoms remain byte-identical.
+- **The Massot emitter now reports each node's chapter** (`scripts/blueprint_emit.py` walks the node's plasTeX sectioning ancestry and forwards the outermost division's title), so Massot projects get real chapter folders and a populated summary `by-chapter` instead of a single `ungrouped` bucket.
+- The summary's `by-chapter` grouping normalizes blank chapters to `ungrouped` (previously only a missing chapter fell back).
+- Committed example-template artifacts (`examples/verso-blueprint-project-template/`) regenerated — they now include node atoms, `totals.node-atoms`, and the new locations (they had predated 0.6.0's node atoms).
+
 ## [0.6.0] - 2026-08-12
 
 ### Added
