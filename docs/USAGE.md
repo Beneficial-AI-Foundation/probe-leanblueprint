@@ -19,6 +19,20 @@ sudo apt-get install graphviz libgraphviz-dev
 pip install -r requirements.txt   # plasTeX, plastexdepgraph, leanblueprint
 ```
 
+Without a repo checkout (e.g. provisioning a worker image around the released
+binary), the equivalent is `pip3 install leanblueprint`, which pulls the other
+two. Once the **default `python3`** can `import plasTeX, leanblueprint`, the
+`--python` flag is unnecessary — `extract` runs flag-free on both adapter
+families; `--python` exists only to point at a different interpreter (e.g. a
+venv). Verify a machine with:
+
+```bash
+python3 -c "import plasTeX, leanblueprint; print('OK')"
+```
+
+A Massot extraction on an unprovisioned interpreter fails fast with the
+emitter's `ModuleNotFoundError` and writes no output.
+
 ## probe-lean installation
 
 `probe-leanblueprint` needs a `probe-lean` binary to produce the atom base
