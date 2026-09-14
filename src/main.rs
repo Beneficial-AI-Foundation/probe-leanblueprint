@@ -582,12 +582,71 @@ fn build_verso_model(args: &ExtractArgs, render_root: &Path) -> Result<Blueprint
     Ok(model)
 }
 
+/// Mathlib cache warm-up command, run in the render root before the render.
+const CACHE_GET_CMD: &str = "lake exe cache get";
+
+/// Does the lake workspace at `root` list mathlib as a resolved dependency?
+/// Exact match on `packages[].name` — not a substring scan, so a fork URL,
+/// scope, or `mathlib-foo` package cannot trigger it. A missing or unparsable
+/// manifest is "no" (silent).
+fn workspace_depends_on_mathlib(root: &Path) -> bool {
+    std::fs::read(root.join("lake-manifest.json"))
+        .ok()
+        .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok())
+        .and_then(|m| m.get("packages")?.as_array().cloned())
+        .is_some_and(|pkgs| {
+            pkgs.iter()
+                .any(|p| p.get("name").and_then(|n| n.as_str()) == Some("mathlib"))
+        })
+}
+
+/// Port of probe-lean's `ensureMathlibCache` for the render workspace, which
+/// is a separate lake workspace probe-lean never sees: without the pre-built
+/// cache, `lake exe vbp build` compiles the Mathlib import cone from source
+/// (~70 min measured vs ~4 min with the cache). Best-effort, never fatal; opt
+/// out with `PROBE_LEANBLUEPRINT_NO_CACHE_GET`.
+fn ensure_mathlib_cache(root: &Path, cmd: &str) {
+    if std::env::var_os("PROBE_LEANBLUEPRINT_NO_CACHE_GET").is_some() {
+        return;
+    }
+    if !workspace_depends_on_mathlib(root) {
+        return;
+    }
+    if root
+        .join(".lake/packages/mathlib/.lake/build/lib/lean/Mathlib.olean")
+        .exists()
+    {
+        return;
+    }
+    eprintln!(
+        "Render workspace {} depends on Mathlib with no pre-built cache; running `{cmd}` \
+         (best-effort) ...",
+        root.display()
+    );
+    // Inherit stdio so the multi-GB download's progress streams to the terminal.
+    match Command::new("sh")
+        .arg("-c")
+        .arg(cmd)
+        .current_dir(root)
+        .status()
+    {
+        Ok(s) if s.success() => eprintln!("  Mathlib cache downloaded"),
+        Ok(s) => eprintln!(
+            "warning: `{cmd}` failed ({s}); the render may compile Mathlib from source. \
+             Try manually: cd {} && {cmd}",
+            root.display()
+        ),
+        Err(e) => eprintln!("warning: could not run `{cmd}`: {e}; continuing with the render"),
+    }
+}
+
 /// Render the Verso docs in-place so `blueprint-manifest.json` exists. Runs the
 /// render command through `sh -c` in the blueprint root (the dir whose lakefile
 /// declares versoBlueprint — possibly `docs/`, where `lake exe vbp build` can
 /// actually resolve `vbp`). This is what makes the Verso path work from a bare
 /// Lean project, mirroring the Massot path's embedded plasTeX emitter.
 fn render_verso_docs(args: &ExtractArgs, render_root: &Path) -> Result<()> {
+    ensure_mathlib_cache(render_root, CACHE_GET_CMD);
     let cmd = args
         .verso_render_cmd
         .as_deref()
@@ -1183,6 +1242,84 @@ mod tests {
             source_package: None,
             source_version: None,
         }
+    }
+
+    const MATHLIB_MANIFEST: &str = r#"{"packages":[{"name":"mathlib","url":"https://github.com/leanprover-community/mathlib4"}]}"#;
+
+    #[test]
+    fn workspace_depends_on_mathlib_exact_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let manifest = root.join("lake-manifest.json");
+        assert!(!workspace_depends_on_mathlib(root), "no manifest");
+        std::fs::write(&manifest, "{ not json").unwrap();
+        assert!(!workspace_depends_on_mathlib(root), "invalid JSON");
+        std::fs::write(&manifest, r#"{"packages":[]}"#).unwrap();
+        assert!(!workspace_depends_on_mathlib(root), "no packages");
+        std::fs::write(&manifest, r#"{"packages":[{"name":"mathlib-lite"}]}"#).unwrap();
+        assert!(!workspace_depends_on_mathlib(root), "name is only a prefix");
+        // The false positive a substring scan would hit: a URL/scope mentions
+        // mathlib but no package is named mathlib.
+        std::fs::write(
+            &manifest,
+            r#"{"packages":[{"name":"batteries","url":"https://github.com/leanprover-community/mathlib4-fork","scope":"mathlib"}]}"#,
+        )
+        .unwrap();
+        assert!(
+            !workspace_depends_on_mathlib(root),
+            "url/scope mention only"
+        );
+        std::fs::write(&manifest, MATHLIB_MANIFEST).unwrap();
+        assert!(workspace_depends_on_mathlib(root), "exact package name");
+    }
+
+    #[test]
+    fn ensure_mathlib_cache_runs_when_mathlib_uncached() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("lake-manifest.json"), MATHLIB_MANIFEST).unwrap();
+        ensure_mathlib_cache(dir.path(), "touch ran");
+        assert!(
+            dir.path().join("ran").exists(),
+            "cache command runs in the render root"
+        );
+    }
+
+    #[test]
+    fn ensure_mathlib_cache_skips_when_olean_present() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("lake-manifest.json"), MATHLIB_MANIFEST).unwrap();
+        let olean = dir
+            .path()
+            .join(".lake/packages/mathlib/.lake/build/lib/lean/Mathlib.olean");
+        std::fs::create_dir_all(olean.parent().unwrap()).unwrap();
+        std::fs::write(&olean, b"").unwrap();
+        ensure_mathlib_cache(dir.path(), "touch ran");
+        assert!(
+            !dir.path().join("ran").exists(),
+            "already-built cache is not re-fetched"
+        );
+    }
+
+    #[test]
+    fn ensure_mathlib_cache_skips_without_mathlib() {
+        let dir = tempfile::tempdir().unwrap();
+        ensure_mathlib_cache(dir.path(), "touch ran");
+        assert!(
+            !dir.path().join("ran").exists(),
+            "no manifest: nothing runs"
+        );
+    }
+
+    #[test]
+    fn ensure_mathlib_cache_failure_is_not_fatal() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("lake-manifest.json"), MATHLIB_MANIFEST).unwrap();
+        ensure_mathlib_cache(dir.path(), "exit 1");
+        // The render itself still proceeds after a failed warm-up.
+        let mut args = verso_args(dir.path().to_path_buf());
+        args.verso_render_cmd = Some("touch rendered.marker".to_string());
+        render_verso_docs(&args, dir.path()).unwrap();
+        assert!(dir.path().join("rendered.marker").exists());
     }
 
     #[test]

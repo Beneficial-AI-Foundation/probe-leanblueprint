@@ -51,6 +51,13 @@ Two environment variables control this behavior:
   entirely, restoring the old "must already be installed and on PATH"
   behavior. For fully offline or explicitly audited environments.
 
+A third variable controls the Verso render step (see below):
+
+- **`PROBE_LEANBLUEPRINT_NO_CACHE_GET=1`** — skip the best-effort `lake exe
+  cache get` that otherwise runs in the Verso render workspace when it depends
+  on Mathlib and has no pre-built `.olean` cache yet. For offline or explicitly
+  audited environments; the render then compiles Mathlib from source.
+
 ## Zero-config: just a Lean project
 
 The intended entry point (and the one automated consumers use) needs **only a
@@ -73,9 +80,19 @@ From that alone the tool:
    build` when no `blueprint-manifest.json` exists yet (that render entry point
    ships with the `versoBlueprint` dependency); for Massot it runs the bundled
    plasTeX emitter (embedded in the binary). No manual render step is required.
+   The Verso render root (often `docs/`) is a *separate* lake workspace from
+   the project root, so before rendering the tool runs `lake exe cache get`
+   there when its `lake-manifest.json` lists `mathlib` and no
+   `Mathlib.olean` is built yet — mirroring what `probe-lean` already does for
+   the root workspace (see its [Mathlib cache](https://github.com/Beneficial-AI-Foundation/probe-lean/blob/main/docs/USAGE.md#mathlib-cache-auto-downloaded)
+   section). Without it a fresh checkout compiles the Mathlib import cone from
+   source (~70 min measured vs ~4 min with the cache). The step is best-effort:
+   a failed or offline download warns and the render proceeds. Disable it with
+   `PROBE_LEANBLUEPRINT_NO_CACHE_GET=1`.
 
 > **Trust note.** Steps 2–3 execute the target project's own build code
-> (`probe-lean extract`, and `lake exe vbp build` via `sh -c`), and step 2 may
+> (`probe-lean extract`, and `lake exe cache get` + `lake exe vbp build` via
+> `sh -c`), and step 2 may
 > also install `probe-lean` itself (see [probe-lean installation](#probe-lean-installation)
 > above) — downloading a prebuilt release from GitHub, or cloning and
 > `lake build`-ing `probe-lean` from source, writing to `~/.local/bin`. Only

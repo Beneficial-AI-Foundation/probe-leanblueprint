@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-14
+
+### Added
+- **Mathlib cache warm-up for the Verso render workspace**: before running the Verso render command, `extract` now runs `lake exe cache get` in the render root (e.g. `docs/`) when that workspace's `lake-manifest.json` lists a package named exactly `mathlib` and no `Mathlib.olean` is built there yet. The render root is a *separate* lake workspace from the project root, so `probe-lean`'s own cache download (since probe-lean 0.4.1) never reached it and a fresh checkout compiled the Mathlib import cone from source — measured at 70m29s for the flag-free pipeline vs 4m01s with both caches in place. The step is best-effort and never fatal (a failed or offline download warns and the render proceeds), silent on non-Mathlib workspaces, and disabled by `PROBE_LEANBLUEPRINT_NO_CACHE_GET=1`. The trusted pipeline (`--no-render` + `--verso-manifest`) never reaches it. Companion to probe-lean#93.
+
 ## [0.8.0] - 2026-08-14
 
 ### Added

@@ -73,7 +73,9 @@ enriched extract plus a two-axis progress summary under
 `<project>/.verilib/probes/`.
 
 > **Trust note.** Zero-config executes the target project's own build code
-> (`probe-lean extract`, and `lake exe vbp build` via `sh -c`), and may also
+> (`probe-lean extract`, `lake exe vbp build` via `sh -c`, and — when the Verso
+> render workspace depends on Mathlib with no pre-built cache — `lake exe cache
+> get`), and may also
 > install `probe-lean` itself — downloading a prebuilt release from GitHub or
 > building it from source — if no version matching the project's
 > `lean-toolchain` is already cached under `~/.local/bin`. Only run it
