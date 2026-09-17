@@ -22,14 +22,17 @@ struct Manifest {
     graphs: Vec<Graph>,
     #[serde(default)]
     previews: Vec<Preview>,
-    /// Verso's internal manifest generation: 2 on v4.30, 3 on v4.31. Absent or
-    /// unrecognized values suggest a drifted or pre-graph (v4.28) file.
+    /// Verso's manifest generation: 2 on v4.30, 3 on v4.31, 8 on v4.33. Absent means a
+    /// pre-graph render such as v4.28, which emits only a preview manifest, or a non-Verso
+    /// file; an unrecognized value means the graph schema may have drifted.
     #[serde(rename = "vbpInternalSchemaVersion", default)]
     vbp_internal_schema_version: Option<u64>,
 }
 
-/// Manifest generations whose `graphs[].nodes[]` schema this adapter understands.
-const KNOWN_SCHEMA_VERSIONS: &[u64] = &[2, 3];
+/// Manifest generations whose `graphs[].nodes[]` and `previews[].codeData`
+/// schemas this adapter understands. Generations 4 through 7 have not been
+/// verified against a real render and stay unknown.
+const KNOWN_SCHEMA_VERSIONS: &[u64] = &[2, 3, 8];
 
 /// Human-readable warnings about a parsed manifest — an unknown schema
 /// generation, or an empty graph distinguished as previews-only vs wrong/drifted.
@@ -118,6 +121,79 @@ struct Preview {
     facet: Option<String>,
     #[serde(rename = "sourceLocation", default)]
     source_location: Option<SourceLocation>,
+    /// Free-form tokens the author put on the block with `(tags := ...)`, trimmed,
+    /// lowercased and deduped by the renderer. A `gh-<n>` token names the node's
+    /// tracking GitHub issue. Typed as a free `Value` like the [`Decl`] metadata: an
+    /// unexpected shape on one preview must not abort the whole manifest parse;
+    /// [`issue_tags`] ignores non-array values and non-string elements instead.
+    #[serde(default)]
+    tags: serde_json::Value,
+}
+
+/// The issue tags of one statement preview, classified.
+#[derive(Debug, Default, PartialEq)]
+struct IssueTags {
+    /// The `n` of each well-formed `gh-<n>` token, as the bare digit string without the
+    /// prefix, distinct and in first-seen order.
+    numbers: Vec<String>,
+    /// Tokens starting with `gh-` that are not `gh-<n>`.
+    malformed: Vec<String>,
+}
+
+/// The issue number in a `gh-<n>` token, where `n` is decimal with no leading
+/// zero (`^gh-([1-9][0-9]*)$`).
+fn issue_number(tag: &str) -> Option<&str> {
+    let n = tag.strip_prefix("gh-")?;
+    let mut digits = n.chars();
+    let first = digits.next()?;
+    (first.is_ascii_digit() && first != '0' && digits.all(|c| c.is_ascii_digit())).then_some(n)
+}
+
+fn issue_tags(tags: &serde_json::Value) -> IssueTags {
+    let mut out = IssueTags::default();
+    let strings = tags
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|t| t.as_str());
+    for tag in strings {
+        if let Some(n) = issue_number(tag) {
+            if !out.numbers.iter().any(|x| x == n) {
+                out.numbers.push(n.to_string());
+            }
+        } else if tag.starts_with("gh-") {
+            out.malformed.push(tag.to_string());
+        }
+        // Other tokens are not issue tags; ignored silently.
+    }
+    out
+}
+
+/// A node's [`BlueprintNode::github_issue`] from its statement preview's issue tags,
+/// with the warnings to print. Exactly one distinct number sets the field. Several
+/// set nothing: the field is single-valued and picking one would be wrong data.
+/// Malformed `gh-` tokens are reported and ignored.
+fn github_issue_from_tags(label: &str, tags: &IssueTags) -> (Option<String>, Vec<String>) {
+    let mut warnings = Vec::new();
+    for t in &tags.malformed {
+        warnings.push(format!(
+            "node {label}: tag {t:?} starts with `gh-` but is not `gh-<issue number>`; ignored"
+        ));
+    }
+    let github_issue = match tags.numbers.as_slice() {
+        [one] => Some(one.clone()),
+        [] => None,
+        several => {
+            let listed: Vec<String> = several.iter().map(|n| format!("gh-{n}")).collect();
+            warnings.push(format!(
+                "node {label}: several issue tags ({}); blueprint-github-issue is single-valued, \
+                 none kept",
+                listed.join(", ")
+            ));
+            None
+        }
+    };
+    (github_issue, warnings)
 }
 
 #[derive(Debug, Deserialize)]
@@ -154,14 +230,65 @@ struct Position {
     line: Option<u32>,
 }
 
+/// A preview's code bindings in either manifest generation. Schema 8 renamed the two
+/// container fields but kept the per-declaration records, so one [`Decl`] type serves
+/// both and the adapter reads old and new fields side by side. No manifest seen
+/// carries both; [`CodeData::decl_names`] fixes the order in case one does.
 #[derive(Debug, Deserialize)]
 struct CodeData {
+    /// Schema 2/3: references to existing decls.
     #[serde(default)]
     external: Option<External>,
-    /// Declarations defined *inline* in the blueprint text (a `lean` code block,
-    /// as opposed to `external`, which references an existing decl).
+    /// Schema 2/3: declarations defined in a `lean` code block inside the blueprint
+    /// text, as opposed to [`CodeData::external`], which references decls that exist
+    /// elsewhere.
     #[serde(default)]
     inline: Option<Inline>,
+    /// Schema 8 name for `external.decls`.
+    #[serde(rename = "externalDecls", default)]
+    external_decls: Vec<Decl>,
+    /// Schema 8 name for `inline.code`.
+    #[serde(rename = "literateDeclarations", default)]
+    literate_declarations: Option<InlineCode>,
+}
+
+impl CodeData {
+    /// Every external declaration record, old shape then new.
+    fn external_decls(&self) -> impl Iterator<Item = &Decl> {
+        self.external
+            .iter()
+            .flat_map(|e| e.decls.iter())
+            .chain(self.external_decls.iter())
+    }
+
+    /// Every bound declaration name, not de-duplicated, in a fixed order: old external,
+    /// old inline, new external, new inline; within an inline block, defs before
+    /// theorems. The generations never co-occur in a manifest seen; the order only makes
+    /// the result defined if they do. [`parse_manifest`] de-duplicates first-seen.
+    fn decl_names(&self) -> Vec<&str> {
+        fn inline_names(code: &InlineCode) -> impl Iterator<Item = &str> {
+            code.defined_defs
+                .iter()
+                .chain(code.defined_theorems.iter())
+                .map(|d| d.name.as_str())
+        }
+        let mut names: Vec<&str> = Vec::new();
+        names.extend(
+            self.external
+                .iter()
+                .flat_map(|e| e.decls.iter())
+                .map(|d| d.canonical.as_str()),
+        );
+        names.extend(
+            self.inline
+                .iter()
+                .filter_map(|i| i.code.as_ref())
+                .flat_map(inline_names),
+        );
+        names.extend(self.external_decls.iter().map(|d| d.canonical.as_str()));
+        names.extend(self.literate_declarations.iter().flat_map(inline_names));
+        names
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -284,9 +411,10 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
     let manifest: Manifest = serde_json::from_str(text).map_err(BlueprintError::ManifestParse)?;
 
     // Index preview key -> Lean decl names. A preview binds decls either by
-    // reference to an existing decl (`external.decls[].canonical`) or inline in
-    // the blueprint text (`inline.code.definedDefs/definedTheorems[].name`);
-    // collect both so inline-authored nodes join too.
+    // reference to an existing decl (`external.decls[].canonical`, schema 8:
+    // `externalDecls[]`) or inline in the blueprint text
+    // (`inline.code.definedDefs/definedTheorems[].name`, schema 8:
+    // `literateDeclarations.*`); collect all so inline-authored nodes join too.
     let mut decls_by_preview: HashMap<String, Vec<String>> = HashMap::new();
     // Canonical names of external decls the renderer proved upstream (out of this
     // workspace). A node bound only to these is decl-missing here yet proved.
@@ -295,20 +423,13 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
         let Some(cd) = &preview.code_data else {
             continue;
         };
-        let mut names: Vec<String> = Vec::new();
-        if let Some(ext) = &cd.external {
-            for d in &ext.decls {
-                names.push(d.canonical.clone());
-                if d.is_upstream_proved() {
-                    upstream_proved.insert(d.canonical.clone());
-                }
-            }
-        }
-        if let Some(code) = cd.inline.as_ref().and_then(|i| i.code.as_ref()) {
-            names.extend(code.defined_defs.iter().map(|d| d.name.clone()));
-            names.extend(code.defined_theorems.iter().map(|d| d.name.clone()));
-        }
-        // De-duplicate while preserving first-seen order (external before inline).
+        upstream_proved.extend(
+            cd.external_decls()
+                .filter(|d| d.is_upstream_proved())
+                .map(|d| d.canonical.clone()),
+        );
+        let mut names: Vec<String> = cd.decl_names().into_iter().map(str::to_string).collect();
+        // De-duplicate while preserving first-seen order.
         let mut seen = std::collections::HashSet::new();
         names.retain(|n| seen.insert(n.clone()));
         if !names.is_empty() {
@@ -340,6 +461,20 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
         anchor_by_preview.insert(preview.key.clone(), (path.clone(), start, end));
     }
 
+    // Index preview key -> issue tags (statement facet only, like the anchor;
+    // the renderer rejects tags on proof blocks). Not gated on code bindings:
+    // planned-only nodes with `codeData: null` carry tags too.
+    let mut tags_by_preview: HashMap<String, IssueTags> = HashMap::new();
+    for preview in &manifest.previews {
+        if preview.facet.as_deref() != Some("statement") {
+            continue;
+        }
+        let tags = issue_tags(&preview.tags);
+        if tags != IssueTags::default() {
+            tags_by_preview.insert(preview.key.clone(), tags);
+        }
+    }
+
     let mut model = BlueprintModel::default();
     // A label can appear in multiple graphs within one manifest (e.g. statement
     // and proof sub-graphs). De-duplicate within the manifest so a node is not
@@ -360,6 +495,22 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
                 .preview_key
                 .as_ref()
                 .and_then(|k| anchor_by_preview.get(k));
+            // A label recurs across the manifest's graphs with the same
+            // previewKey; warn only on its first occurrence.
+            let first_seen = !index_by_label.contains_key(&node.label);
+            let github_issue = node
+                .preview_key
+                .as_ref()
+                .and_then(|k| tags_by_preview.get(k))
+                .and_then(|tags| {
+                    let (github_issue, warnings) = github_issue_from_tags(&node.label, tags);
+                    if first_seen {
+                        for w in warnings {
+                            eprintln!("warning: {w}");
+                        }
+                    }
+                    github_issue
+                });
 
             let built = BlueprintNode {
                 label: node.label.clone(),
@@ -392,7 +543,7 @@ fn parse_manifest(text: &str, chapter: Option<&str>) -> Result<BlueprintModel> {
                     .and_then(chapter_from_href)
                     .or_else(|| chapter.map(str::to_string)),
                 title: node.title.clone(),
-                discussion: None,
+                github_issue,
                 source_path: anchor.map(|(p, _, _)| p.clone()),
                 source_lines: anchor.map(|&(_, s, e)| (s, e)),
                 // Filled by the CLI from the anchored span; the manifest ships
@@ -730,6 +881,14 @@ mod tests {
         // Nothing at all: wrong/drifted file.
         let drifted = manifest_warnings(Some(3), 0, 0);
         assert!(drifted.iter().any(|w| w.contains("wrong or drifted")));
+        // Schema 8 (verso-blueprint v4.33) is a known generation.
+        assert!(manifest_warnings(Some(8), 5, 10).is_empty());
+        // Generations never seen in a real render stay unknown.
+        for v in 4..=7 {
+            assert!(manifest_warnings(Some(v), 5, 5)
+                .iter()
+                .any(|w| w.contains("unrecognized vbpInternalSchemaVersion")));
+        }
         // Unknown / missing generation is flagged.
         assert!(manifest_warnings(Some(99), 5, 5)
             .iter()
@@ -766,6 +925,315 @@ mod tests {
             vec!["b_def", "b_thm"],
             "inline defs and theorems both bound"
         );
+    }
+
+    /// All four [`CodeData`] shapes bind a node, and a preview carrying several yields
+    /// names in the fixed order old external, old inline, new external, new inline,
+    /// then first-seen dedup. `up` witnesses that the upstream-proved criterion reads
+    /// the schema-8 record unchanged; `empty` that empty schema-8 lists bind nothing.
+    #[test]
+    fn schema8_code_data_shapes_bind() {
+        let text = r#"{
+          "vbpInternalSchemaVersion": 8,
+          "graphs": [{"nodes": [
+            {"label":"ext","kind":"theorem","previewKey":"ext--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"},
+            {"label":"lit","kind":"theorem","previewKey":"lit--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"},
+            {"label":"all","kind":"theorem","previewKey":"all--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"},
+            {"label":"up","kind":"theorem","previewKey":"up--statement",
+             "statementStatus":"formalized","proofStatus":"formalizedWithAncestors"},
+            {"label":"empty","kind":"theorem","previewKey":"empty--statement",
+             "statementStatus":"ready","proofStatus":"none"}
+          ]}],
+          "previews": [
+            {"key":"ext--statement","codeData":{
+               "externalDecls":[{"canonical":"Foo.ext"}],
+               "literateDeclarations":{"definedDefs":[],"definedTheorems":[]}}},
+            {"key":"lit--statement","codeData":{
+               "externalDecls":[],
+               "literateDeclarations":{"definedDefs":[{"name":"lit_def"}],
+                                       "definedTheorems":[{"name":"lit_thm"}]}}},
+            {"key":"all--statement","codeData":{
+               "externalDecls":[{"canonical":"New.ext"},{"canonical":"Old.ext"}],
+               "literateDeclarations":{"definedDefs":[{"name":"new_def"}],"definedTheorems":[]},
+               "external":{"decls":[{"canonical":"Old.ext"}]},
+               "inline":{"code":{"definedDefs":[{"name":"old_def"}],
+                                 "definedTheorems":[{"name":"old_thm"}]}}}},
+            {"key":"up--statement","codeData":{"externalDecls":[
+              {"canonical":"Nat.mul_assoc","present":true,"provedStatus":"proved",
+               "provenance":{"outWorkspace":{"moduleName":"Init.Data.Nat.Basic"}}},
+              {"canonical":"MyProj.thm","present":true,"provedStatus":"proved",
+               "provenance":{"inWorkspace":{"moduleName":"MyProj"}}}
+            ]}},
+            {"key":"empty--statement","codeData":{
+               "externalDecls":[],
+               "literateDeclarations":{"definedDefs":[],"definedTheorems":[]}}}
+          ]
+        }"#;
+        let model = parse_manifest(text, None).unwrap();
+        let node = |l: &str| model.nodes.iter().find(|n| n.label == l).unwrap();
+        assert_eq!(
+            node("ext").lean_decls,
+            vec!["Foo.ext"],
+            "externalDecls binds"
+        );
+        assert_eq!(
+            node("lit").lean_decls,
+            vec!["lit_def", "lit_thm"],
+            "literateDeclarations defs and theorems both bind"
+        );
+        assert_eq!(
+            node("all").lean_decls,
+            vec!["Old.ext", "old_def", "old_thm", "New.ext", "new_def"],
+            "old external, old inline, new external, new inline; first-seen dedup"
+        );
+        assert_eq!(node("up").lean_decls, vec!["Nat.mul_assoc", "MyProj.thm"]);
+        assert_eq!(
+            node("up").external_upstream_proved,
+            vec!["Nat.mul_assoc"],
+            "upstream-proved read from the schema-8 record"
+        );
+        assert!(
+            node("empty").lean_decls.is_empty(),
+            "empty schema-8 lists bind nothing"
+        );
+    }
+
+    /// The deployed secure-messaging manifest, verso-blueprint v4.33 at schema 8,
+    /// projected to the adapter's fields as the fixture README describes. Before schema
+    /// 8 was known every one of its nodes came out planned-only; here 74 of 147 bind
+    /// and the 14 upstream-proved LatticeCrypto decls all sit on `kpke`. It carries no
+    /// literate declarations, so `literateDeclarations` is covered only by
+    /// [`schema8_code_data_shapes_bind`].
+    #[test]
+    fn schema8_real_manifest_binds_declarations() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/verso/secure-messaging-schema8/blueprint-manifest.json");
+        let text = std::fs::read_to_string(&path).unwrap();
+        let manifest: Manifest = serde_json::from_str(&text).unwrap();
+        assert_eq!(manifest.vbp_internal_schema_version, Some(8));
+        assert_eq!(manifest.previews.len(), 147);
+
+        let model = load_manifest(&path).unwrap();
+        // Checks the classifier on the fixture's own version and counts; the
+        // `eprintln!` output itself is not observed here.
+        assert!(
+            manifest_warnings(
+                manifest.vbp_internal_schema_version,
+                model.nodes.len(),
+                manifest.previews.len()
+            )
+            .is_empty(),
+            "schema 8 is not classified as an unknown generation"
+        );
+        assert_eq!(model.nodes.len(), 147);
+        let bound = model
+            .nodes
+            .iter()
+            .filter(|n| !n.lean_decls.is_empty())
+            .count();
+        assert_eq!(
+            bound, 74,
+            "74 nodes bind a declaration (was 0 before schema 8)"
+        );
+        let node = |l: &str| model.nodes.iter().find(|n| n.label == l).unwrap();
+        // A representative schema-8 external binding, exact.
+        assert_eq!(node("aead").lean_decls, vec!["AEADScheme"]);
+        assert!(node("aead").external_upstream_proved.is_empty());
+        // Every upstream-proved decl sits on `kpke` (Definition 6.3.2), bound to
+        // exactly these 14 LatticeCrypto declarations.
+        let mut expected = vec![
+            "MLKEM.Concrete.byteDecode",
+            "MLKEM.Concrete.byteEncode",
+            "MLKEM.Concrete.compress",
+            "MLKEM.Concrete.decompress",
+            "MLKEM.Concrete.samplePolyCBD",
+            "MLKEM.KPKE.decrypt",
+            "MLKEM.KPKE.encrypt",
+            "MLKEM.KPKE.keygenFromSeed",
+            "MLKEM.NTTRingOps",
+            "MLKEM.Primitives.gKeygen",
+            "MLKEM.Primitives.prfEta2",
+            "MLKEM.Primitives.publicMatrix",
+            "MLKEM.Primitives.sampleVecEta1",
+            "MLKEM.Primitives.sampleVecEta2",
+        ];
+        expected.sort_unstable();
+        let mut kpke_upstream = node("kpke").external_upstream_proved.clone();
+        kpke_upstream.sort_unstable();
+        assert_eq!(kpke_upstream, expected);
+        let elsewhere = model
+            .nodes
+            .iter()
+            .filter(|n| n.label != "kpke" && !n.external_upstream_proved.is_empty())
+            .count();
+        assert_eq!(elsewhere, 0, "no other node is upstream-proved");
+        // Chapters come from the hrefs, not the fixture directory.
+        assert_eq!(
+            node("kpke").chapter.as_deref(),
+            Some("Key-Encapsulation-Mechanism")
+        );
+    }
+
+    /// The tag classifier and the single-value rule, checked on [`issue_tags`] and
+    /// [`github_issue_from_tags`] directly: [`parse_manifest`] prints the warnings with
+    /// `eprintln!`, where a test cannot count them.
+    #[test]
+    fn issue_tags_classify_and_warn() {
+        use serde_json::json;
+        assert_eq!(issue_number("gh-17"), Some("17"));
+        for bad in [
+            "gh-01", "gh-0", "gh-x", "gh-", "gh-1a", "gh", "GH-1", "gh-1 ",
+        ] {
+            assert_eq!(issue_number(bad), None, "{bad:?} is not an issue tag");
+        }
+
+        // One tag: kept, no warning.
+        let (d, w) = github_issue_from_tags("n", &issue_tags(&json!(["gh-7", "wip"])));
+        assert_eq!(d.as_deref(), Some("7"));
+        assert!(w.is_empty());
+        // The same number twice: still one distinct number, kept.
+        let (d, w) = github_issue_from_tags("n", &issue_tags(&json!(["gh-7", "gh-7"])));
+        assert_eq!(d.as_deref(), Some("7"));
+        assert!(w.is_empty());
+        // Two distinct: none kept, exactly one warning naming label and numbers.
+        let (d, w) = github_issue_from_tags("two", &issue_tags(&json!(["gh-1", "gh-2"])));
+        assert_eq!(d, None);
+        assert_eq!(w.len(), 1);
+        assert!(
+            w[0].contains("two") && w[0].contains("gh-1, gh-2"),
+            "{}",
+            w[0]
+        );
+        // Malformed next to a valid one: valid kept, one warning per bad token.
+        let (d, w) = github_issue_from_tags("m", &issue_tags(&json!(["gh-01", "gh-x", "gh-4"])));
+        assert_eq!(d.as_deref(), Some("4"));
+        assert_eq!(w.len(), 2);
+        assert!(w[0].contains("\"gh-01\"") && w[1].contains("\"gh-x\""));
+        // Non-array `tags`: nothing. Non-string elements: skipped.
+        assert_eq!(issue_tags(&json!("gh-3")), IssueTags::default());
+        assert_eq!(issue_tags(&json!(null)), IssueTags::default());
+        assert_eq!(
+            issue_tags(&json!(["gh-17", 42, null, {"k": 1}])),
+            IssueTags {
+                numbers: vec!["17".to_string()],
+                malformed: vec![],
+            }
+        );
+    }
+
+    /// Tags reach [`BlueprintNode::github_issue`] through [`parse_manifest`]:
+    /// statement-facet previews only, not gated on code bindings, and an odd `tags`
+    /// shape on one preview is skipped without aborting the parse.
+    #[test]
+    fn tags_set_github_issue() {
+        let text = r#"{
+          "vbpInternalSchemaVersion": 8,
+          "graphs": [{"nodes": [
+            {"label":"one","kind":"theorem","previewKey":"one--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"},
+            {"label":"two","kind":"theorem","previewKey":"two--statement",
+             "statementStatus":"ready","proofStatus":"none"},
+            {"label":"planned","kind":"definition","previewKey":"planned--statement",
+             "statementStatus":"ready","proofStatus":"none"},
+            {"label":"str","kind":"theorem","previewKey":"str--statement",
+             "statementStatus":"ready","proofStatus":"none"},
+            {"label":"mixed","kind":"theorem","previewKey":"mixed--statement",
+             "statementStatus":"ready","proofStatus":"none"},
+            {"label":"proof","kind":"theorem","previewKey":"proof--proof",
+             "statementStatus":"ready","proofStatus":"none"},
+            {"label":"untagged","kind":"theorem","previewKey":"untagged--statement",
+             "statementStatus":"ready","proofStatus":"none"}
+          ]}, {"nodes": [
+            {"label":"two","kind":"theorem","previewKey":"two--statement",
+             "statementStatus":"ready","proofStatus":"none"}
+          ]}],
+          "previews": [
+            {"key":"one--statement","facet":"statement","tags":["gh-7"],
+             "codeData":{"externalDecls":[{"canonical":"Foo.one"}]}},
+            {"key":"two--statement","facet":"statement","tags":["gh-1","gh-2"],"codeData":null},
+            {"key":"planned--statement","facet":"statement","tags":["gh-9"],"codeData":null},
+            {"key":"str--statement","facet":"statement","tags":"gh-3","codeData":null},
+            {"key":"mixed--statement","facet":"statement","tags":["gh-17",42],"codeData":null},
+            {"key":"proof--proof","facet":"proof","tags":["gh-5"],"codeData":null},
+            {"key":"untagged--statement","facet":"statement","tags":[],"codeData":null}
+          ]
+        }"#;
+        let model = parse_manifest(text, None).expect("odd tag shapes must not abort the parse");
+        let disc = |l: &str| {
+            model
+                .nodes
+                .iter()
+                .find(|n| n.label == l)
+                .unwrap()
+                .github_issue
+                .clone()
+        };
+        assert_eq!(disc("one").as_deref(), Some("7"), "one gh- tag, bound node");
+        assert_eq!(disc("two"), None, "two distinct numbers: none kept");
+        assert_eq!(
+            disc("planned").as_deref(),
+            Some("9"),
+            "codeData: null does not gate tags"
+        );
+        assert_eq!(disc("str"), None, "tags as a string: ignored");
+        assert_eq!(
+            disc("mixed").as_deref(),
+            Some("17"),
+            "non-string element skipped, string kept"
+        );
+        assert_eq!(disc("proof"), None, "proof-facet preview tags are ignored");
+        assert_eq!(disc("untagged"), None);
+        let one = model.nodes.iter().find(|n| n.label == "one").unwrap();
+        assert_eq!(one.lean_decls, vec!["Foo.one"], "tags and bindings coexist");
+    }
+
+    /// Issue tags on the deployed schema-8 manifest described in the fixture README:
+    /// 123 of 147 nodes carry one `gh-<n>` tag, 73 of them planned-only, and one issue
+    /// can track several nodes. The hand-built fixtures cannot witness this at scale.
+    #[test]
+    fn schema8_real_manifest_issue_tags() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/verso/secure-messaging-schema8/blueprint-manifest.json");
+        let model = load_manifest(&path).unwrap();
+        let tagged: Vec<&BlueprintNode> = model
+            .nodes
+            .iter()
+            .filter(|n| n.github_issue.is_some())
+            .collect();
+        assert_eq!(tagged.len(), 123, "123 nodes carry exactly one gh- tag");
+        let distinct: HashSet<&str> = tagged
+            .iter()
+            .map(|n| n.github_issue.as_deref().unwrap())
+            .collect();
+        assert_eq!(distinct.len(), 118);
+        assert_eq!(
+            tagged.iter().filter(|n| !n.lean_decls.is_empty()).count(),
+            50,
+            "50 tagged nodes are bound; the other 73 are planned-only"
+        );
+        let with = |num: &str| -> Vec<&str> {
+            let mut v: Vec<&str> = tagged
+                .iter()
+                .filter(|n| n.github_issue.as_deref() == Some(num))
+                .map(|n| n.label.as_str())
+                .collect();
+            v.sort_unstable();
+            v
+        };
+        assert_eq!(
+            with("226"),
+            vec![
+                "incremental_kem_from_ml_kem_correctness",
+                "incremental_kem_from_ml_kem_spec",
+                "ml_kem_correctness_easycrypt",
+            ]
+        );
+        for shared in ["251", "252", "263"] {
+            assert_eq!(with(shared).len(), 2, "issue {shared} tracks two nodes");
+        }
     }
 
     #[test]

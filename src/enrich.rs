@@ -2,7 +2,7 @@
 //!
 //! - Blueprint nodes are matched to atoms by `probe:` + Lean declaration name.
 //! - Matched atoms gain `blueprint-*` extension fields (statement/proof status,
-//!   uses, group, title, discussion), keeping probe-lean's machine
+//!   uses, group, title, github issue), keeping probe-lean's machine
 //!   `verification-status` authoritative on the proof axis.
 //! - Nodes with no Lean binding become synthetic "planned" atoms so the
 //!   statement axis (roadmap) is represented.
@@ -176,7 +176,7 @@ fn make_extensions(
         group: node.group.clone(),
         chapter: node.chapter.clone(),
         title: node.title.clone(),
-        discussion: node.discussion.clone(),
+        github_issue: node.github_issue.clone(),
         statement_uses: resolve(&node.statement_uses),
         proof_uses: resolve(&node.proof_uses),
         status_mismatch: mismatch,
@@ -215,7 +215,7 @@ const BLUEPRINT_KEYS: &[&str] = &[
     "blueprint-group",
     "blueprint-chapter",
     "blueprint-title",
-    "blueprint-discussion",
+    "blueprint-github-issue",
     "blueprint-statement-uses",
     "blueprint-proof-uses",
     "blueprint-status-mismatch",
@@ -1100,7 +1100,7 @@ mod tests {
             group: None,
             chapter: None,
             title: None,
-            discussion: None,
+            github_issue: None,
             source_path: None,
             source_lines: None,
             statement_text: None,

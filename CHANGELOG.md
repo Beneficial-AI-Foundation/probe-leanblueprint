@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Verso adapter fills `blueprint-github-issue` from the node's statement-block `tags` (schema 8, verso-blueprint v4.33): a single `gh-<n>` token sets the field to the digit string `n`, the same field the Massot adapter fills from `\discussion{N}`. Several distinct numbers set nothing and warn once naming the node and the numbers (the field is single-valued); a `gh-` token that is not `gh-<n>` warns and is ignored; other tokens are ignored. Tags on proof-facet previews are ignored, and a preview with an unexpected `tags` shape is skipped rather than aborting the parse. Not gated on code bindings, so planned-only nodes carry their issue too. Merging and enrichment are unchanged: the owner node's value lands on a shared Lean atom, each node atom shows its own, and re-enrichment drops a removed tag. On the deployed secure-messaging render, 123 of 147 nodes carry an issue.
+
+### Changed
+- `blueprint-discussion` is renamed `blueprint-github-issue`. The value is unchanged (the issue number as a digit string, resolved against `source.repo`); the old name was leanblueprint's `\discussion{N}` macro name and said nothing about what the value is. No known consumer read the old key. `schema-version` stays `3.0` (it tracks the hub's interchange version, see `docs/SCHEMA.md`, Schema Evolution).
+
+### Fixed
+- Verso adapter reads the schema-8 (verso-blueprint v4.33) code bindings: `codeData.externalDecls[]` and `codeData.literateDeclarations.definedDefs/definedTheorems[]`, the renamed forms of `codeData.external.decls[]` and `codeData.inline.code.*`. Per-declaration records are unchanged, so upstream-proved detection carries over. Previously a schema-8 manifest parsed but bound no declarations, so every node came out planned-only (on the deployed secure-messaging render, 0 of 74 bound nodes). Both generations are read; if a preview carried both, names come out old external, old inline, new external, new inline, then first-seen dedup. `vbpInternalSchemaVersion` 8 is now a known generation (4 through 7 still warn). New fixture `tests/fixtures/verso/secure-messaging-schema8/` is a field-allowlisted projection of the deployed manifest (one graph kept of the 10 identical copies, guarded) with its `project.jq` and a recorded raw-vs-projected equivalence check.
+
 ## [0.8.0] - 2026-08-14
 
 ### Added

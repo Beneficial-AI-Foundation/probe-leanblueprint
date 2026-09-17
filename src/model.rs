@@ -150,8 +150,9 @@ pub struct BlueprintNode {
     pub chapter: Option<String>,
     /// Display title (e.g. "Theorem 2.3"), if any.
     pub title: Option<String>,
-    /// GitHub discussion issue number (`\discussion`), if any.
-    pub discussion: Option<String>,
+    /// GitHub issue number tracking the node, as a bare digit string. Massot reads it
+    /// from `\discussion{N}`; Verso from a single `gh-<n>` tag on the statement block.
+    pub github_issue: Option<String>,
     /// Repo-relative path of the node's declaration site, if the adapter could
     /// recover one (Verso: the block preview's `sourceLocation`; Massot: the
     /// `\label{<id>}` site in the blueprint LaTeX).
@@ -193,7 +194,7 @@ impl BlueprintModel {
     /// - `lean_decls`, `statement_uses`, `proof_uses`: set-union (order-
     ///   preserving, de-duplicated); each manifest may expose a subset of a
     ///   node's bindings.
-    /// - `kind`, `chapter`, `group`, `title`, `discussion`: a copy with a known
+    /// - `kind`, `chapter`, `group`, `title`, `github_issue`: a copy with a known
     ///   `kind` (the defining occurrence) wins over a null-kind *mention*;
     ///   between copies of equal standing it is first-wins, deterministic
     ///   because `load_from_dir` sorts manifest paths.
@@ -243,7 +244,7 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
     if existing.source_proof_status.is_none() {
         existing.source_proof_status = incoming.source_proof_status.clone();
     }
-    // Identity (kind/title/chapter/group/discussion): a copy with a known kind
+    // Identity (kind/title/chapter/group/github_issue): a copy with a known kind
     // is the defining occurrence and wins over a null-kind mention; its fields
     // fall back to the mention's only where the defining copy omits them.
     if existing.kind.is_none() && incoming.kind.is_some() {
@@ -257,8 +258,8 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
         if incoming.title.is_some() {
             existing.title = incoming.title;
         }
-        if incoming.discussion.is_some() {
-            existing.discussion = incoming.discussion;
+        if incoming.github_issue.is_some() {
+            existing.github_issue = incoming.github_issue;
         }
     } else {
         // First-wins for descriptive/structural fields.
@@ -274,8 +275,8 @@ pub fn merge_node(existing: &mut BlueprintNode, incoming: BlueprintNode) {
         if existing.title.is_none() {
             existing.title = incoming.title;
         }
-        if existing.discussion.is_none() {
-            existing.discussion = incoming.discussion;
+        if existing.github_issue.is_none() {
+            existing.github_issue = incoming.github_issue;
         }
     }
     // Anchor (path + lines) and content (text + format) are independent
@@ -321,7 +322,7 @@ mod tests {
             group: None,
             chapter: None,
             title: None,
-            discussion: None,
+            github_issue: None,
             source_path: None,
             source_lines: None,
             statement_text: None,
@@ -451,10 +452,10 @@ pub struct BlueprintExtensions {
     #[serde(rename = "blueprint-title", skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(
-        rename = "blueprint-discussion",
+        rename = "blueprint-github-issue",
         skip_serializing_if = "Option::is_none"
     )]
-    pub discussion: Option<String>,
+    pub github_issue: Option<String>,
     #[serde(
         rename = "blueprint-statement-uses",
         skip_serializing_if = "Vec::is_empty"

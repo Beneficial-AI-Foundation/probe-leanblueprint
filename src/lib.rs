@@ -8,7 +8,7 @@
 //!   emitter that reuses leanblueprint's own parser.
 //!
 //! It joins blueprint nodes to atoms by Lean declaration name, attaches
-//! blueprint extension fields (statement/proof status, uses, group, discussion),
+//! blueprint extension fields (statement/proof status, uses, group, github issue),
 //! and synthesizes atoms for nodes that have no owned real atom — "planned"
 //! nodes with no Lean binding, "decl-missing" nodes whose bound decls are all
 //! absent, and "shadow" nodes that lost a same-decl collision — so the extract

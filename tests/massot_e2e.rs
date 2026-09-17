@@ -39,7 +39,10 @@ fn massot_enrichment_from_emitter_fixture() {
         Some("claims-proved-but-unverified")
     );
     assert_eq!(
-        bar.extensions.get("blueprint-discussion").unwrap().as_str(),
+        bar.extensions
+            .get("blueprint-github-issue")
+            .unwrap()
+            .as_str(),
         Some("42")
     );
     // Status source records that this is a human claim, not code-derived.
