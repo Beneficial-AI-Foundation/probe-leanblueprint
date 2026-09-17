@@ -281,3 +281,140 @@ fn verso_mixed_upstream_wire_evidence() {
     // The invariants now fire against a non-empty upstream list.
     assert_wire_invariants(&atoms);
 }
+
+/// Write a hand-built manifest under `name` and load it. A non-canonical name keeps
+/// [`verso::load_manifest`] from inferring a chapter from the temp directory.
+fn load_inline_manifest(
+    dir: &Path,
+    name: &str,
+    text: &str,
+) -> probe_leanblueprint::model::BlueprintModel {
+    let path = dir.join(name);
+    std::fs::write(&path, text).unwrap();
+    verso::load_manifest(&path).unwrap()
+}
+
+fn github_issue(atoms: &BTreeMap<String, Atom>, key: &str) -> Option<String> {
+    atoms[key]
+        .extensions
+        .get("blueprint-github-issue")
+        .map(|v| {
+            v.as_str()
+                .expect("blueprint-github-issue is a string")
+                .to_string()
+        })
+}
+
+/// A `gh-<n>` tag on a bound node reaches its Lean atom and its node atom; on a
+/// planned-only node it reaches the node atom. Re-enriching after the tags change
+/// drops the removed one and updates the changed one: [`enrich::enrich`] scrubs
+/// every `blueprint-*` key and every synthetic atom before rewriting.
+#[test]
+fn verso_issue_tags_reach_atoms_and_follow_re_enrichment() {
+    let dir = tempfile::tempdir().unwrap();
+    let manifest = |bound_tags: &str, planned_tags: &str| {
+        format!(
+            r#"{{
+          "vbpInternalSchemaVersion": 8,
+          "graphs": [{{"nodes": [
+            {{"label":"bound","kind":"theorem","previewKey":"bound--statement",
+             "statementStatus":"formalized","proofStatus":"formalized"}},
+            {{"label":"planned","kind":"definition","previewKey":"planned--statement",
+             "statementStatus":"ready","proofStatus":"none"}}
+          ]}}],
+          "previews": [
+            {{"key":"bound--statement","facet":"statement","tags":{bound_tags},
+             "codeData":{{"externalDecls":[{{"canonical":"Foo.bound"}}]}}}},
+            {{"key":"planned--statement","facet":"statement","tags":{planned_tags},"codeData":null}}
+          ]
+        }}"#
+        )
+    };
+
+    let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+    atoms.insert("probe:Foo.bound".to_string(), lean_atom("verified"));
+
+    let model = load_inline_manifest(
+        dir.path(),
+        "v1.json",
+        &manifest(r#"["gh-11"]"#, r#"["gh-12"]"#),
+    );
+    let report = enrich::enrich(&mut atoms, &model);
+    assert_eq!(report.nodes_with_decl, 1);
+    assert_eq!(report.planned_only, 1);
+    assert_eq!(
+        github_issue(&atoms, "probe:Foo.bound").as_deref(),
+        Some("11")
+    );
+    assert_eq!(
+        github_issue(&atoms, "probe:blueprint:bound").as_deref(),
+        Some("11")
+    );
+    assert_eq!(
+        github_issue(&atoms, "probe:blueprint:planned").as_deref(),
+        Some("12")
+    );
+
+    // Tag removed from `bound`, changed on `planned`; enrich the same atoms again.
+    let model = load_inline_manifest(dir.path(), "v2.json", &manifest("[]", r#"["gh-13"]"#));
+    enrich::enrich(&mut atoms, &model);
+    assert_eq!(
+        github_issue(&atoms, "probe:Foo.bound"),
+        None,
+        "removed tag is gone"
+    );
+    assert_eq!(github_issue(&atoms, "probe:blueprint:bound"), None);
+    assert_eq!(
+        github_issue(&atoms, "probe:blueprint:planned").as_deref(),
+        Some("13"),
+        "updated"
+    );
+}
+
+/// Two nodes bind one declaration; the earlier is tagged, the later is not.
+/// The later binder owns the Lean atom and writes its full field set, so the
+/// atom carries no `blueprint-github-issue`; each node atom shows its own.
+#[test]
+fn verso_issue_tag_on_shared_decl_follows_owner() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = r#"{
+      "vbpInternalSchemaVersion": 8,
+      "graphs": [{"nodes": [
+        {"label":"first","kind":"theorem","previewKey":"first--statement",
+         "statementStatus":"formalized","proofStatus":"formalized"},
+        {"label":"second","kind":"theorem","previewKey":"second--statement",
+         "statementStatus":"formalized","proofStatus":"formalized"}
+      ]}],
+      "previews": [
+        {"key":"first--statement","facet":"statement","tags":["gh-21"],
+         "codeData":{"externalDecls":[{"canonical":"Foo.shared"}]}},
+        {"key":"second--statement","facet":"statement","tags":[],
+         "codeData":{"externalDecls":[{"canonical":"Foo.shared"}]}}
+      ]
+    }"#;
+    let model = load_inline_manifest(dir.path(), "shared.json", text);
+
+    let mut atoms: BTreeMap<String, Atom> = BTreeMap::new();
+    atoms.insert("probe:Foo.shared".to_string(), lean_atom("verified"));
+    let report = enrich::enrich(&mut atoms, &model);
+    assert_eq!(report.collisions, 1, "same-decl collision is reported");
+
+    assert_eq!(
+        atoms["probe:Foo.shared"]
+            .extensions
+            .get("blueprint-label")
+            .and_then(|v| v.as_str()),
+        Some("second"),
+        "the last binder owns the atom"
+    );
+    assert_eq!(
+        github_issue(&atoms, "probe:Foo.shared"),
+        None,
+        "owner has no tag"
+    );
+    assert_eq!(
+        github_issue(&atoms, "probe:blueprint:first").as_deref(),
+        Some("21")
+    );
+    assert_eq!(github_issue(&atoms, "probe:blueprint:second"), None);
+}

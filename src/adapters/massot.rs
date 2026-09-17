@@ -161,7 +161,7 @@ pub fn parse_emitter_json(text: &str) -> Result<BlueprintModel> {
             statement_text: statement_text.clone(),
             statement_format: statement_text.is_some().then(|| "latex".to_string()),
             title: None,
-            discussion: n.issue.clone(),
+            github_issue: n.issue.clone(),
             status_source: StatusSource::Declared,
         };
         if let Some(&idx) = index_by_label.get(&built.label) {
@@ -263,7 +263,7 @@ mod tests {
         assert_eq!(bar.proof_status, ProofStatus::FullyProved);
         assert_eq!(bar.statement_uses, vec!["def:foo"]);
         assert_eq!(bar.proof_uses, vec!["def:foo"]);
-        assert_eq!(bar.discussion.as_deref(), Some("42"));
+        assert_eq!(bar.github_issue.as_deref(), Some("42"));
 
         let qux = model.nodes.iter().find(|n| n.label == "thm:qux").unwrap();
         assert!(qux.lean_decls.is_empty());

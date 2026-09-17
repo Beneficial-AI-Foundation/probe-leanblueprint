@@ -497,7 +497,7 @@ Added (flattened) to enriched and synthetic atoms:
 | `blueprint-group` | string | no | Sub-construction grouping label (Verso `parent`) |
 | `blueprint-chapter` | string | no | Chapter the node belongs to (one Verso manifest = one chapter) |
 | `blueprint-title` | string | no | Display title, e.g. `"Theorem 2.3"` |
-| `blueprint-discussion` | string | no | GitHub discussion issue number |
+| `blueprint-github-issue` | string | no | GitHub issue number tracking the node, as a digit string; consumers resolve it against the envelope's `source.repo`. Named `blueprint-discussion` through 0.8.0. Massot: `\discussion{N}`. Verso: a single `gh-<n>` tag on the node's statement directive; omitted with a warning when a node carries several distinct numbers. On a Lean atom bound by two nodes it is the owner node's number (the last binder in manifest order), or absent if the owner has none; each node atom shows its own node's number |
 | `blueprint-statement-uses` | array of strings | no | Code-names used by the statement. Resolution is class-dependent (see [Node atoms → Uses resolution](#node-atoms)): node-to-node on a node atom, code representatives on an enriched real atom. Extension-only; never merged into `dependencies` |
 | `blueprint-proof-uses` | array of strings | no | Code-names used by the proof (same class-dependent resolution) |
 | `blueprint-status-mismatch` | string | no | Set when the blueprint over-claims vs the machine status, e.g. `"claims-proved-but-unverified"` / `"claims-proved-but-failed"` |

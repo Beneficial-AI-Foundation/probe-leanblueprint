@@ -50,7 +50,7 @@ fn node(label: &str, decls: &[&str], kind: NodeKind, proof: ProofStatus) -> Blue
         group: None,
         chapter: None,
         title: None,
-        discussion: None,
+        github_issue: None,
         source_path: None,
         source_lines: None,
         statement_text: None,
