@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-17
+
 ### Added
 - Verso adapter fills `blueprint-github-issue` from the node's statement-block `tags` (schema 8, verso-blueprint v4.33): a single `gh-<n>` token sets the field to the digit string `n`, the same field the Massot adapter fills from `\discussion{N}`. Several distinct numbers set nothing and warn once naming the node and the numbers (the field is single-valued); a `gh-` token that is not `gh-<n>` warns and is ignored; other tokens are ignored. Tags on proof-facet previews are ignored, and a preview with an unexpected `tags` shape is skipped rather than aborting the parse. Not gated on code bindings, so planned-only nodes carry their issue too. Merging and enrichment are unchanged: the owner node's value lands on a shared Lean atom, each node atom shows its own, and re-enrichment drops a removed tag. On the deployed secure-messaging render, 123 of 147 nodes carry an issue.
 
