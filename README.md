@@ -80,6 +80,13 @@ enriched extract plus a two-axis progress summary under
 > against projects you trust; to ingest an untrusted repo, render/extract it in
 > your own sandbox and pass the results in. See [`docs/USAGE.md`](docs/USAGE.md).
 
+To query an extract interactively — blueprint metadata, code location, or
+rendered-doc link of a declaration; the declarations bound to a node label —
+run [`scripts/blueprint-lookup.sh`](scripts/blueprint-lookup.sh) from inside
+the extracted project (jq stopgap until the native `query` subcommand of
+[#28](https://github.com/Beneficial-AI-Foundation/probe-leanblueprint/issues/28)
+lands).
+
 Full install (incl. the Massot Python path), manual flags, output formats, the
 `blueprint_stats.py` reporter, and development commands are in
 [`docs/USAGE.md`](docs/USAGE.md). Output schemas are in
