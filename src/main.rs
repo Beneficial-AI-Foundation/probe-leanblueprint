@@ -75,8 +75,9 @@ struct ExtractArgs {
     #[arg(long, value_enum, default_value_t = Adapter::Auto)]
     adapter: Adapter,
 
-    /// Verso blueprint manifest file, or a directory to search recursively for
-    /// `blueprint-manifest.json`.
+    /// Verso blueprint manifest file, or a directory to search for
+    /// `blueprint-manifest.json` (the shallowest manifests win; deeper render
+    /// trees are ignored).
     #[arg(long)]
     verso_manifest: Option<PathBuf>,
 
@@ -546,8 +547,12 @@ const DEFAULT_VERSO_RENDER_CMD: &str = "lake exe vbp build";
 
 /// Canonical Verso render-output subdirectory, relative to the blueprint root.
 /// `lake exe vbp build` writes the site (and its `blueprint-manifest.json`s)
-/// here. Manifest discovery is scoped to it, so only one render generation is
-/// read and sibling output directories are ignored.
+/// here. Manifest discovery is scoped to it and keeps only the shallowest
+/// manifests, so a stale render generation nested deeper in the tree (e.g.
+/// leftovers from an older per-chapter layout) is ignored rather than merged.
+/// Discovery assumes the current render's manifests are the shallowest; after
+/// changing render layout, clean `_out/site`. Any manifest found here also
+/// suppresses the render fallback below.
 const VERSO_SITE_SUBDIR: &str = "_out/site";
 
 fn build_verso_model(args: &ExtractArgs, render_root: &Path) -> Result<BlueprintModel> {

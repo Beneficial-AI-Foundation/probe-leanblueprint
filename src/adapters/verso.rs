@@ -630,11 +630,13 @@ fn chapter_from_path(path: &Path) -> Option<String> {
     None
 }
 
-/// Discover every `blueprint-manifest.json` under `root` (recursively), sorted
-/// for deterministic merge order. Errors with `NoManifest` when none is found.
+/// Discover the shallowest `blueprint-manifest.json`s under `root`: every
+/// manifest at the first depth where any exists, sorted for deterministic
+/// merge order. Deeper manifests are ignored — a stale render generation
+/// nested inside the fresh tree must not merge into it. Errors with
+/// `NoManifest` when none is found.
 pub fn discover_manifests(root: &Path) -> Result<Vec<std::path::PathBuf>> {
-    let mut found = Vec::new();
-    collect_manifests(root, &mut found)?;
+    let mut found = collect_manifests(root)?;
     if found.is_empty() {
         return Err(BlueprintError::NoManifest(root.to_path_buf()));
     }
@@ -642,9 +644,10 @@ pub fn discover_manifests(root: &Path) -> Result<Vec<std::path::PathBuf>> {
     Ok(found)
 }
 
-/// Discover and merge every `blueprint-manifest.json` under `root` (recursively),
-/// de-duplicating nodes by label. Useful for Verso projects that render one
-/// manifest per chapter.
+/// Discover and merge the shallowest `blueprint-manifest.json`s under `root`,
+/// de-duplicating nodes by label. Same-depth siblings are the chapters of one
+/// render (the legacy per-chapter layout) and merge; deeper render trees are
+/// ignored.
 pub fn load_from_dir(root: &Path) -> Result<BlueprintModel> {
     let mut model = BlueprintModel::default();
     for path in discover_manifests(root)? {
@@ -659,39 +662,54 @@ pub fn load_from_dir(root: &Path) -> Result<BlueprintModel> {
 /// lands under `_out/site/`), so descending into them only wastes time.
 const SKIP_DIRS: &[&str] = &[".lake", ".git", "target", "node_modules", "lake-packages"];
 
-fn collect_manifests(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> Result<()> {
-    if !dir.is_dir() {
-        return Ok(());
-    }
-    let read = std::fs::read_dir(dir).map_err(|source| BlueprintError::Io {
-        path: dir.to_path_buf(),
-        source,
-    })?;
-    for entry in read {
-        let entry = entry.map_err(|source| BlueprintError::Io {
-            path: dir.to_path_buf(),
-            source,
-        })?;
-        // `file_type()` does not follow symlinks, so symlinked directories are
-        // not descended into (no cycles).
-        let file_type = entry.file_type().map_err(|source| BlueprintError::Io {
-            path: entry.path(),
-            source,
-        })?;
-        let path = entry.path();
-        if file_type.is_dir() {
-            let name = path.file_name().and_then(|n| n.to_str());
-            if name.is_some_and(|n| SKIP_DIRS.contains(&n)) {
+/// Breadth-first walk: every directory of a level is scanned before the walk
+/// decides whether to descend, so a manifest in one branch cannot shadow a
+/// same-depth manifest in a sibling branch. Returns the manifests of the first
+/// level that has any (unsorted); empty when the tree has none.
+fn collect_manifests(root: &Path) -> Result<Vec<std::path::PathBuf>> {
+    let mut level = vec![root.to_path_buf()];
+    while !level.is_empty() {
+        let mut found = Vec::new();
+        let mut next = Vec::new();
+        for dir in &level {
+            if !dir.is_dir() {
                 continue;
             }
-            collect_manifests(&path, out)?;
-        } else if file_type.is_file()
-            && path.file_name().and_then(|n| n.to_str()) == Some("blueprint-manifest.json")
-        {
-            out.push(path);
+            let read = std::fs::read_dir(dir).map_err(|source| BlueprintError::Io {
+                path: dir.clone(),
+                source,
+            })?;
+            for entry in read {
+                let entry = entry.map_err(|source| BlueprintError::Io {
+                    path: dir.clone(),
+                    source,
+                })?;
+                // `file_type()` does not follow symlinks, so symlinked directories are
+                // not descended into (no cycles).
+                let file_type = entry.file_type().map_err(|source| BlueprintError::Io {
+                    path: entry.path(),
+                    source,
+                })?;
+                let path = entry.path();
+                if file_type.is_dir() {
+                    let name = path.file_name().and_then(|n| n.to_str());
+                    if name.is_some_and(|n| SKIP_DIRS.contains(&n)) {
+                        continue;
+                    }
+                    next.push(path);
+                } else if file_type.is_file()
+                    && path.file_name().and_then(|n| n.to_str()) == Some("blueprint-manifest.json")
+                {
+                    found.push(path);
+                }
+            }
         }
+        if !found.is_empty() {
+            return Ok(found);
+        }
+        level = next;
     }
-    Ok(())
+    Ok(Vec::new())
 }
 
 #[cfg(test)]
@@ -1323,10 +1341,135 @@ mod tests {
             std::fs::create_dir_all(&d).unwrap();
             std::fs::write(d.join("blueprint-manifest.json"), "{}").unwrap();
         }
-        let mut found = Vec::new();
-        collect_manifests(base, &mut found).unwrap();
+        let found = collect_manifests(base).unwrap();
         assert_eq!(found.len(), 1, "only the _out manifest should be collected");
         assert!(found[0].starts_with(base.join("_out")));
+    }
+
+    /// A minimal manifest whose single node `a` binds `decl`.
+    fn manifest_binding(decl: &str) -> String {
+        format!(
+            r#"{{"vbpInternalSchemaVersion":8,
+                "graphs":[{{"nodes":[{{"label":"a","previewKey":"a--statement",
+                  "statementStatus":"formalized","proofStatus":"none"}}]}}],
+                "previews":[{{"key":"a--statement","facet":"statement",
+                  "codeData":{{"external":{{"decls":[{{"canonical":"{decl}"}}]}}}}}}]}}"#
+        )
+    }
+
+    #[test]
+    fn shallowest_manifest_wins_over_deeper_stale_copy() {
+        // The #29 regression: a stale render generation nested inside the fresh
+        // tree (secure-messaging's chapter-renders fossils) must not merge into
+        // it. Asserted at the decl level: only the fresh, qualified binding
+        // survives.
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path();
+        let fresh = base.join("html-multi/-verso-data");
+        std::fs::create_dir_all(&fresh).unwrap();
+        std::fs::write(
+            fresh.join("blueprint-manifest.json"),
+            manifest_binding("Foo.a"),
+        )
+        .unwrap();
+        let stale = base.join("chapter-renders/Chap/html-multi/Chap/-verso-data");
+        std::fs::create_dir_all(&stale).unwrap();
+        std::fs::write(stale.join("blueprint-manifest.json"), manifest_binding("a")).unwrap();
+
+        let model = load_from_dir(base).unwrap();
+        assert_eq!(model.nodes.len(), 1);
+        assert_eq!(model.nodes[0].lean_decls, vec!["Foo.a"]);
+    }
+
+    #[test]
+    fn same_depth_siblings_merge_and_deeper_duplicate_is_ignored() {
+        // Legacy per-chapter layout: both depth-4 chapter manifests merge, in
+        // sorted order (merging has first-wins fields); a deeper duplicate that
+        // the old recursive walk merged twice is ignored.
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path();
+        let chap_a = base.join("html-multi/Alpha/-verso-data");
+        let chap_b = base.join("html-multi/Beta/-verso-data");
+        std::fs::create_dir_all(&chap_a).unwrap();
+        std::fs::create_dir_all(&chap_b).unwrap();
+        std::fs::write(
+            chap_a.join("blueprint-manifest.json"),
+            manifest_binding("Foo.a"),
+        )
+        .unwrap();
+        std::fs::write(
+            chap_b.join("blueprint-manifest.json"),
+            manifest_binding("Foo.a"),
+        )
+        .unwrap();
+        let dup = chap_b.join("nested");
+        std::fs::create_dir_all(&dup).unwrap();
+        std::fs::write(dup.join("blueprint-manifest.json"), manifest_binding("a")).unwrap();
+
+        let found = discover_manifests(base).unwrap();
+        assert_eq!(
+            found,
+            vec![
+                chap_a.join("blueprint-manifest.json"),
+                chap_b.join("blueprint-manifest.json"),
+            ]
+        );
+    }
+
+    #[test]
+    fn shallow_manifest_in_one_branch_suppresses_deeper_sibling_branch() {
+        // The whole level is scanned before descending: a manifest at depth 2
+        // in branch A means branch B's depth-3 manifest is never selected,
+        // whichever branch the walk visits first.
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path();
+        let branch_a = base.join("a");
+        std::fs::create_dir_all(&branch_a).unwrap();
+        std::fs::write(
+            branch_a.join("blueprint-manifest.json"),
+            manifest_binding("Foo.a"),
+        )
+        .unwrap();
+        let branch_b = base.join("b/deeper");
+        std::fs::create_dir_all(&branch_b).unwrap();
+        std::fs::write(
+            branch_b.join("blueprint-manifest.json"),
+            manifest_binding("a"),
+        )
+        .unwrap();
+
+        let found = discover_manifests(base).unwrap();
+        assert_eq!(found, vec![branch_a.join("blueprint-manifest.json")]);
+    }
+
+    #[test]
+    fn manifest_directly_in_root_wins() {
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path();
+        std::fs::write(
+            base.join("blueprint-manifest.json"),
+            manifest_binding("Foo.a"),
+        )
+        .unwrap();
+        let deeper = base.join("html-multi/-verso-data");
+        std::fs::create_dir_all(&deeper).unwrap();
+        std::fs::write(
+            deeper.join("blueprint-manifest.json"),
+            manifest_binding("a"),
+        )
+        .unwrap();
+
+        let found = discover_manifests(base).unwrap();
+        assert_eq!(found, vec![base.join("blueprint-manifest.json")]);
+    }
+
+    #[test]
+    fn empty_tree_errors_no_manifest() {
+        let root = tempfile::tempdir().unwrap();
+        let sub = root.path().join("html-multi/empty");
+        std::fs::create_dir_all(&sub).unwrap();
+        let err = discover_manifests(root.path()).unwrap_err();
+        assert!(matches!(err, BlueprintError::NoManifest(_)));
     }
 
     #[test]
