@@ -550,9 +550,10 @@ const DEFAULT_VERSO_RENDER_CMD: &str = "lake exe vbp build";
 /// here. Manifest discovery is scoped to it and keeps only the shallowest
 /// manifests, so a stale render generation nested deeper in the tree (e.g.
 /// leftovers from an older per-chapter layout) is ignored rather than merged.
-/// Discovery assumes the current render's manifests are the shallowest; after
-/// changing render layout, clean `_out/site`. Any manifest found here also
-/// suppresses the render fallback below.
+/// Depth is the only signal — discovery cannot tell fresh from stale at the
+/// same depth — so after changing render layout or renaming/removing chapters,
+/// clean `_out/site`. Any manifest found here also suppresses the render
+/// fallback below.
 const VERSO_SITE_SUBDIR: &str = "_out/site";
 
 fn build_verso_model(args: &ExtractArgs, render_root: &Path) -> Result<BlueprintModel> {

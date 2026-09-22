@@ -645,9 +645,9 @@ pub fn discover_manifests(root: &Path) -> Result<Vec<std::path::PathBuf>> {
 }
 
 /// Discover and merge the shallowest `blueprint-manifest.json`s under `root`,
-/// de-duplicating nodes by label. Same-depth siblings are the chapters of one
-/// render (the legacy per-chapter layout) and merge; deeper render trees are
-/// ignored.
+/// de-duplicating nodes by label. Same-depth siblings merge (supporting the
+/// legacy per-chapter layout — depth alone cannot prove they belong to one
+/// render); deeper render trees are ignored.
 pub fn load_from_dir(root: &Path) -> Result<BlueprintModel> {
     let mut model = BlueprintModel::default();
     for path in discover_manifests(root)? {
@@ -1346,15 +1346,20 @@ mod tests {
         assert!(found[0].starts_with(base.join("_out")));
     }
 
-    /// A minimal manifest whose single node `a` binds `decl`.
-    fn manifest_binding(decl: &str) -> String {
+    /// A minimal manifest whose single node `label` binds `decl`.
+    fn manifest_node(label: &str, decl: &str) -> String {
         format!(
             r#"{{"vbpInternalSchemaVersion":8,
-                "graphs":[{{"nodes":[{{"label":"a","previewKey":"a--statement",
+                "graphs":[{{"nodes":[{{"label":"{label}","previewKey":"{label}--statement",
                   "statementStatus":"formalized","proofStatus":"none"}}]}}],
-                "previews":[{{"key":"a--statement","facet":"statement",
+                "previews":[{{"key":"{label}--statement","facet":"statement",
                   "codeData":{{"external":{{"decls":[{{"canonical":"{decl}"}}]}}}}}}]}}"#
         )
+    }
+
+    /// A minimal manifest whose single node `a` binds `decl`.
+    fn manifest_binding(decl: &str) -> String {
+        manifest_node("a", decl)
     }
 
     #[test]
@@ -1383,9 +1388,10 @@ mod tests {
 
     #[test]
     fn same_depth_siblings_merge_and_deeper_duplicate_is_ignored() {
-        // Legacy per-chapter layout: both depth-4 chapter manifests merge, in
-        // sorted order (merging has first-wins fields); a deeper duplicate that
-        // the old recursive walk merged twice is ignored.
+        // Legacy per-chapter layout: both depth-4 chapter manifests are
+        // selected in sorted order and both contribute to the merged model
+        // (distinct labels so a silently dropped sibling would be visible);
+        // a deeper manifest that the old recursive walk merged is ignored.
         let root = tempfile::tempdir().unwrap();
         let base = root.path();
         let chap_a = base.join("html-multi/Alpha/-verso-data");
@@ -1394,17 +1400,17 @@ mod tests {
         std::fs::create_dir_all(&chap_b).unwrap();
         std::fs::write(
             chap_a.join("blueprint-manifest.json"),
-            manifest_binding("Foo.a"),
+            manifest_node("a", "Foo.a"),
         )
         .unwrap();
         std::fs::write(
             chap_b.join("blueprint-manifest.json"),
-            manifest_binding("Foo.a"),
+            manifest_node("b", "Foo.b"),
         )
         .unwrap();
         let dup = chap_b.join("nested");
         std::fs::create_dir_all(&dup).unwrap();
-        std::fs::write(dup.join("blueprint-manifest.json"), manifest_binding("a")).unwrap();
+        std::fs::write(dup.join("blueprint-manifest.json"), manifest_node("c", "c")).unwrap();
 
         let found = discover_manifests(base).unwrap();
         assert_eq!(
@@ -1414,6 +1420,19 @@ mod tests {
                 chap_b.join("blueprint-manifest.json"),
             ]
         );
+
+        let model = load_from_dir(base).unwrap();
+        let mut labels: Vec<_> = model.nodes.iter().map(|n| n.label.as_str()).collect();
+        labels.sort_unstable();
+        assert_eq!(
+            labels,
+            ["a", "b"],
+            "both siblings merge, deeper node does not"
+        );
+        let a = model.nodes.iter().find(|n| n.label == "a").unwrap();
+        let b = model.nodes.iter().find(|n| n.label == "b").unwrap();
+        assert_eq!(a.lean_decls, vec!["Foo.a"]);
+        assert_eq!(b.lean_decls, vec!["Foo.b"]);
     }
 
     #[test]
@@ -1461,6 +1480,28 @@ mod tests {
 
         let found = discover_manifests(base).unwrap();
         assert_eq!(found, vec![base.join("blueprint-manifest.json")]);
+    }
+
+    #[test]
+    fn malformed_shallowest_manifest_errors_without_deeper_fallback() {
+        // A broken shallowest manifest is an error, not a reason to read
+        // deeper: falling back would silently swap in another render
+        // generation.
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path();
+        let shallow = base.join("html-multi/-verso-data");
+        std::fs::create_dir_all(&shallow).unwrap();
+        std::fs::write(shallow.join("blueprint-manifest.json"), "not json").unwrap();
+        let deeper = shallow.join("nested");
+        std::fs::create_dir_all(&deeper).unwrap();
+        std::fs::write(
+            deeper.join("blueprint-manifest.json"),
+            manifest_binding("Foo.a"),
+        )
+        .unwrap();
+
+        let err = load_from_dir(base).unwrap_err();
+        assert!(matches!(err, BlueprintError::ManifestParse(_)));
     }
 
     #[test]
