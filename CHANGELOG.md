@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-22
+
+### Fixed
+- Manifest discovery is breadth-first: it returns every `blueprint-manifest.json` at the shallowest depth where any exists (sorted) and never descends further. Previously all manifests under the search root merged, however deep, so a stale render generation nested inside `_out/site` (secure-messaging's `chapter-renders/` fossils) silently corrupted the fresh render — phantom missing-decl demotions, spurious collisions, headline understated 10/63 vs the correct 16/63. Same-depth siblings still merge (the legacy per-chapter layout); their deeper duplicates, previously merged twice, are ignored. Single-manifest layouts are unchanged. Discovery selects by depth only, not freshness — after changing render layout or renaming/removing chapters, clean `_out/site`.
+
+### Changed
+- The directory form of `--verso-manifest` gets the same shallowest-depth selection (it shares the discovery code); the file form is untouched.
+
 ## [0.9.0] - 2026-09-17
 
 ### Added
